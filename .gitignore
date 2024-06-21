@@ -1,0 +1,17 @@
+*.pkl
+*.yaml
+gcbfplus/pretrained/CrazyFlie/gcbf+/config.yaml
+gcbfplus/pretrained/CrazyFlie/gcbf+/models/1000/actor.pkl
+gcbfplus/pretrained/CrazyFlie/gcbf+/models/1000/cbf.pkl
+gcbfplus/pretrained/DoubleIntegrator/gcbf+/config.yaml
+gcbfplus/pretrained/DoubleIntegrator/gcbf+/models/1000/actor.pkl
+gcbfplus/pretrained/DoubleIntegrator/gcbf+/models/1000/cbf.pkl
+gcbfplus/pretrained/DubinsCar/gcbf+/config.yaml
+gcbfplus/pretrained/DubinsCar/gcbf+/models/1000/actor.pkl
+gcbfplus/pretrained/DubinsCar/gcbf+/models/1000/cbf.pkl
+gcbfplus/pretrained/LinearDrone/gcbf+/config.yaml
+gcbfplus/pretrained/LinearDrone/gcbf+/models/1000/actor.pkl
+gcbfplus/pretrained/LinearDrone/gcbf+/models/1000/cbf.pkl
+gcbfplus/pretrained/SingleIntegrator/gcbf+/config.yaml
+gcbfplus/pretrained/SingleIntegrator/gcbf+/models/1000/actor.pkl
+gcbfplus/pretrained/SingleIntegrator/gcbf+/models/1000/cbf.pkl
