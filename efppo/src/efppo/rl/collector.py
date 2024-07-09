@@ -66,9 +66,12 @@ def collect_single_mode(
         l = task.l(envstate_new, control)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
+        if hasattr(task, 'l1_control_info'):
+            task.l1_control_info['z'] = z_new
 
         return CollectorState(state.steps, envstate_new, z_new), (envstate_new, obs_pol, z_new, control)
-
+    if hasattr(task, 'l1_control_info'):
+        task.l1_control_info['z'] = z0
     colstate0 = CollectorState(0, x0, z0)
     collect_state, (T_envstate, T_obs, T_z, T_u) = lax.scan(_body, colstate0, None, length=rollout_T)
     obs_final = task.get_obs(collect_state.state)
@@ -82,7 +85,6 @@ def collect_single_mode(
     Th_h = jax.vmap(task.h_components)(T_state_to)
 
     return RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, None, T_l, Th_h)
-
 
 def collect_single(
     task: Task,

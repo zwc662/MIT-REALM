@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "ada-cbf"
+version = "0.1.0"
+description = "Gaussian Process Adaptive CBF"
+authors = ["zwc662 <zwc662@gmail.com>"]
+readme = "README.md"
+packages = [ 
+    { include = "../"}
+    ]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
