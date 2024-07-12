@@ -10,6 +10,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
+f110-gym = {path = "f1tenth_gym", develop = true}
 
 
 [build-system]
