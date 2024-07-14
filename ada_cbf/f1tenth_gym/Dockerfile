@@ -20,7 +20,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-FROM ubuntu:20.04
+#FROM ubuntu:20.04
+FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04
+
+WORKDIR /Workspace
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y tmux git wget vim sudo make build-essential net-tools \
+libssl-dev zlib1g-dev \
+libbz2-dev libreadline-dev libsqlite3-dev curl \
+libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
 
 ARG DEBIAN_FRONTEND="noninteractive"
 ENV LIBGL_ALWAYS_INDIRECT=1
@@ -46,12 +54,12 @@ RUN pip3 install --upgrade pip
 RUN pip3 install PyOpenGL \
                  PyOpenGL_accelerate
 
-RUN mkdir /f1tenth_gym
-COPY . /f1tenth_gym
+#RUN mkdir /f1tenth_gym
+#COPY . /f1tenth_gym
 
-RUN cd /f1tenth_gym && \
-    pip3 install -e .
+#RUN cd /f1tenth_gym && \
+#    pip3 install -e .
 
-WORKDIR /f1tenth_gym
+#WORKDIR /f1tenth_gym
 
 ENTRYPOINT ["/bin/bash"]
