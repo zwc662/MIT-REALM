@@ -7,6 +7,7 @@ from argparse import Namespace
 
 from numba import njit
 
+import pyglet
 from pyglet.gl import GL_POINTS
 
 """
