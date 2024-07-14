@@ -7,10 +7,7 @@ from argparse import Namespace
 
 from numba import njit
 
-import pyglet
-pyglet.options["headless"] = True
-
-#from pyglet.gl import GL_POINTS
+from pyglet.gl import GL_POINTS
 
 """
 Planner Helpers
