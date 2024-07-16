@@ -167,8 +167,8 @@ def create_track():
     track_poly = shp.Polygon(track_xy)
     track_xy_offset_in = track_poly.buffer(WIDTH)
     track_xy_offset_out = track_poly.buffer(-WIDTH)
-    track_xy_offset_in_np = np.array(track_xy_offset_in.exterior)
-    track_xy_offset_out_np = np.array(track_xy_offset_out.exterior)
+    track_xy_offset_in_np = np.array(track_xy_offset_in.exterior.coords)
+    track_xy_offset_out_np = np.array(track_xy_offset_out.exterior.coords)
     return track_xy, track_xy_offset_in_np, track_xy_offset_out_np
 
 
@@ -231,4 +231,5 @@ if __name__ == '__main__':
         except:
             print('Random generator failed, retrying')
             continue
+        print(track_int)
         convert_track(track, track_int, track_ext, i)

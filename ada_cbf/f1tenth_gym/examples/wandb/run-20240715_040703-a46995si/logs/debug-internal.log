@@ -1,0 +1,13 @@
+{"time":"2024-07-15T04:07:03.708478-04:00","level":"INFO","msg":"using version","core version":"0.17.4"}
+{"time":"2024-07-15T04:07:03.708512-04:00","level":"INFO","msg":"created symlink","path":"/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/wandb/run-20240715_040703-a46995si/logs/debug-core.log"}
+{"time":"2024-07-15T04:07:03.720879-04:00","level":"INFO","msg":"created new stream","id":"a46995si"}
+{"time":"2024-07-15T04:07:03.720985-04:00","level":"INFO","msg":"handler: started","stream_id":{"value":"a46995si"}}
+{"time":"2024-07-15T04:07:03.721112-04:00","level":"INFO","msg":"sender: started","stream_id":{"value":"a46995si"}}
+{"time":"2024-07-15T04:07:03.721094-04:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"a46995si"}}
+{"time":"2024-07-15T04:07:04.154938-04:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-07-15T04:07:04.15649-04:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-07-15T04:11:53.459421-04:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-07-15T04:11:53.459563-04:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-07-15T04:11:55.062384-04:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"a46995si"}}
+{"time":"2024-07-15T04:11:55.062568-04:00","level":"INFO","msg":"sender: closed","stream_id":{"value":"a46995si"}}
+{"time":"2024-07-15T04:11:55.065189-04:00","level":"INFO","msg":"closed stream","id":"a46995si"}

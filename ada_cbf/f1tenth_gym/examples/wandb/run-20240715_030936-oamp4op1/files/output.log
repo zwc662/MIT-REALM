@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 467, in <module>
+    main()
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 423, in main
+    planner = PurePursuitPlanner(conf, (0.17145+0.15875)) #FlippyPlanner(speed=0.2, flip_every=1, steer=10)
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 262, in __init__
+    self.bicycle_model = BicycleModel(wb)
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 69, in __init__
+    self.load_gp()
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 110, in load_gp
+    self.gp_x = joblib.load(filename_x)
+  File "/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/joblib/numpy_pickle.py", line 650, in load
+    with open(filename, 'rb') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'gp_x.pkl'

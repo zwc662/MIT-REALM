@@ -1,0 +1,12 @@
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/f110_gym/envs/base_classes.py:93: UserWarning: Chosen integrator is RK4. This is different from previous versions of the gym.
+  warnings.warn(f"Chosen integrator is RK4. This is different from previous versions of the gym.")
+Traceback (most recent call last):
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 496, in <module>
+    main()
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 484, in main
+    speed, steer = planner.plan(obs, work)
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 403, in plan
+    lookahead_point = self._get_current_waypoint(self.waypoints, lookahead_distance, position, pose_theta)
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 383, in _get_current_waypoint
+    current_waypoint[2] = waypoints[i, self.conf.wpt_vind]
+IndexError: index 5 is out of bounds for axis 1 with size 2

@@ -1,0 +1,180 @@
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/f110_gym/envs/base_classes.py:93: UserWarning: Chosen integrator is RK4. This is different from previous versions of the gym.
+  warnings.warn(f"Chosen integrator is RK4. This is different from previous versions of the gym.")
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 1.7393550523219205e-08
+GP Model Mean Squared Error (y): 4.552915658113343e-08
+NN Model Mean Squared Error (x): 0.0002563410593635571
+NN Model Mean Squared Error (y): 0.0002192226461051756
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 9.380003344507614e-08
+GP Model Mean Squared Error (y): 2.7074232586760097e-08
+NN Model Mean Squared Error (x): 0.0005829146464496563
+NN Model Mean Squared Error (y): 0.0009888203962513955
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 8.067301801482845e-08
+GP Model Mean Squared Error (y): 1.2743895107864745e-07
+NN Model Mean Squared Error (x): 0.0005652449863438384
+NN Model Mean Squared Error (y): 0.0005330042420491951
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 1.9614740497923846e-07
+GP Model Mean Squared Error (y): 2.0265554507156886e-07
+NN Model Mean Squared Error (x): 0.0006678390689047896
+NN Model Mean Squared Error (y): 0.0004222883135045429
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 8.868428762790665e-08
+GP Model Mean Squared Error (y): 2.5029711833477194e-08
+NN Model Mean Squared Error (x): 0.00039919119007715336
+NN Model Mean Squared Error (y): 0.00021787018598212561
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 2.4551533823636996e-07
+GP Model Mean Squared Error (y): 1.539883784027252e-08
+NN Model Mean Squared Error (x): 0.0007977846665261975
+NN Model Mean Squared Error (y): 0.00042826689717323263
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 2.4807249307622424e-07
+GP Model Mean Squared Error (y): 1.4001862037826615e-08
+NN Model Mean Squared Error (x): 0.0003789754735481106
+NN Model Mean Squared Error (y): 0.0007865657604410433
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 2.4643987121554594e-07
+GP Model Mean Squared Error (y): 1.8144462392909006e-07
+NN Model Mean Squared Error (x): 0.0007282553136499696
+NN Model Mean Squared Error (y): 0.000250098816193635
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 2.9323485570061983e-07
+GP Model Mean Squared Error (y): 2.0431947053527726e-07
+NN Model Mean Squared Error (x): 0.00041371172911804034
+NN Model Mean Squared Error (y): 0.0009582204263488881
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 2.2442006591615212e-07
+GP Model Mean Squared Error (y): 2.0375502731475164e-08
+NN Model Mean Squared Error (x): 0.0002304868736482179
+NN Model Mean Squared Error (y): 0.00013730842468042835
+Traceback (most recent call last):
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 498, in <module>
+    start = time.time()
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 491, in main
+    env = gym.make('f110_gym:f110-v0', map=conf.map_path, map_ext=conf.map_ext, num_agents=1, timestep=0.01, integrator=Integrator.RK4)
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 420, in call_back
+    position = np.array([pose_x, pose_y])
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 122, in update_models
+    Y = np.array([self.data['Ys']['xs'],
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 134, in train_gp
+    assert X.shape[0] > 10
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/base.py", line 1473, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py", line 325, in fit
+    self._constrained_optimization(obj_func, theta_initial, bounds)
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py", line 652, in _constrained_optimization
+    opt_res = scipy.optimize.minimize(
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/scipy/optimize/_minimize.py", line 710, in minimize
+    res = _minimize_lbfgsb(fun, x0, args, jac, bounds,
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/scipy/optimize/_lbfgsb_py.py", line 365, in _minimize_lbfgsb
+    f, g = func_and_grad(x)
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/scipy/optimize/_differentiable_functions.py", line 285, in fun_and_grad
+    self._update_fun()
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/scipy/optimize/_differentiable_functions.py", line 251, in _update_fun
+    self._update_fun_impl()
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/scipy/optimize/_differentiable_functions.py", line 155, in update_fun
+    self.f = fun_wrapped(self.x)
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/scipy/optimize/_differentiable_functions.py", line 137, in fun_wrapped
+    fx = fun(np.copy(x), *args)
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/scipy/optimize/_optimize.py", line 77, in __call__
+    self._compute_if_needed(x, *args)
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/scipy/optimize/_optimize.py", line 71, in _compute_if_needed
+    fg = self.fun(x, *args)
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py", line 297, in obj_func
+    lml, grad = self.log_marginal_likelihood(
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py", line 583, in log_marginal_likelihood
+    L = cholesky(K, lower=GPR_CHOLESKY_LOWER, check_finite=False)
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/scipy/linalg/_decomp_cholesky.py", line 89, in cholesky
+    c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True,
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/scipy/linalg/_decomp_cholesky.py", line 35, in _cholesky
+    c, info = potrf(a1, lower=lower, overwrite_a=overwrite_a, clean=clean)
+KeyboardInterrupt

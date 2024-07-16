@@ -1,0 +1,193 @@
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/f110_gym/envs/base_classes.py:93: UserWarning: Chosen integrator is RK4. This is different from previous versions of the gym.
+  warnings.warn(f"Chosen integrator is RK4. This is different from previous versions of the gym.")
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 1.7110383862070583e-08
+GP Model Mean Squared Error (y): 6.53471916730356e-10
+NN Model Mean Squared Error (x): 0.0005110611021982937
+NN Model Mean Squared Error (y): 0.0008899428016396031
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 2.3135755018536036e-08
+GP Model Mean Squared Error (y): 1.5255065581515158e-08
+NN Model Mean Squared Error (x): 0.0006408013118850084
+NN Model Mean Squared Error (y): 0.0008682006523452479
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 1.986653005419234e-09
+GP Model Mean Squared Error (y): 1.009201949598145e-09
+NN Model Mean Squared Error (x): 0.012337826125996841
+NN Model Mean Squared Error (y): 0.007762702221303349
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 1.025492555307018e-09
+GP Model Mean Squared Error (y): 7.998378357142148e-10
+NN Model Mean Squared Error (x): 0.015435487080966983
+NN Model Mean Squared Error (y): 0.020433654505479622
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 1.20414891441218e-09
+GP Model Mean Squared Error (y): 8.468591704607247e-10
+NN Model Mean Squared Error (x): 0.0006186418628184647
+NN Model Mean Squared Error (y): 0.0005966500904137262
+GP Model Mean Squared Error (x): 6.926467210867214e-07
+GP Model Mean Squared Error (y): 1.0164375415882888e-08
+NN Model Mean Squared Error (x): 0.0014900056593591035
+NN Model Mean Squared Error (y): 0.0013673968955685348
+GP Model Mean Squared Error (x): 3.177115308259008e-07
+GP Model Mean Squared Error (y): 2.5017939608125724e-09
+NN Model Mean Squared Error (x): 0.006567432294371203
+NN Model Mean Squared Error (y): 0.0018618880545905304
+GP Model Mean Squared Error (x): 1.9858046091409473e-09
+GP Model Mean Squared Error (y): 9.65779080044731e-10
+NN Model Mean Squared Error (x): 0.010085249467945522
+NN Model Mean Squared Error (y): 0.002956502335543267
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 4.151404831008054e-09
+GP Model Mean Squared Error (y): 7.654720101985935e-10
+NN Model Mean Squared Error (x): 0.00157527390348952
+NN Model Mean Squared Error (y): 0.0020938787877157455
+GP Model Mean Squared Error (x): 1.9211255662317343e-09
+GP Model Mean Squared Error (y): 9.860308482973817e-10
+NN Model Mean Squared Error (x): 0.0003014088539427022
+NN Model Mean Squared Error (y): 0.000707844251733909
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 5.53114436328495e-09
+GP Model Mean Squared Error (y): 1.3456397197582316e-09
+NN Model Mean Squared Error (x): 0.0031998820470155345
+NN Model Mean Squared Error (y): 0.0015295891404455248
+GP Model Mean Squared Error (x): 6.918592241828662e-10
+GP Model Mean Squared Error (y): 6.801513419481706e-10
+NN Model Mean Squared Error (x): 0.0005001474852502344
+NN Model Mean Squared Error (y): 0.00031193737602882925
+GP Model Mean Squared Error (x): 1.5118108186779936e-09
+GP Model Mean Squared Error (y): 1.197866601648678e-09
+NN Model Mean Squared Error (x): 0.001813789296846207
+NN Model Mean Squared Error (y): 0.002082837372912173
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 1.554329470636427e-08
+GP Model Mean Squared Error (y): 3.211755181019239e-09
+NN Model Mean Squared Error (x): 0.000645632893997227
+NN Model Mean Squared Error (y): 0.0007349388850200844
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 5.872681637376987e-09
+GP Model Mean Squared Error (y): 1.253348637153284e-09
+NN Model Mean Squared Error (x): 0.00036271002515160836
+NN Model Mean Squared Error (y): 0.0005728597928953024
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 6.547358957038661e-09
+GP Model Mean Squared Error (y): 7.672267990416766e-10
+NN Model Mean Squared Error (x): 0.003946034864897644
+NN Model Mean Squared Error (y): 0.07528887030915449
+GP Model Mean Squared Error (x): 3.8633179583741325e-09
+GP Model Mean Squared Error (y): 1.0124287408122047e-09
+NN Model Mean Squared Error (x): 0.08337165244004809
+NN Model Mean Squared Error (y): 0.004198219017388547
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 4.782685606762878e-07
+GP Model Mean Squared Error (y): 4.277622187275086e-08
+NN Model Mean Squared Error (x): 0.03233634646307622
+NN Model Mean Squared Error (y): 0.011302661712668905
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 2.548821991650645e-07
+GP Model Mean Squared Error (y): 1.6559612861541595e-07
+NN Model Mean Squared Error (x): 0.06923841651786536
+NN Model Mean Squared Error (y): 0.007846087162282772
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 2.978219037056913e-08
+GP Model Mean Squared Error (y): 6.452053094120421e-09
+NN Model Mean Squared Error (x): 0.0005838453038794825
+NN Model Mean Squared Error (y): 0.0003452187197454381
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 3.930516078363106e-08
+GP Model Mean Squared Error (y): 1.5497369272884517e-09
+NN Model Mean Squared Error (x): 0.0012728749738030118
+NN Model Mean Squared Error (y): 0.0004839933814498103
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+GP Model Mean Squared Error (x): 3.857089475565176e-08
+GP Model Mean Squared Error (y): 1.3187084799433774e-09
+NN Model Mean Squared Error (x): 0.20286993050003393
+NN Model Mean Squared Error (y): 0.01586774607807431
+Sim elapsed time: 1.2200000000000009 Real elapsed time: 11.441189050674438

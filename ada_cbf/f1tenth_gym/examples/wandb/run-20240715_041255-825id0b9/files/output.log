@@ -1,0 +1,1597 @@
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/f110_gym/envs/base_classes.py:93: UserWarning: Chosen integrator is RK4. This is different from previous versions of the gym.
+  warnings.warn(f"Chosen integrator is RK4. This is different from previous versions of the gym.")
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+step: 0
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+step: 10
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 20
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+step: 30
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 40
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 50
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 60
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 70
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 80
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 90
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 100
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 110
+gp_avg_error_x: -0.05141281977896374
+gp_avg_error_y: 0.06935065858314406
+nn_avg_error_x: -0.06156623576203023
+nn_avg_error_y: 0.02552817483641632
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 120
+gp_avg_error_x: -0.05244945629965113
+gp_avg_error_y: 0.06930008461551515
+nn_avg_error_x: 0.042202459606196306
+nn_avg_error_y: -0.01115304719579251
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 130
+gp_avg_error_x: -0.05180851863168679
+gp_avg_error_y: 0.07043720391113086
+nn_avg_error_x: 0.0008520748374531854
+nn_avg_error_y: 0.0016816825002814477
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 140
+gp_avg_error_x: -0.05109338683856675
+gp_avg_error_y: 0.07149749933147424
+nn_avg_error_x: 0.01944202629320236
+nn_avg_error_y: -0.009993002754552945
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 150
+gp_avg_error_x: -0.05154754986535431
+gp_avg_error_y: 0.07133327345871146
+nn_avg_error_x: 0.09949619380901453
+nn_avg_error_y: 0.0919206107564977
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 160
+gp_avg_error_x: -0.0535440582679385
+gp_avg_error_y: 0.06972976206836051
+nn_avg_error_x: 0.05763507599930117
+nn_avg_error_y: 0.10309229854259574
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 170
+gp_avg_error_x: -0.05649296320360606
+gp_avg_error_y: 0.06675988225270242
+nn_avg_error_x: -0.009886365569487549
+nn_avg_error_y: 0.12132397647465441
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 180
+gp_avg_error_x: -0.05945985203621036
+gp_avg_error_y: 0.06340986824645586
+nn_avg_error_x: -0.010241100397372312
+nn_avg_error_y: 0.11353710204336447
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 190
+gp_avg_error_x: -0.06189886154409714
+gp_avg_error_y: 0.060604705437446685
+nn_avg_error_x: -0.020089776555773202
+nn_avg_error_y: 0.11789454796504509
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 200
+gp_avg_error_x: -0.06387124176197975
+gp_avg_error_y: 0.05864107298125276
+nn_avg_error_x: -0.028239552615182482
+nn_avg_error_y: 0.10387737391181792
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 210
+gp_avg_error_x: -0.06550747949744173
+gp_avg_error_y: 0.0572296249890332
+nn_avg_error_x: -0.04108102224536876
+nn_avg_error_y: 0.10687287658034406
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 220
+gp_avg_error_x: -0.06707632149714622
+gp_avg_error_y: 0.055840518979982004
+nn_avg_error_x: -0.03930926696462175
+nn_avg_error_y: 0.10074337336008272
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 230
+gp_avg_error_x: -0.06875125832165037
+gp_avg_error_y: 0.05424780718765443
+nn_avg_error_x: -0.040326591657495324
+nn_avg_error_y: 0.09948028171067662
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 240
+gp_avg_error_x: -0.07049740107781785
+gp_avg_error_y: 0.0524043072747212
+nn_avg_error_x: -0.015374039222012621
+nn_avg_error_y: 0.052827631848193723
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 250
+gp_avg_error_x: -0.07220753486129432
+gp_avg_error_y: 0.05046702837666889
+nn_avg_error_x: -0.05349064397651349
+nn_avg_error_y: 0.061377644210672135
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 260
+gp_avg_error_x: -0.07388590583258611
+gp_avg_error_y: 0.048682885066883355
+nn_avg_error_x: -0.07051696178093436
+nn_avg_error_y: 0.023440121274157094
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 270
+gp_avg_error_x: -0.07550088074736971
+gp_avg_error_y: 0.04716639344521247
+nn_avg_error_x: -0.07173666706994229
+nn_avg_error_y: 0.02868701241508952
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 280
+gp_avg_error_x: -0.07705538196119972
+gp_avg_error_y: 0.0458859965280344
+nn_avg_error_x: -0.07847972885293561
+nn_avg_error_y: 0.026510631959863022
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 290
+gp_avg_error_x: -0.07849768971163922
+gp_avg_error_y: 0.04481176708313562
+nn_avg_error_x: -0.08539446904587797
+nn_avg_error_y: 0.026287824963789935
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 300
+gp_avg_error_x: -0.07984062297387631
+gp_avg_error_y: 0.04390001613867607
+nn_avg_error_x: -0.09937619713152225
+nn_avg_error_y: 0.0062189386104678146
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 310
+gp_avg_error_x: -0.08107697836437355
+gp_avg_error_y: 0.04307005989373837
+nn_avg_error_x: -0.13362373615466264
+nn_avg_error_y: -0.019974584636864304
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 320
+gp_avg_error_x: -0.08222057624747166
+gp_avg_error_y: 0.04229032577201627
+nn_avg_error_x: -0.12982774194981242
+nn_avg_error_y: -0.01701236673325535
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 330
+gp_avg_error_x: -0.08326033041676037
+gp_avg_error_y: 0.04166132308045275
+nn_avg_error_x: -0.1457355036672196
+nn_avg_error_y: -0.0007254932919850933
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 340
+gp_avg_error_x: -0.08416190597096514
+gp_avg_error_y: 0.04126173152628632
+nn_avg_error_x: -0.1494465643615267
+nn_avg_error_y: 0.0010379220379183411
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 350
+gp_avg_error_x: -0.0849344247212692
+gp_avg_error_y: 0.04109790093018193
+nn_avg_error_x: -0.15014581442523928
+nn_avg_error_y: 0.0014649046436180412
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 360
+gp_avg_error_x: -0.08556489426124324
+gp_avg_error_y: 0.041152901602828765
+nn_avg_error_x: -0.14477610522389175
+nn_avg_error_y: 0.0012919902439934325
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 370
+gp_avg_error_x: -0.08605706268155666
+gp_avg_error_y: 0.04141009128223982
+nn_avg_error_x: -0.12864460190285723
+nn_avg_error_y: -0.0069608912497650085
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 380
+gp_avg_error_x: -0.08642588357117544
+gp_avg_error_y: 0.04182066634896273
+nn_avg_error_x: -0.1434568324105174
+nn_avg_error_y: 0.0032717819021854284
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 390
+gp_avg_error_x: -0.08667321776706641
+gp_avg_error_y: 0.04236877609176963
+nn_avg_error_x: -0.14248394687078952
+nn_avg_error_y: 0.0007659177096120449
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 400
+gp_avg_error_x: -0.08678323230352013
+gp_avg_error_y: 0.0430613452774881
+nn_avg_error_x: -0.13863675445273407
+nn_avg_error_y: 0.003142332399885873
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 410
+gp_avg_error_x: -0.08675855168394223
+gp_avg_error_y: 0.04388501150695624
+nn_avg_error_x: -0.1346280129926608
+nn_avg_error_y: 0.015634967142113498
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 420
+gp_avg_error_x: -0.08663738362304309
+gp_avg_error_y: 0.044774536757738924
+nn_avg_error_x: -0.13256022797978254
+nn_avg_error_y: 0.018698170626333596
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 430
+gp_avg_error_x: -0.08649457652783535
+gp_avg_error_y: 0.045636946276765386
+nn_avg_error_x: -0.18473642686699956
+nn_avg_error_y: -0.04625516477783227
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 440
+gp_avg_error_x: -0.08641178671755956
+gp_avg_error_y: 0.04638829781385986
+nn_avg_error_x: -0.19511892316719268
+nn_avg_error_y: -0.06257374752832644
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 450
+gp_avg_error_x: -0.08640456796101376
+gp_avg_error_y: 0.047015992313494584
+nn_avg_error_x: -0.17998630004569874
+nn_avg_error_y: -0.06810515181651938
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 460
+gp_avg_error_x: -0.08643562998636391
+gp_avg_error_y: 0.047557916482742
+nn_avg_error_x: -0.1962033640408941
+nn_avg_error_y: -0.09081375363439964
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 470
+gp_avg_error_x: -0.08646092271812503
+gp_avg_error_y: 0.04807406516510952
+nn_avg_error_x: -0.19641704880016048
+nn_avg_error_y: -0.0850601727741326
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 480
+gp_avg_error_x: -0.08649416675723054
+gp_avg_error_y: 0.04856063819289213
+nn_avg_error_x: -0.19469274833577177
+nn_avg_error_y: -0.08237992107587444
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 490
+gp_avg_error_x: -0.08657847137342112
+gp_avg_error_y: 0.048940541809175196
+nn_avg_error_x: -0.21134799979549754
+nn_avg_error_y: -0.10505895639222845
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 500
+gp_avg_error_x: -0.08676734163459283
+gp_avg_error_y: 0.04912954928585228
+nn_avg_error_x: -0.21513572791523303
+nn_avg_error_y: -0.09701881363054328
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 510
+gp_avg_error_x: -0.08707601050153747
+gp_avg_error_y: 0.04907272997996804
+nn_avg_error_x: -0.21258432973209826
+nn_avg_error_y: -0.09907102093064084
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 520
+gp_avg_error_x: -0.08747311852415203
+gp_avg_error_y: 0.04877377183346579
+nn_avg_error_x: -0.21895750359379607
+nn_avg_error_y: -0.0965326121513206
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 530
+gp_avg_error_x: -0.08791682436800165
+gp_avg_error_y: 0.04828510490399433
+nn_avg_error_x: -0.24133592536700077
+nn_avg_error_y: -0.15369439922250605
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 540
+gp_avg_error_x: -0.088372056349525
+gp_avg_error_y: 0.04765229582007157
+nn_avg_error_x: -0.23617863007282427
+nn_avg_error_y: -0.1587246615692346
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 550
+gp_avg_error_x: -0.08881916505861812
+gp_avg_error_y: 0.046817667770639976
+nn_avg_error_x: -0.22884211942323135
+nn_avg_error_y: -0.16576445179829077
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 560
+gp_avg_error_x: -0.08918453159953246
+gp_avg_error_y: 0.045694165760474345
+nn_avg_error_x: -0.22154514055503424
+nn_avg_error_y: -0.16401518122204423
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 570
+gp_avg_error_x: -0.08943026460696497
+gp_avg_error_y: 0.04421079763395169
+nn_avg_error_x: -0.2230612972794694
+nn_avg_error_y: -0.1560032160413224
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 580
+gp_avg_error_x: -0.0895257938494751
+gp_avg_error_y: 0.042511029494621135
+nn_avg_error_x: -0.21607683166470393
+nn_avg_error_y: -0.158551046027799
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 590
+gp_avg_error_x: -0.08955318590399879
+gp_avg_error_y: 0.040860864474677266
+nn_avg_error_x: -0.22303985288309194
+nn_avg_error_y: -0.15885492051643413
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 600
+gp_avg_error_x: -0.08955318283854184
+gp_avg_error_y: 0.039338410562682585
+nn_avg_error_x: -0.21981951488577514
+nn_avg_error_y: -0.15645791686054594
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 610
+gp_avg_error_x: -0.08949412699761639
+gp_avg_error_y: 0.0378380139866947
+nn_avg_error_x: -0.23080717094413944
+nn_avg_error_y: -0.15020015363098232
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 620
+gp_avg_error_x: -0.08922638647310342
+gp_avg_error_y: 0.03612801389067196
+nn_avg_error_x: -0.22749599629199646
+nn_avg_error_y: -0.1462169222731307
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 630
+gp_avg_error_x: -0.08862781725275112
+gp_avg_error_y: 0.03413071403814822
+nn_avg_error_x: -0.27187867460073484
+nn_avg_error_y: -0.1262911049136208
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 640
+gp_avg_error_x: -0.08767927719653462
+gp_avg_error_y: 0.032011825609642365
+nn_avg_error_x: -0.3018578247804037
+nn_avg_error_y: -0.10080457388212291
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 650
+gp_avg_error_x: -0.08663523085342077
+gp_avg_error_y: 0.029955943132302532
+nn_avg_error_x: -0.2786064538551972
+nn_avg_error_y: -0.1014976232776535
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 660
+gp_avg_error_x: -0.08550313132116727
+gp_avg_error_y: 0.02796323709439789
+nn_avg_error_x: -0.272746837593647
+nn_avg_error_y: -0.09852893351097874
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 670
+gp_avg_error_x: -0.0841760000232107
+gp_avg_error_y: 0.026027753644062505
+nn_avg_error_x: -0.26876922005737536
+nn_avg_error_y: -0.09897014983514846
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 680
+gp_avg_error_x: -0.08250707033876377
+gp_avg_error_y: 0.02419261783471766
+nn_avg_error_x: -0.263744255440903
+nn_avg_error_y: -0.09566312984755178
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 690
+gp_avg_error_x: -0.08052577228196499
+gp_avg_error_y: 0.022563143136918675
+nn_avg_error_x: -0.25701354727524656
+nn_avg_error_y: -0.09654720258953471
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 700
+gp_avg_error_x: -0.07847400161045587
+gp_avg_error_y: 0.02106582782873106
+nn_avg_error_x: -0.27881336357492165
+nn_avg_error_y: -0.11046158889968173
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 710
+gp_avg_error_x: -0.07652541500674856
+gp_avg_error_y: 0.019589178142863588
+nn_avg_error_x: -0.2615984722321921
+nn_avg_error_y: -0.05793769742276259
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 720
+gp_avg_error_x: -0.0747354090055431
+gp_avg_error_y: 0.018080881839043165
+nn_avg_error_x: -0.2431692896714209
+nn_avg_error_y: -0.10855251577749364
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 730
+gp_avg_error_x: -0.07303933352952152
+gp_avg_error_y: 0.016551674956006106
+nn_avg_error_x: -0.2446462447339799
+nn_avg_error_y: -0.10831597545081002
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 740
+gp_avg_error_x: -0.07137510282247626
+gp_avg_error_y: 0.01502426229827733
+nn_avg_error_x: -0.26583061627022586
+nn_avg_error_y: -0.11432025104199597
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 750
+gp_avg_error_x: -0.06976429285592113
+gp_avg_error_y: 0.01354665163074267
+nn_avg_error_x: -0.26107058322834903
+nn_avg_error_y: -0.1044098353338911
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 760
+gp_avg_error_x: -0.0682627613752863
+gp_avg_error_y: 0.012132071908981358
+nn_avg_error_x: -0.25507210443390943
+nn_avg_error_y: -0.10813650687112394
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 770
+gp_avg_error_x: -0.06695504235975647
+gp_avg_error_y: 0.010750876214702955
+nn_avg_error_x: -0.23417482661797376
+nn_avg_error_y: -0.13818878028983092
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 780
+gp_avg_error_x: -0.06592178382453479
+gp_avg_error_y: 0.009408184515060754
+nn_avg_error_x: -0.2231254019423432
+nn_avg_error_y: -0.12579368672414976
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 790
+gp_avg_error_x: -0.06519501446610161
+gp_avg_error_y: 0.008143564844093978
+nn_avg_error_x: -0.18522910080547572
+nn_avg_error_y: -0.13485004235840095
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 800
+gp_avg_error_x: -0.06473403980804347
+gp_avg_error_y: 0.007017245004646345
+nn_avg_error_x: -0.18499306678058897
+nn_avg_error_y: -0.1320115852050411
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 810
+gp_avg_error_x: -0.06447355320389223
+gp_avg_error_y: 0.006058056915464267
+nn_avg_error_x: -0.20094146036593163
+nn_avg_error_y: -0.1344095046727522
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 820
+gp_avg_error_x: -0.06435824025011987
+gp_avg_error_y: 0.0052760854859056254
+nn_avg_error_x: -0.18983407276753284
+nn_avg_error_y: -0.16238656084736738
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 830
+gp_avg_error_x: -0.06433440330937892
+gp_avg_error_y: 0.00465930363027274
+nn_avg_error_x: -0.185942161519876
+nn_avg_error_y: -0.15797569434361206
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 840
+gp_avg_error_x: -0.06436286519767825
+gp_avg_error_y: 0.004144181281934188
+nn_avg_error_x: -0.19746655443475247
+nn_avg_error_y: -0.17351821609427995
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 850
+gp_avg_error_x: -0.06440990176544518
+gp_avg_error_y: 0.0036400125266375623
+nn_avg_error_x: -0.21009908343437134
+nn_avg_error_y: -0.16687396123299564
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 860
+gp_avg_error_x: -0.06447437409913731
+gp_avg_error_y: 0.0030974650970916856
+nn_avg_error_x: -0.20382770007453863
+nn_avg_error_y: -0.16664306207944007
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 870
+gp_avg_error_x: -0.06453779708496027
+gp_avg_error_y: 0.0024877015544926147
+nn_avg_error_x: -0.20306086489321523
+nn_avg_error_y: -0.16115200185280568
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 880
+gp_avg_error_x: -0.06455730137523423
+gp_avg_error_y: 0.0017907337573967233
+nn_avg_error_x: -0.20113993206480188
+nn_avg_error_y: -0.159207900213741
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 890
+gp_avg_error_x: -0.06445880480558375
+gp_avg_error_y: 0.000985290885186237
+nn_avg_error_x: -0.19386718561837304
+nn_avg_error_y: -0.15532295694574932
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 900
+gp_avg_error_x: -0.06417653954260351
+gp_avg_error_y: 7.650632226062993e-05
+nn_avg_error_x: -0.22491028905356242
+nn_avg_error_y: -0.1691528937868293
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 910
+gp_avg_error_x: -0.06370614073459564
+gp_avg_error_y: -0.0008886098273665001
+nn_avg_error_x: -0.22315504380326628
+nn_avg_error_y: -0.16937366560380215
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 920
+gp_avg_error_x: -0.06315273922860352
+gp_avg_error_y: -0.0018462602229954155
+nn_avg_error_x: -0.2203668933542815
+nn_avg_error_y: -0.16592922174073793
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 930
+gp_avg_error_x: -0.06264072032820728
+gp_avg_error_y: -0.0027732207549050086
+nn_avg_error_x: -0.21655044898847772
+nn_avg_error_y: -0.17378103522522878
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 940
+gp_avg_error_x: -0.062168592838173255
+gp_avg_error_y: -0.0036775682375444724
+nn_avg_error_x: -0.21443717271043772
+nn_avg_error_y: -0.17182800899656017
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 950
+gp_avg_error_x: -0.061656993674858676
+gp_avg_error_y: -0.0045779754097191264
+nn_avg_error_x: -0.19853811809489064
+nn_avg_error_y: -0.1862392149877666
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 960
+gp_avg_error_x: -0.06104294623750809
+gp_avg_error_y: -0.005486113194465936
+nn_avg_error_x: -0.17869713032625997
+nn_avg_error_y: -0.18726481778661352
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 970
+gp_avg_error_x: -0.06030703988329085
+gp_avg_error_y: -0.006390113723702411
+nn_avg_error_x: -0.17124344360984464
+nn_avg_error_y: -0.19107339342773097
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 980
+gp_avg_error_x: -0.05948120664957666
+gp_avg_error_y: -0.007281969032692254
+nn_avg_error_x: -0.18193862092892624
+nn_avg_error_y: -0.18161113529168127
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+step: 990
+gp_avg_error_x: -0.058624864787095936
+gp_avg_error_y: -0.008159480662329419
+nn_avg_error_x: -0.1674214747971231
+nn_avg_error_y: -0.20195268982963827
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+Sim elapsed time: 33.290000000001946 Real elapsed time: 1769.6182463169098

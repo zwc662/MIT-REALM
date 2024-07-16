@@ -195,10 +195,10 @@ class PurePursuitPlanner:
             # x, y
             current_waypoint[0:2] = wpts[i2, :]
             # speed
-            current_waypoint[2] = waypoints[i, self.conf.wpt_vind]
+            current_waypoint[2] = 1 #waypoints[i, self.conf.wpt_vind]
             return current_waypoint
         elif nearest_dist < self.max_reacquire:
-            return np.append(wpts[i, :], waypoints[i, self.conf.wpt_vind])
+            return np.append(wpts[i, :], 1) #waypoints[i, self.conf.wpt_vind])
         else:
             return None
 
@@ -278,8 +278,10 @@ def main():
 
     laptime = 0.0
     start = time.time()
-
+    step = 0
     while not done:
+        print(step)
+        step += 1
         speed, steer = planner.plan(obs['poses_x'][0], obs['poses_y'][0], obs['poses_theta'][0], work['tlad'], work['vgain'])
         obs, step_reward, done, info = env.step(np.array([[steer, speed]]))
         laptime += step_reward

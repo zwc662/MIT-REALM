@@ -1,0 +1,25 @@
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/f110_gym/envs/base_classes.py:93: UserWarning: Chosen integrator is RK4. This is different from previous versions of the gym.
+  warnings.warn(f"Chosen integrator is RK4. This is different from previous versions of the gym.")
+0.0
+Traceback (most recent call last):
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 471, in <module>
+    main()
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 464, in main
+    planner.call_back(step, wandb, obs)
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 375, in call_back
+    self.bicycle_model.update_gp()
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 65, in update_gp
+    self.gp_x.fit(X, y_x)
+  File "/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/base.py", line 1474, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py", line 251, in fit
+    X, y = self._validate_data(
+  File "/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/base.py", line 650, in _validate_data
+    X, y = check_X_y(X, y, **check_params)
+  File "/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/utils/validation.py", line 1279, in check_X_y
+    y = _check_y(y, multi_output=multi_output, y_numeric=y_numeric, estimator=estimator)
+  File "/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/utils/validation.py", line 1289, in _check_y
+    y = check_array(
+  File "/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/utils/validation.py", line 1072, in check_array
+    raise ValueError(
+ValueError: Found array with 0 sample(s) (shape=(0,)) while a minimum of 1 is required by GaussianProcessRegressor.

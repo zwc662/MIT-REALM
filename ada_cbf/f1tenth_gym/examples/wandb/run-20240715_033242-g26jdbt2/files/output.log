@@ -1,0 +1,268 @@
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/f110_gym/envs/base_classes.py:93: UserWarning: Chosen integrator is RK4. This is different from previous versions of the gym.
+  warnings.warn(f"Chosen integrator is RK4. This is different from previous versions of the gym.")
+0.0
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 0
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+0.08409438762037498
+0.17919438762037498
+0.27429438762037495
+0.3693943876203749
+0.46449438762037487
+0.5595943876203748
+0.6546943876203748
+0.7497943876203748
+0.8448943876203747
+0.9399943876203747
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:445: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 10
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+1.0350943876203746
+1.1301943876203746
+1.2252943876203746
+1.3203943876203745
+1.4154943876203745
+1.5105943876203745
+1.6056943876203744
+1.7007943876203744
+1.7958943876203743
+1.8909943876203743
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 20
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+1.9860943876203743
+2.0811943876203745
+2.1762943876203744
+2.2713943876203744
+2.3664943876203743
+2.4615943876203743
+2.5566943876203743
+2.6517943876203742
+2.746894387620374
+2.841994387620374
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 30
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+2.937094387620374
+3.032194387620374
+3.127294387620374
+3.222394387620374
+3.317494387620374
+3.412594387620374
+3.507694387620374
+3.602794387620374
+3.697894387620374
+3.7929943876203738
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 40
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+3.8880943876203737
+3.9831943876203737
+4.078294387620374
+4.173394387620374
+4.2684943876203745
+4.363594387620375
+4.458694387620375
+4.553794387620376
+4.648894387620376
+4.7439943876203765
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 50
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+4.839094387620377
+4.934194387620377
+5.029294387620378
+5.124394387620378
+5.2194943876203785
+5.314594387620379
+5.409694387620379
+5.50479438762038
+5.59989438762038
+5.694994387620381
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 60
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+5.790094387620381
+5.885194387620381
+5.980294387620382
+6.075394387620382
+6.170494387620383
+6.265594387620383
+6.360694387620383
+6.455794387620384
+6.550894387620384
+6.645994387620385
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:663: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 70
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+6.741094387620385
+6.8361943876203854
+6.931294387620386
+7.026394387620386
+7.121494387620387
+7.212166233238412
+7.298526632597301
+7.381082368664174
+7.459712579481067
+7.534603923773617
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 80
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+7.606186654341932
+7.674365626071723
+7.7395068079582625
+7.801550526646097
+7.860644066510325
+7.917084329338384
+7.970840857668969
+8.022041263077433
+8.070916962399352
+8.117468622218512
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 90
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+8.161870686937647
+8.204161433479387
+8.244441255023066
+8.282824404708593
+8.319382435626574
+8.354176084284406
+8.387315294948557
+8.418878736145627
+8.448871031255653
+8.477437192733197
+Models saved to gp_x.pkl, gp_y.pkl, and nn.pkl.
+step: 100
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/fromnumeric.py:3474: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/weichaozhou/.pyenv/versions/3.10.6/lib/python3.10/site-packages/numpy/core/_methods.py:189: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+gp_avg_error_x: nan
+gp_avg_error_y: nan
+nn_avg_error_x: nan
+nn_avg_error_y: nan
+8.504530929874983
+Traceback (most recent call last):
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 473, in <module>
+    main()
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 466, in main
+    planner.call_back(step, wandb, obs)
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 367, in call_back
+    'res_x': self.bm_nxt_x_res,
+AttributeError: 'PurePursuitPlanner' object has no attribute 'bm_nxt_x_res'

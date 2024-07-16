@@ -1,0 +1,37 @@
+{
+  "os":  "macOS-14.4.1-arm64-arm-64bit",
+  "python":  "3.10.6",
+  "startedAt":  "2024-07-15T07:34:02.918552Z",
+  "program":  "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py",
+  "codePath":  "ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py",
+  "git":  {
+    "remote":  "https://github.com/zwc662/MIT-REALM",
+    "commit":  "08f4e4b59c44e6b0e1bfdba699502e6baeaf5625"
+  },
+  "email":  "zwc662@bu.edu",
+  "root":  "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples",
+  "host":  "Weichaos-MBP",
+  "username":  "weichaozhou",
+  "executable":  "/Users/weichaozhou/.pyenv/versions/3.10.6/bin/python",
+  "codePathLocal":  "waypoint_follow_sysid.py",
+  "cpu_count":  8,
+  "cpu_count_logical":  8,
+  "disk":  {
+    "/":  {
+      "total":  "494384795648",
+      "used":  "327741947904"
+    }
+  },
+  "memory":  {
+    "total":  "17179869184"
+  },
+  "cpu":  {
+    "count":  8,
+    "countLogical":  8
+  },
+  "gpuapple":  {
+    "gpuType":  "Apple M1 Pro",
+    "vendor":  "sppci_vendor_Apple",
+    "cores":  14
+  }
+}

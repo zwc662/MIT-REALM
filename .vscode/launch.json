@@ -1,0 +1,19 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+         
+        {
+            "name": "Python: create map",
+            "type": "python",
+            "request": "launch",
+            "module": "torch.distributed.run",
+            "cwd": "${workspaceFolder}/ada_cbf/f1tenth_gym/examples",
+            "args": ["${workspaceFolder}/ada_cbf/f1tenth_gym/gym/f110_gym/unittest/random_trackgen.py", "--seed", "100"],
+            "python": "/opt/anaconda3/envs/envelope/bin/python",
+            "console": "integratedTerminal"
+        }
+    ] 
+}

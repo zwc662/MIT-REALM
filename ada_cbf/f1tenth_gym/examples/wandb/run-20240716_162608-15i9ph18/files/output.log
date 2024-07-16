@@ -1,0 +1,65 @@
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/f110_gym/envs/base_classes.py:93: UserWarning: Chosen integrator is RK4. This is different from previous versions of the gym.
+  warnings.warn(f"Chosen integrator is RK4. This is different from previous versions of the gym.")
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 1.739362873534489e-08
+GP Model Mean Squared Error (y): 4.552954201678692e-08
+NN Model Mean Squared Error (x): 0.0003809715681735873
+NN Model Mean Squared Error (y): 0.0004710255884840195
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/_gpr.py:659: ConvergenceWarning: lbfgs failed to converge (status=2):
+ABNORMAL_TERMINATION_IN_LNSRCH.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+  _check_optimize_result("lbfgs", opt_res)
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 0.04692429181024806
+GP Model Mean Squared Error (y): 0.002715730866715595
+NN Model Mean Squared Error (x): 0.05101243507158701
+NN Model Mean Squared Error (y): 0.003814547117460012
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 0.03081916932425419
+GP Model Mean Squared Error (y): 0.0017698818302395735
+NN Model Mean Squared Error (x): 0.03334282160851587
+NN Model Mean Squared Error (y): 0.0027820322949242216
+GP Model Mean Squared Error (x): 0.24952322455205203
+GP Model Mean Squared Error (y): 0.0006542387178929743
+NN Model Mean Squared Error (x): 0.09806472552848743
+NN Model Mean Squared Error (y): 0.0017713799910465688
+GP Model Mean Squared Error (x): 0.3285226554513081
+GP Model Mean Squared Error (y): 0.0018444257976997938
+NN Model Mean Squared Error (x): 0.32890400851921514
+NN Model Mean Squared Error (y): 0.00212822918570653
+GP Model Mean Squared Error (x): 0.49732475500475726
+GP Model Mean Squared Error (y): 0.002913591765314698
+NN Model Mean Squared Error (x): 0.4382747601459425
+NN Model Mean Squared Error (y): 0.0027580244059890466
+GP Model Mean Squared Error (x): 0.8350672582835941
+GP Model Mean Squared Error (y): 0.005363259735736013
+NN Model Mean Squared Error (x): 0.42929822517830707
+NN Model Mean Squared Error (y): 0.0027620120413809025
+/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/sklearn/neural_network/_multilayer_perceptron.py:697: UserWarning: Training interrupted by user.
+  warnings.warn("Training interrupted by user.")
+GP Model Mean Squared Error (x): 1.8343967411896906
+GP Model Mean Squared Error (y): 0.011023225731096995
+NN Model Mean Squared Error (x): 1.6167798782986125
+NN Model Mean Squared Error (y): 0.01079096190944596
+Traceback (most recent call last):
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 514, in <module>
+  File "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 505, in main
+    laptime += step_reward
+  File "/opt/anaconda3/envs/envelope/lib/python3.10/site-packages/f110_gym/envs/f110_env.py", line 408, in render
+    time.sleep(0.005)
+KeyboardInterrupt

@@ -1,0 +1,13 @@
+{"time":"2024-07-15T03:35:03.347833-04:00","level":"INFO","msg":"using version","core version":"0.17.4"}
+{"time":"2024-07-15T03:35:03.34787-04:00","level":"INFO","msg":"created symlink","path":"/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/wandb/run-20240715_033503-82pkd7tc/logs/debug-core.log"}
+{"time":"2024-07-15T03:35:03.353964-04:00","level":"INFO","msg":"created new stream","id":"82pkd7tc"}
+{"time":"2024-07-15T03:35:03.354038-04:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"82pkd7tc"}}
+{"time":"2024-07-15T03:35:03.354051-04:00","level":"INFO","msg":"sender: started","stream_id":{"value":"82pkd7tc"}}
+{"time":"2024-07-15T03:35:03.354145-04:00","level":"INFO","msg":"handler: started","stream_id":{"value":"82pkd7tc"}}
+{"time":"2024-07-15T03:35:03.611919-04:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-07-15T03:35:03.612497-04:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-07-15T04:00:57.736711-04:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-07-15T04:00:58.090726-04:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-07-15T04:00:58.951427-04:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"82pkd7tc"}}
+{"time":"2024-07-15T04:00:58.951447-04:00","level":"INFO","msg":"sender: closed","stream_id":{"value":"82pkd7tc"}}
+{"time":"2024-07-15T04:00:58.952553-04:00","level":"INFO","msg":"closed stream","id":"82pkd7tc"}

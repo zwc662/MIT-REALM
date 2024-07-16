@@ -1,0 +1,8 @@
+{"time":"2024-07-16T16:27:29.510403-04:00","level":"INFO","msg":"using version","core version":"0.17.4"}
+{"time":"2024-07-16T16:27:29.510428-04:00","level":"INFO","msg":"created symlink","path":"/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/wandb/run-20240716_162729-pseqy8j2/logs/debug-core.log"}
+{"time":"2024-07-16T16:27:29.514795-04:00","level":"INFO","msg":"created new stream","id":"pseqy8j2"}
+{"time":"2024-07-16T16:27:29.514883-04:00","level":"INFO","msg":"sender: started","stream_id":{"value":"pseqy8j2"}}
+{"time":"2024-07-16T16:27:29.51493-04:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"pseqy8j2"}}
+{"time":"2024-07-16T16:27:29.514889-04:00","level":"INFO","msg":"handler: started","stream_id":{"value":"pseqy8j2"}}
+{"time":"2024-07-16T16:27:29.695983-04:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-07-16T16:27:29.69642-04:00","level":"INFO","msg":"Starting system monitor"}
