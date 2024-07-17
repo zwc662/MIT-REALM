@@ -1,0 +1,1855 @@
+/usr/local/lib/python3.10/dist-packages/f110_gym/envs/base_classes.py:93: UserWarning: Chosen integrator is RK4. This is different from previous versions of the gym.
+  warnings.warn(f"Chosen integrator is RK4. This is different from previous versions of the gym.")
+Step 101
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 9.831410242729744e-09
+GP Model Mean Squared Error (y): 8.484869500503979e-08
+NN Model Mean Squared Error (x): 0.0007979515533373361
+NN Model Mean Squared Error (y): 0.00865599528409378
+Step 201
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k1__constant_value is close to the specified lower bound 0.001. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 0.016739764351076564
+GP Model Mean Squared Error (y): 0.008252352223815866
+NN Model Mean Squared Error (x): 0.0169582920707459
+NN Model Mean Squared Error (y): 0.00801723582277992
+Step 301
+Call back training and testing
+GP Model Mean Squared Error (x): 0.010855177767732076
+GP Model Mean Squared Error (y): 0.005351054330983725
+NN Model Mean Squared Error (x): 0.01225134052731137
+NN Model Mean Squared Error (y): 0.014281057758052114
+Step 401
+Call back training and testing
+GP Model Mean Squared Error (x): 0.011878106475772353
+GP Model Mean Squared Error (y): 0.08870157614244141
+NN Model Mean Squared Error (x): 0.032981453912761034
+NN Model Mean Squared Error (y): 0.0997229742971027
+Step 501
+Call back training and testing
+GP Model Mean Squared Error (x): 0.0031131105397010253
+GP Model Mean Squared Error (y): 0.15408915774814927
+NN Model Mean Squared Error (x): 0.004024573169036157
+NN Model Mean Squared Error (y): 0.07348305695731104
+Step 601
+Call back training and testing
+GP Model Mean Squared Error (x): 0.0063870104979955366
+GP Model Mean Squared Error (y): 0.3066296758736702
+NN Model Mean Squared Error (x): 0.0784604815349572
+NN Model Mean Squared Error (y): 0.28071439476298865
+Step 701
+Call back training and testing
+GP Model Mean Squared Error (x): 0.014464713135804382
+GP Model Mean Squared Error (y): 0.2616127440730228
+NN Model Mean Squared Error (x): 0.04908851253327218
+NN Model Mean Squared Error (y): 0.26417210303423844
+Step 801
+Call back training and testing
+GP Model Mean Squared Error (x): 0.0058181587363757585
+GP Model Mean Squared Error (y): 0.043446829159773555
+NN Model Mean Squared Error (x): 0.007585908031487575
+NN Model Mean Squared Error (y): 0.0687260819282256
+Step 901
+Call back training and testing
+GP Model Mean Squared Error (x): 0.03704997255208248
+GP Model Mean Squared Error (y): 0.5802696874692799
+NN Model Mean Squared Error (x): 0.01082850088605007
+NN Model Mean Squared Error (y): 0.2156230204875304
+Step 1001
+Call back training and testing
+GP Model Mean Squared Error (x): 0.060655928161683144
+GP Model Mean Squared Error (y): 0.5908367129666154
+NN Model Mean Squared Error (x): 0.048415852582028684
+NN Model Mean Squared Error (y): 0.4770501403323902
+Step 1101
+Call back training and testing
+GP Model Mean Squared Error (x): 0.16239473091093723
+GP Model Mean Squared Error (y): 1.2980477934495906
+NN Model Mean Squared Error (x): 0.10834133340842753
+NN Model Mean Squared Error (y): 0.7606764527168244
+Step 1201
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 0.12966106137834815
+GP Model Mean Squared Error (y): 0.732613454094242
+NN Model Mean Squared Error (x): 0.12788517659198173
+NN Model Mean Squared Error (y): 0.7240783815760041
+Step 1301
+Call back training and testing
+GP Model Mean Squared Error (x): 0.3116546719722936
+GP Model Mean Squared Error (y): 1.5704917910876208
+NN Model Mean Squared Error (x): 0.3049817825803608
+NN Model Mean Squared Error (y): 1.5036638645386526
+Step 1401
+Call back training and testing
+GP Model Mean Squared Error (x): 0.1457613006619522
+GP Model Mean Squared Error (y): 0.8826605273735904
+NN Model Mean Squared Error (x): 0.150458228626304
+NN Model Mean Squared Error (y): 0.8775440860047173
+Step 1501
+Call back training and testing
+GP Model Mean Squared Error (x): 0.4389905246400321
+GP Model Mean Squared Error (y): 1.7062303676638833
+NN Model Mean Squared Error (x): 0.3983877061752458
+NN Model Mean Squared Error (y): 1.6067403046592343
+Step 1601
+Call back training and testing
+GP Model Mean Squared Error (x): 0.540005055550274
+GP Model Mean Squared Error (y): 1.5467137149730288
+NN Model Mean Squared Error (x): 0.4973098930245361
+NN Model Mean Squared Error (y): 1.3839086875766131
+Step 1701
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 0.3170121409471118
+GP Model Mean Squared Error (y): 1.0800118949769368
+NN Model Mean Squared Error (x): 0.32149402732180865
+NN Model Mean Squared Error (y): 1.0872512529722174
+Step 1801
+Call back training and testing
+GP Model Mean Squared Error (x): 1.1389981598845156
+GP Model Mean Squared Error (y): 2.1832468041035002
+NN Model Mean Squared Error (x): 1.1202966679426138
+NN Model Mean Squared Error (y): 2.053031863427184
+Step 1901
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 0.9077749298608803
+GP Model Mean Squared Error (y): 1.8379348291075182
+NN Model Mean Squared Error (x): 0.8904823597691549
+NN Model Mean Squared Error (y): 1.8103395175842132
+Step 2001
+Call back training and testing
+GP Model Mean Squared Error (x): 0.16029666844477286
+GP Model Mean Squared Error (y): 0.6809063454812971
+NN Model Mean Squared Error (x): 0.2049807438344687
+NN Model Mean Squared Error (y): 0.7249745238204386
+Step 2101
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 0.878579744608108
+GP Model Mean Squared Error (y): 1.4114387822310128
+NN Model Mean Squared Error (x): 0.8765082746426489
+NN Model Mean Squared Error (y): 1.4107702908742352
+Step 2201
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 1.210228056213949
+GP Model Mean Squared Error (y): 1.6768816713478567
+NN Model Mean Squared Error (x): 1.2120937692652936
+NN Model Mean Squared Error (y): 1.642327257987144
+Step 2301
+Call back training and testing
+GP Model Mean Squared Error (x): 1.9489309820255152
+GP Model Mean Squared Error (y): 2.253452095835064
+NN Model Mean Squared Error (x): 1.8831177888640678
+NN Model Mean Squared Error (y): 2.144394064767282
+Step 2401
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 0.7324026371033855
+GP Model Mean Squared Error (y): 1.2793638632736066
+NN Model Mean Squared Error (x): 0.8381287841563246
+NN Model Mean Squared Error (y): 1.3891738131652982
+Step 2501
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 1.7335781235127157
+GP Model Mean Squared Error (y): 1.8540158707108545
+NN Model Mean Squared Error (x): 1.755894727779125
+NN Model Mean Squared Error (y): 1.8457050271909956
+Step 2601
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 1.7019487115240157
+GP Model Mean Squared Error (y): 1.780618172189079
+NN Model Mean Squared Error (x): 1.7162849266776574
+NN Model Mean Squared Error (y): 1.7846882248299805
+Step 2701
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 1.3397129067949716
+GP Model Mean Squared Error (y): 1.6493479175362762
+NN Model Mean Squared Error (x): 1.3434339757363107
+NN Model Mean Squared Error (y): 1.6695348201304734
+Step 2801
+Call back training and testing
+GP Model Mean Squared Error (x): 2.2612671738419636
+GP Model Mean Squared Error (y): 2.276155521512114
+NN Model Mean Squared Error (x): 1.6444388289017946
+NN Model Mean Squared Error (y): 1.654245005899102
+Step 2901
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 2.108593185387446
+GP Model Mean Squared Error (y): 1.9037485437900652
+NN Model Mean Squared Error (x): 2.333298610799981
+NN Model Mean Squared Error (y): 2.0503093857466728
+Step 3001
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 2.033802571591688
+GP Model Mean Squared Error (y): 1.6840456021714114
+NN Model Mean Squared Error (x): 2.057808109176596
+NN Model Mean Squared Error (y): 1.7011907142983527
+Step 3101
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 3.1891666775768925
+GP Model Mean Squared Error (y): 2.2447576963611136
+NN Model Mean Squared Error (x): 3.2418543244261095
+NN Model Mean Squared Error (y): 2.315319717359975
+Step 3201
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 2.0845716306240494
+GP Model Mean Squared Error (y): 1.6125417554131893
+NN Model Mean Squared Error (x): 2.198036058614512
+NN Model Mean Squared Error (y): 1.7286656036407164
+Step 3301
+Call back training and testing
+GP Model Mean Squared Error (x): 6.3444293930888005
+GP Model Mean Squared Error (y): 2.915988054305631
+NN Model Mean Squared Error (x): 4.270870699883904
+NN Model Mean Squared Error (y): 2.622101330301824
+Step 3401
+Call back training and testing
+GP Model Mean Squared Error (x): 7.896222460105417
+GP Model Mean Squared Error (y): 3.8784365908290788
+NN Model Mean Squared Error (x): 4.207911301289939
+NN Model Mean Squared Error (y): 2.6160402797929785
+Step 3501
+Call back training and testing
+GP Model Mean Squared Error (x): 5.105348345604958
+GP Model Mean Squared Error (y): 3.0628995053862775
+NN Model Mean Squared Error (x): 5.036007494542551
+NN Model Mean Squared Error (y): 3.0942954566845313
+Step 3601
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 3.7465435285054833
+GP Model Mean Squared Error (y): 2.313123814152482
+NN Model Mean Squared Error (x): 3.8741314507229476
+NN Model Mean Squared Error (y): 2.3771908749190374
+Step 3701
+Call back training and testing
+GP Model Mean Squared Error (x): 6.196562143525543
+GP Model Mean Squared Error (y): 3.629971555619542
+NN Model Mean Squared Error (x): 5.78508629991643
+NN Model Mean Squared Error (y): 3.274622884066335
+Step 3801
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 5.823912242774122
+GP Model Mean Squared Error (y): 3.2472988084325443
+NN Model Mean Squared Error (x): 6.2068507971734075
+NN Model Mean Squared Error (y): 3.452954364082974
+Step 3901
+Call back training and testing
+GP Model Mean Squared Error (x): 7.2084822745891595
+GP Model Mean Squared Error (y): 3.6715646853738586
+NN Model Mean Squared Error (x): 4.789900818721057
+NN Model Mean Squared Error (y): 2.756682628391575
+Step 4001
+Call back training and testing
+GP Model Mean Squared Error (x): 2.2175173419517646
+GP Model Mean Squared Error (y): 1.5248067941791796
+NN Model Mean Squared Error (x): 3.783027877248106
+NN Model Mean Squared Error (y): 2.2394849266962735
+Step 4101
+Call back training and testing
+GP Model Mean Squared Error (x): 6.969709963227062
+GP Model Mean Squared Error (y): 3.2622837700748435
+NN Model Mean Squared Error (x): 4.474811238335794
+NN Model Mean Squared Error (y): 2.5642781265498775
+Step 4201
+Call back training and testing
+GP Model Mean Squared Error (x): 4.788358012642236
+GP Model Mean Squared Error (y): 2.702358394590637
+NN Model Mean Squared Error (x): 4.053185420290972
+NN Model Mean Squared Error (y): 2.3779017774216236
+Step 4301
+Call back training and testing
+GP Model Mean Squared Error (x): 8.888077482286823
+GP Model Mean Squared Error (y): 4.664167730369038
+NN Model Mean Squared Error (x): 8.705139958972966
+NN Model Mean Squared Error (y): 4.555158213085334
+Step 4401
+Call back training and testing
+GP Model Mean Squared Error (x): 9.160087993524854
+GP Model Mean Squared Error (y): 4.710379210661587
+NN Model Mean Squared Error (x): 9.273406447403152
+NN Model Mean Squared Error (y): 4.745356513628584
+Step 4501
+Call back training and testing
+GP Model Mean Squared Error (x): 5.983972283457618
+GP Model Mean Squared Error (y): 3.248243549734241
+NN Model Mean Squared Error (x): 6.228510926161225
+NN Model Mean Squared Error (y): 3.4174649477051395
+Step 4601
+Call back training and testing
+GP Model Mean Squared Error (x): 10.956272925726452
+GP Model Mean Squared Error (y): 5.464482137124322
+NN Model Mean Squared Error (x): 10.487874010046959
+NN Model Mean Squared Error (y): 5.185032397511092
+Step 4701
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 7.75991058562323
+GP Model Mean Squared Error (y): 3.847593259783617
+NN Model Mean Squared Error (x): 7.7507432571455555
+NN Model Mean Squared Error (y): 3.857203729246217
+Step 4801
+Call back training and testing
+GP Model Mean Squared Error (x): 7.252176388126798
+GP Model Mean Squared Error (y): 3.7229337589917035
+NN Model Mean Squared Error (x): 6.499924369692858
+NN Model Mean Squared Error (y): 3.4224500230361112
+Step 4901
+Call back training and testing
+GP Model Mean Squared Error (x): 11.524965221365624
+GP Model Mean Squared Error (y): 5.133357065940687
+NN Model Mean Squared Error (x): 11.449035618589154
+NN Model Mean Squared Error (y): 5.111299573487998
+Step 5001
+Call back training and testing
+GP Model Mean Squared Error (x): 11.411278396302128
+GP Model Mean Squared Error (y): 5.019952010201481
+NN Model Mean Squared Error (x): 11.102324661619134
+NN Model Mean Squared Error (y): 4.805881879636743
+Step 5101
+Call back training and testing
+GP Model Mean Squared Error (x): 17.065542598778126
+GP Model Mean Squared Error (y): 7.225399297582353
+NN Model Mean Squared Error (x): 16.78299890895184
+NN Model Mean Squared Error (y): 7.123143585906207
+Step 5201
+Call back training and testing
+GP Model Mean Squared Error (x): 14.37312262164725
+GP Model Mean Squared Error (y): 5.645950862584707
+NN Model Mean Squared Error (x): 14.907193586332669
+NN Model Mean Squared Error (y): 5.869491724354206
+Step 5301
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 11.889278241130457
+GP Model Mean Squared Error (y): 4.815833633863005
+NN Model Mean Squared Error (x): 12.030723546795738
+NN Model Mean Squared Error (y): 4.851763086077281
+Step 5401
+Call back training and testing
+GP Model Mean Squared Error (x): 15.330702549656385
+GP Model Mean Squared Error (y): 5.517070747638314
+NN Model Mean Squared Error (x): 15.697542696014219
+NN Model Mean Squared Error (y): 5.540909933103535
+Step 5501
+Call back training and testing
+GP Model Mean Squared Error (x): 16.767360836292415
+GP Model Mean Squared Error (y): 6.139853411762575
+NN Model Mean Squared Error (x): 15.662958202750298
+NN Model Mean Squared Error (y): 5.639811225608704
+Step 5601
+Call back training and testing
+GP Model Mean Squared Error (x): 11.77846467036535
+GP Model Mean Squared Error (y): 4.937453283302764
+NN Model Mean Squared Error (x): 10.676851652828125
+NN Model Mean Squared Error (y): 4.12622138793879
+Step 5701
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 16.626187754920913
+GP Model Mean Squared Error (y): 6.086301466184206
+NN Model Mean Squared Error (x): 17.034336316880776
+NN Model Mean Squared Error (y): 6.239363449712916
+Step 5801
+Call back training and testing
+GP Model Mean Squared Error (x): 13.597465200274861
+GP Model Mean Squared Error (y): 4.774289179218535
+NN Model Mean Squared Error (x): 12.445762204462048
+NN Model Mean Squared Error (y): 4.516305176855585
+Step 5901
+Call back training and testing
+GP Model Mean Squared Error (x): 14.066923630315008
+GP Model Mean Squared Error (y): 4.776458585410828
+NN Model Mean Squared Error (x): 14.07300823750004
+NN Model Mean Squared Error (y): 4.7610170825834
+Step 6001
+Call back training and testing
+GP Model Mean Squared Error (x): 22.178444210217197
+GP Model Mean Squared Error (y): 5.497598809102144
+NN Model Mean Squared Error (x): 12.815838588555424
+NN Model Mean Squared Error (y): 4.638776884892024
+Step 6101
+Call back training and testing
+GP Model Mean Squared Error (x): 15.357250619497961
+GP Model Mean Squared Error (y): 5.363490430519734
+NN Model Mean Squared Error (x): 15.286319916362016
+NN Model Mean Squared Error (y): 5.268413623185693
+Step 6201
+Call back training and testing
+GP Model Mean Squared Error (x): 20.020244282425118
+GP Model Mean Squared Error (y): 5.7725991973087325
+NN Model Mean Squared Error (x): 13.507381526745242
+NN Model Mean Squared Error (y): 5.028237494272633
+Step 6301
+Call back training and testing
+GP Model Mean Squared Error (x): 15.067682136851083
+GP Model Mean Squared Error (y): 4.8010862105975605
+NN Model Mean Squared Error (x): 14.31760321735238
+NN Model Mean Squared Error (y): 4.5640368095372805
+Step 6401
+Call back training and testing
+GP Model Mean Squared Error (x): 18.491787837139043
+GP Model Mean Squared Error (y): 5.005275092077095
+NN Model Mean Squared Error (x): 18.51912215357487
+NN Model Mean Squared Error (y): 4.940159477246046
+Step 6501
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/neural_network/_multilayer_perceptron.py:690: ConvergenceWarning: Stochastic Optimizer: Maximum iterations (500) reached and the optimization hasn't converged yet.
+  warnings.warn(
+GP Model Mean Squared Error (x): 17.882440732795843
+GP Model Mean Squared Error (y): 5.419450957556708
+NN Model Mean Squared Error (x): 17.69051083624473
+NN Model Mean Squared Error (y): 5.708174082510198
+Step 6601
+Call back training and testing
+GP Model Mean Squared Error (x): 22.429507604323856
+GP Model Mean Squared Error (y): 5.181990700547734
+NN Model Mean Squared Error (x): 21.024308011178007
+NN Model Mean Squared Error (y): 5.033647305736581
+Step 6701
+Call back training and testing
+GP Model Mean Squared Error (x): 18.505883191584907
+GP Model Mean Squared Error (y): 5.6767493490122884
+NN Model Mean Squared Error (x): 17.92605248611647
+NN Model Mean Squared Error (y): 5.517053312929589
+Step 6801
+Call back training and testing
+GP Model Mean Squared Error (x): 20.429658267701026
+GP Model Mean Squared Error (y): 5.70108993075833
+NN Model Mean Squared Error (x): 19.809592022378084
+NN Model Mean Squared Error (y): 5.833197245845037
+Step 6901
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 18.270577734304553
+GP Model Mean Squared Error (y): 4.4128677484523084
+NN Model Mean Squared Error (x): 18.396275388511608
+NN Model Mean Squared Error (y): 4.510319283150029
+Step 7001
+Call back training and testing
+GP Model Mean Squared Error (x): 17.004494207221878
+GP Model Mean Squared Error (y): 5.37250876254788
+NN Model Mean Squared Error (x): 16.089084787910245
+NN Model Mean Squared Error (y): 4.639619591311749
+Step 7101
+Call back training and testing
+GP Model Mean Squared Error (x): 19.18876636606139
+GP Model Mean Squared Error (y): 4.341712351329409
+NN Model Mean Squared Error (x): 17.388036071201224
+NN Model Mean Squared Error (y): 4.3615147344397265
+Step 7201
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 19.696143104085248
+GP Model Mean Squared Error (y): 4.824167961339585
+NN Model Mean Squared Error (x): 19.840875739183463
+NN Model Mean Squared Error (y): 4.923629010569466
+Step 7301
+Call back training and testing
+GP Model Mean Squared Error (x): 20.87407501070967
+GP Model Mean Squared Error (y): 4.534664881387419
+NN Model Mean Squared Error (x): 21.98116354678767
+NN Model Mean Squared Error (y): 5.092132857495636
+Step 7401
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 18.623349720692993
+GP Model Mean Squared Error (y): 4.594390873322996
+NN Model Mean Squared Error (x): 20.119853056231058
+NN Model Mean Squared Error (y): 4.791114586729148
+Step 7501
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 22.608230560020154
+GP Model Mean Squared Error (y): 5.252884282038711
+NN Model Mean Squared Error (x): 22.907705894504833
+NN Model Mean Squared Error (y): 5.375129011501459
+Step 7601
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 23.322199062592322
+GP Model Mean Squared Error (y): 5.213286770883375
+NN Model Mean Squared Error (x): 24.566954710612627
+NN Model Mean Squared Error (y): 5.257762284714849
+Step 7701
+Call back training and testing
+GP Model Mean Squared Error (x): 23.112928358944174
+GP Model Mean Squared Error (y): 5.1690313081388854
+NN Model Mean Squared Error (x): 24.61661727764958
+NN Model Mean Squared Error (y): 5.268950110668232
+Step 7801
+Call back training and testing
+GP Model Mean Squared Error (x): 17.746334788819837
+GP Model Mean Squared Error (y): 4.729018971273782
+NN Model Mean Squared Error (x): 18.451842027465553
+NN Model Mean Squared Error (y): 4.613407083277935
+Step 7901
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 29.433206439647694
+GP Model Mean Squared Error (y): 5.076370790668584
+NN Model Mean Squared Error (x): 29.096622037788922
+NN Model Mean Squared Error (y): 5.100954594338
+Step 8001
+Call back training and testing
+GP Model Mean Squared Error (x): 26.668660739142894
+GP Model Mean Squared Error (y): 4.788832684929525
+NN Model Mean Squared Error (x): 25.15669330949436
+NN Model Mean Squared Error (y): 4.715755018154745
+Step 8101
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 20.748939418196446
+GP Model Mean Squared Error (y): 3.8753857343924234
+NN Model Mean Squared Error (x): 21.87011408345234
+NN Model Mean Squared Error (y): 4.144345570071911
+Step 8201
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 23.811409952261492
+GP Model Mean Squared Error (y): 4.704972635109327
+NN Model Mean Squared Error (x): 25.317250707851173
+NN Model Mean Squared Error (y): 4.788287675404721
+Step 8301
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 21.400908645646822
+GP Model Mean Squared Error (y): 4.525624739058627
+NN Model Mean Squared Error (x): 21.879977354762325
+NN Model Mean Squared Error (y): 4.573877875343999
+Step 8401
+Call back training and testing
+GP Model Mean Squared Error (x): 28.747546802575098
+GP Model Mean Squared Error (y): 5.513384938926425
+NN Model Mean Squared Error (x): 26.01655165232349
+NN Model Mean Squared Error (y): 4.497134764959818
+Step 8501
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 28.082909620556446
+GP Model Mean Squared Error (y): 4.810486487486454
+NN Model Mean Squared Error (x): 27.77610159355402
+NN Model Mean Squared Error (y): 4.761317383099635
+Step 8601
+Call back training and testing
+GP Model Mean Squared Error (x): 21.995948939497033
+GP Model Mean Squared Error (y): 4.588721185487649
+NN Model Mean Squared Error (x): 20.517617184046443
+NN Model Mean Squared Error (y): 3.93446048615712
+Step 8701
+Call back training and testing
+GP Model Mean Squared Error (x): 31.51262059100215
+GP Model Mean Squared Error (y): 4.191930760274491
+NN Model Mean Squared Error (x): 28.27614063574539
+NN Model Mean Squared Error (y): 4.009015636938657
+Step 8801
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 21.47791385035016
+GP Model Mean Squared Error (y): 4.084513546615251
+NN Model Mean Squared Error (x): 22.311406307519103
+NN Model Mean Squared Error (y): 4.11620718877945
+Step 8901
+Call back training and testing
+GP Model Mean Squared Error (x): 26.582370483614994
+GP Model Mean Squared Error (y): 4.333980660826939
+NN Model Mean Squared Error (x): 26.415715648353114
+NN Model Mean Squared Error (y): 4.2427989228443295
+Step 9001
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 17.30783877231105
+GP Model Mean Squared Error (y): 3.8465489602170293
+NN Model Mean Squared Error (x): 19.21481288097065
+NN Model Mean Squared Error (y): 4.027737122978637
+Step 9101
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 26.637417151883824
+GP Model Mean Squared Error (y): 4.150290225117884
+NN Model Mean Squared Error (x): 27.520336848287638
+NN Model Mean Squared Error (y): 4.219098157240462
+Step 9201
+Call back training and testing
+GP Model Mean Squared Error (x): 30.933018887518088
+GP Model Mean Squared Error (y): 5.134949807347495
+NN Model Mean Squared Error (x): 26.888062461628145
+NN Model Mean Squared Error (y): 4.960058214095167
+Step 9301
+Call back training and testing
+GP Model Mean Squared Error (x): 25.955847195794437
+GP Model Mean Squared Error (y): 4.6345281230744595
+NN Model Mean Squared Error (x): 25.009038275095723
+NN Model Mean Squared Error (y): 4.973351790959072
+Step 9401
+Call back training and testing
+GP Model Mean Squared Error (x): 26.286144173040164
+GP Model Mean Squared Error (y): 4.3664618459397415
+NN Model Mean Squared Error (x): 25.889104509505433
+NN Model Mean Squared Error (y): 4.344598503823976
+Step 9501
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 22.46338467503584
+GP Model Mean Squared Error (y): 4.380239816835993
+NN Model Mean Squared Error (x): 22.92522734981
+NN Model Mean Squared Error (y): 4.4736096866804225
+Step 9601
+Call back training and testing
+GP Model Mean Squared Error (x): 35.52304470762338
+GP Model Mean Squared Error (y): 5.274493137044876
+NN Model Mean Squared Error (x): 23.533085892116876
+NN Model Mean Squared Error (y): 4.1404010462180905
+Step 9701
+Call back training and testing
+GP Model Mean Squared Error (x): 22.42864508161667
+GP Model Mean Squared Error (y): 5.401317640302645
+NN Model Mean Squared Error (x): 21.975974001455274
+NN Model Mean Squared Error (y): 4.450403975703631
+Step 9801
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 21.62369363854161
+GP Model Mean Squared Error (y): 4.1528127357616045
+NN Model Mean Squared Error (x): 22.61116908774685
+NN Model Mean Squared Error (y): 4.234833307703658
+Step 9901
+Call back training and testing
+GP Model Mean Squared Error (x): 21.226504547671972
+GP Model Mean Squared Error (y): 4.490393245178917
+NN Model Mean Squared Error (x): 20.829393996197886
+NN Model Mean Squared Error (y): 4.511549810527917
+Step 10001
+Call back training and testing
+GP Model Mean Squared Error (x): 20.863280794128503
+GP Model Mean Squared Error (y): 4.658329532305797
+NN Model Mean Squared Error (x): 20.602999259084562
+NN Model Mean Squared Error (y): 4.366964515199953
+Step 10101
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 26.747471656578718
+GP Model Mean Squared Error (y): 4.48566894465841
+NN Model Mean Squared Error (x): 26.852021834630285
+NN Model Mean Squared Error (y): 4.575755737881342
+Step 10201
+Call back training and testing
+GP Model Mean Squared Error (x): 28.37206772021582
+GP Model Mean Squared Error (y): 5.026327619577661
+NN Model Mean Squared Error (x): 28.74463934951985
+NN Model Mean Squared Error (y): 4.86880494008021
+Step 10301
+Call back training and testing
+GP Model Mean Squared Error (x): 28.626671275962632
+GP Model Mean Squared Error (y): 4.699288804514277
+NN Model Mean Squared Error (x): 24.375150461110994
+NN Model Mean Squared Error (y): 4.6139095705141795
+Step 10401
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 25.807390811714914
+GP Model Mean Squared Error (y): 4.590188631176003
+NN Model Mean Squared Error (x): 26.698526011125562
+NN Model Mean Squared Error (y): 4.744706405192813
+Step 10501
+Call back training and testing
+GP Model Mean Squared Error (x): 30.088342992390235
+GP Model Mean Squared Error (y): 5.4212163209360025
+NN Model Mean Squared Error (x): 25.931537838559944
+NN Model Mean Squared Error (y): 4.6265339871201
+Step 10601
+Call back training and testing
+GP Model Mean Squared Error (x): 32.506557273035945
+GP Model Mean Squared Error (y): 5.415446938491923
+NN Model Mean Squared Error (x): 27.473013136645346
+NN Model Mean Squared Error (y): 5.092576024175163
+Step 10701
+Call back training and testing
+GP Model Mean Squared Error (x): 26.671320388778355
+GP Model Mean Squared Error (y): 4.661520158918868
+NN Model Mean Squared Error (x): 25.79748921837681
+NN Model Mean Squared Error (y): 4.579551273462599
+Step 10801
+Call back training and testing
+GP Model Mean Squared Error (x): 25.334372380132894
+GP Model Mean Squared Error (y): 4.496886938809583
+NN Model Mean Squared Error (x): 24.967213409141277
+NN Model Mean Squared Error (y): 4.499431803688611
+Step 10901
+Call back training and testing
+GP Model Mean Squared Error (x): 27.71057449410935
+GP Model Mean Squared Error (y): 4.682459569042396
+NN Model Mean Squared Error (x): 27.479889828604033
+NN Model Mean Squared Error (y): 4.716590402919807
+Step 11001
+Call back training and testing
+GP Model Mean Squared Error (x): 25.508982550949497
+GP Model Mean Squared Error (y): 4.627472398222233
+NN Model Mean Squared Error (x): 26.904177740125437
+NN Model Mean Squared Error (y): 4.887298245290638
+Step 11101
+Call back training and testing
+GP Model Mean Squared Error (x): 28.79955095111992
+GP Model Mean Squared Error (y): 4.873729527841195
+NN Model Mean Squared Error (x): 28.988890476550697
+NN Model Mean Squared Error (y): 4.720168556710831
+Step 11201
+Call back training and testing
+GP Model Mean Squared Error (x): 27.606133822512952
+GP Model Mean Squared Error (y): 4.7418828724367215
+NN Model Mean Squared Error (x): 26.796594811880627
+NN Model Mean Squared Error (y): 4.667868500655341
+Step 11301
+Call back training and testing
+GP Model Mean Squared Error (x): 32.84747841034474
+GP Model Mean Squared Error (y): 5.354623565180907
+NN Model Mean Squared Error (x): 29.434133525129933
+NN Model Mean Squared Error (y): 5.044688409209753
+Step 11401
+Call back training and testing
+GP Model Mean Squared Error (x): 31.178578564731566
+GP Model Mean Squared Error (y): 5.6932774399701795
+NN Model Mean Squared Error (x): 30.324318963859437
+NN Model Mean Squared Error (y): 5.113142509267033
+Step 11501
+Call back training and testing
+GP Model Mean Squared Error (x): 26.684661463829265
+GP Model Mean Squared Error (y): 5.299452970002938
+NN Model Mean Squared Error (x): 27.457086444479597
+NN Model Mean Squared Error (y): 4.813690403231215
+Step 11601
+Call back training and testing
+GP Model Mean Squared Error (x): 27.009643608360392
+GP Model Mean Squared Error (y): 4.876756852784365
+NN Model Mean Squared Error (x): 26.252955948656506
+NN Model Mean Squared Error (y): 4.841203642432463
+Step 11701
+Call back training and testing
+GP Model Mean Squared Error (x): 27.791671437322858
+GP Model Mean Squared Error (y): 4.8453092096665324
+NN Model Mean Squared Error (x): 26.07152366235186
+NN Model Mean Squared Error (y): 4.784168837524909
+Step 11801
+Call back training and testing
+GP Model Mean Squared Error (x): 23.263798254143676
+GP Model Mean Squared Error (y): 4.643845280703505
+NN Model Mean Squared Error (x): 22.79865909225997
+NN Model Mean Squared Error (y): 4.535576674404405
+Step 11901
+Call back training and testing
+GP Model Mean Squared Error (x): 24.450545819146498
+GP Model Mean Squared Error (y): 5.09842230031105
+NN Model Mean Squared Error (x): 21.899474239016712
+NN Model Mean Squared Error (y): 4.451099690159043
+Step 12001
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 23.280619165291697
+GP Model Mean Squared Error (y): 4.332663665893348
+NN Model Mean Squared Error (x): 23.84645572479164
+NN Model Mean Squared Error (y): 4.5831492447289826
+Step 12101
+Call back training and testing
+GP Model Mean Squared Error (x): 24.27206046780589
+GP Model Mean Squared Error (y): 4.283998384979598
+NN Model Mean Squared Error (x): 24.59740841231266
+NN Model Mean Squared Error (y): 4.346724757259898
+Step 12201
+Call back training and testing
+GP Model Mean Squared Error (x): 24.842104288734625
+GP Model Mean Squared Error (y): 4.3837896662304825
+NN Model Mean Squared Error (x): 24.463043056252136
+NN Model Mean Squared Error (y): 4.447403041746324
+Step 12301
+Call back training and testing
+GP Model Mean Squared Error (x): 25.038581974980627
+GP Model Mean Squared Error (y): 4.409068881663381
+NN Model Mean Squared Error (x): 24.88107024197995
+NN Model Mean Squared Error (y): 4.364974874813184
+Step 12401
+Call back training and testing
+GP Model Mean Squared Error (x): 22.630890283836447
+GP Model Mean Squared Error (y): 4.255331117762257
+NN Model Mean Squared Error (x): 22.608088087908943
+NN Model Mean Squared Error (y): 4.2317764328936365
+Step 12501
+Call back training and testing
+GP Model Mean Squared Error (x): 22.619780962184734
+GP Model Mean Squared Error (y): 4.1040563038637226
+NN Model Mean Squared Error (x): 23.022518615104172
+NN Model Mean Squared Error (y): 4.088482590633383
+Step 12601
+Call back training and testing
+GP Model Mean Squared Error (x): 23.197259006465927
+GP Model Mean Squared Error (y): 4.2279725833225505
+NN Model Mean Squared Error (x): 22.650065454270486
+NN Model Mean Squared Error (y): 4.211791785661485
+Step 12701
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 23.391872290058917
+GP Model Mean Squared Error (y): 4.106370604181877
+NN Model Mean Squared Error (x): 23.678035121909705
+NN Model Mean Squared Error (y): 4.1935863459581855
+Step 12801
+Call back training and testing
+GP Model Mean Squared Error (x): 19.21360675246363
+GP Model Mean Squared Error (y): 4.401359998984284
+NN Model Mean Squared Error (x): 20.506915983681022
+NN Model Mean Squared Error (y): 4.305081393879264
+Step 12901
+Call back training and testing
+GP Model Mean Squared Error (x): 22.231270057230905
+GP Model Mean Squared Error (y): 4.116036859788486
+NN Model Mean Squared Error (x): 23.246250551735137
+NN Model Mean Squared Error (y): 4.142271422155122
+Step 13001
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 22.455852594706485
+GP Model Mean Squared Error (y): 4.046990722155183
+NN Model Mean Squared Error (x): 23.171105208935266
+NN Model Mean Squared Error (y): 4.217822442545402
+Step 13101
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 19.667056061163226
+GP Model Mean Squared Error (y): 3.8784632333031053
+NN Model Mean Squared Error (x): 21.485235289651904
+NN Model Mean Squared Error (y): 4.053501784261041
+Step 13201
+Call back training and testing
+GP Model Mean Squared Error (x): 20.79737935819285
+GP Model Mean Squared Error (y): 4.055162438503271
+NN Model Mean Squared Error (x): 21.556214538727307
+NN Model Mean Squared Error (y): 4.035113966372853
+Step 13301
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 21.796144680211288
+GP Model Mean Squared Error (y): 3.8447450298587156
+NN Model Mean Squared Error (x): 22.11601923441387
+NN Model Mean Squared Error (y): 3.8090065615759165
+Step 13401
+Call back training and testing
+GP Model Mean Squared Error (x): 24.463799489204593
+GP Model Mean Squared Error (y): 4.144068892094834
+NN Model Mean Squared Error (x): 23.71405988268013
+NN Model Mean Squared Error (y): 4.087121987872902
+Step 13501
+Call back training and testing
+GP Model Mean Squared Error (x): 23.690876671224196
+GP Model Mean Squared Error (y): 4.252691814284732
+NN Model Mean Squared Error (x): 22.64116912348397
+NN Model Mean Squared Error (y): 3.9429258202100343
+Step 13601
+Call back training and testing
+GP Model Mean Squared Error (x): 21.669227259686615
+GP Model Mean Squared Error (y): 4.14622453265236
+NN Model Mean Squared Error (x): 21.622772033225523
+NN Model Mean Squared Error (y): 4.040397481092432
+Step 13701
+Call back training and testing
+GP Model Mean Squared Error (x): 21.04320583893586
+GP Model Mean Squared Error (y): 3.779830800897342
+NN Model Mean Squared Error (x): 19.28351584617932
+NN Model Mean Squared Error (y): 3.771782378348968
+Step 13801
+Call back training and testing
+GP Model Mean Squared Error (x): 21.999337426726466
+GP Model Mean Squared Error (y): 3.781516812339747
+NN Model Mean Squared Error (x): 22.380676534841776
+NN Model Mean Squared Error (y): 3.878921008980727
+Step 13901
+Call back training and testing
+GP Model Mean Squared Error (x): 25.639454583466307
+GP Model Mean Squared Error (y): 4.017146260060134
+NN Model Mean Squared Error (x): 26.905356524463468
+NN Model Mean Squared Error (y): 4.183784585385307
+Step 14001
+Call back training and testing
+GP Model Mean Squared Error (x): 22.67840429005294
+GP Model Mean Squared Error (y): 4.473386729052149
+NN Model Mean Squared Error (x): 20.33424721629834
+NN Model Mean Squared Error (y): 3.6712395181754136
+Step 14101
+Call back training and testing
+GP Model Mean Squared Error (x): 22.335594651703293
+GP Model Mean Squared Error (y): 3.816703200602049
+NN Model Mean Squared Error (x): 22.61332820960703
+NN Model Mean Squared Error (y): 3.9268235107718215
+Step 14201
+Call back training and testing
+GP Model Mean Squared Error (x): 21.782474816378222
+GP Model Mean Squared Error (y): 3.799712379674257
+NN Model Mean Squared Error (x): 21.100254629128347
+NN Model Mean Squared Error (y): 3.792950983386551
+Step 14301
+Call back training and testing
+GP Model Mean Squared Error (x): 21.038449166698815
+GP Model Mean Squared Error (y): 4.6472102438581535
+NN Model Mean Squared Error (x): 21.11707832248609
+NN Model Mean Squared Error (y): 3.5847901523241945
+Step 14401
+Call back training and testing
+GP Model Mean Squared Error (x): 20.789701229766845
+GP Model Mean Squared Error (y): 3.9689198054047328
+NN Model Mean Squared Error (x): 21.137712671848686
+NN Model Mean Squared Error (y): 3.9000420953673745
+Step 14501
+Call back training and testing
+GP Model Mean Squared Error (x): 22.191321262719022
+GP Model Mean Squared Error (y): 3.9789890072182827
+NN Model Mean Squared Error (x): 22.41609890020723
+NN Model Mean Squared Error (y): 3.777832349474819
+Step 14601
+Call back training and testing
+GP Model Mean Squared Error (x): 24.803965320952305
+GP Model Mean Squared Error (y): 3.743448888994692
+NN Model Mean Squared Error (x): 21.398019097342317
+NN Model Mean Squared Error (y): 3.7245430069134655
+Step 14701
+Call back training and testing
+GP Model Mean Squared Error (x): 23.236805775488474
+GP Model Mean Squared Error (y): 4.011043628458802
+NN Model Mean Squared Error (x): 21.704571016796052
+NN Model Mean Squared Error (y): 3.9722935520462257
+Step 14801
+Call back training and testing
+GP Model Mean Squared Error (x): 24.40405820077408
+GP Model Mean Squared Error (y): 3.943408045595871
+NN Model Mean Squared Error (x): 20.401502762219227
+NN Model Mean Squared Error (y): 3.807162946046784
+Step 14901
+Call back training and testing
+GP Model Mean Squared Error (x): 21.95299089961927
+GP Model Mean Squared Error (y): 3.6871763988873028
+NN Model Mean Squared Error (x): 20.722616760059285
+NN Model Mean Squared Error (y): 3.905784711615212
+Step 15001
+Call back training and testing
+GP Model Mean Squared Error (x): 19.640812183399827
+GP Model Mean Squared Error (y): 3.611813801578223
+NN Model Mean Squared Error (x): 19.471201871653186
+NN Model Mean Squared Error (y): 3.705159890656527
+Step 15101
+Call back training and testing
+GP Model Mean Squared Error (x): 23.055854848801356
+GP Model Mean Squared Error (y): 4.093245183738415
+NN Model Mean Squared Error (x): 19.629914867680473
+NN Model Mean Squared Error (y): 3.867199843296431
+Step 15201
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 18.671050118666226
+GP Model Mean Squared Error (y): 3.5664062809118966
+NN Model Mean Squared Error (x): 20.39094597645587
+NN Model Mean Squared Error (y): 3.7156514513731285
+Step 15301
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 18.534268230857748
+GP Model Mean Squared Error (y): 3.5234075703147893
+NN Model Mean Squared Error (x): 18.732428408426035
+NN Model Mean Squared Error (y): 3.6645891664042325
+Step 15401
+Call back training and testing
+GP Model Mean Squared Error (x): 19.82019948084736
+GP Model Mean Squared Error (y): 3.6846704178569567
+NN Model Mean Squared Error (x): 19.317392232344716
+NN Model Mean Squared Error (y): 3.8005222600380524
+Step 15501
+Call back training and testing
+GP Model Mean Squared Error (x): 19.300375638418995
+GP Model Mean Squared Error (y): 4.0144063406591854
+NN Model Mean Squared Error (x): 18.221564372838653
+NN Model Mean Squared Error (y): 3.5364569494924387
+Step 15601
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/neural_network/_multilayer_perceptron.py:690: ConvergenceWarning: Stochastic Optimizer: Maximum iterations (500) reached and the optimization hasn't converged yet.
+  warnings.warn(
+GP Model Mean Squared Error (x): 18.792964480361565
+GP Model Mean Squared Error (y): 3.7015654410031913
+NN Model Mean Squared Error (x): 28.829529704695936
+NN Model Mean Squared Error (y): 4.045486945573207
+Step 15701
+Call back training and testing
+GP Model Mean Squared Error (x): 22.538821257191664
+GP Model Mean Squared Error (y): 3.8094090997830503
+NN Model Mean Squared Error (x): 18.78948773785294
+NN Model Mean Squared Error (y): 3.6127403118314954
+Step 15801
+Call back training and testing
+GP Model Mean Squared Error (x): 18.43333136420148
+GP Model Mean Squared Error (y): 3.690704429189792
+NN Model Mean Squared Error (x): 17.99962065188829
+NN Model Mean Squared Error (y): 3.6760813572336217
+Step 15901
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 18.49366503856859
+GP Model Mean Squared Error (y): 3.7383491879720143
+NN Model Mean Squared Error (x): 19.15950420632604
+NN Model Mean Squared Error (y): 3.70209843138608
+Step 16001
+Call back training and testing
+GP Model Mean Squared Error (x): 21.49135832750456
+GP Model Mean Squared Error (y): 4.00962715939428
+NN Model Mean Squared Error (x): 21.098689363142974
+NN Model Mean Squared Error (y): 3.713521825470693
+Step 16101
+Call back training and testing
+GP Model Mean Squared Error (x): 20.476771467370654
+GP Model Mean Squared Error (y): 3.6560172804625055
+NN Model Mean Squared Error (x): 18.56258980014658
+NN Model Mean Squared Error (y): 3.5510486796573715
+Step 16201
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 18.82905326300731
+GP Model Mean Squared Error (y): 3.716350806877692
+NN Model Mean Squared Error (x): 19.332237471749735
+NN Model Mean Squared Error (y): 3.970848960597108
+Step 16301
+Call back training and testing
+GP Model Mean Squared Error (x): 18.32387350301988
+GP Model Mean Squared Error (y): 3.6030001911629084
+NN Model Mean Squared Error (x): 20.09218382682449
+NN Model Mean Squared Error (y): 3.818024403735282
+Step 16401
+Call back training and testing
+GP Model Mean Squared Error (x): 17.383315484553403
+GP Model Mean Squared Error (y): 3.495395961146218
+NN Model Mean Squared Error (x): 17.441195095224025
+NN Model Mean Squared Error (y): 3.613499537898963
+Step 16501
+Call back training and testing
+GP Model Mean Squared Error (x): 19.047539634692075
+GP Model Mean Squared Error (y): 4.105955267678836
+NN Model Mean Squared Error (x): 18.153655423545416
+NN Model Mean Squared Error (y): 3.562050289892301
+Step 16601
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 18.264669072288445
+GP Model Mean Squared Error (y): 3.658818698770143
+NN Model Mean Squared Error (x): 19.303134214851163
+NN Model Mean Squared Error (y): 3.7229183190997057
+Step 16701
+Call back training and testing
+GP Model Mean Squared Error (x): 18.26445864602238
+GP Model Mean Squared Error (y): 3.5936167537185857
+NN Model Mean Squared Error (x): 17.486864926919885
+NN Model Mean Squared Error (y): 3.6506682638775705
+Step 16801
+Call back training and testing
+GP Model Mean Squared Error (x): 17.90937264741203
+GP Model Mean Squared Error (y): 3.941893403000965
+NN Model Mean Squared Error (x): 17.866003829810236
+NN Model Mean Squared Error (y): 3.9017572346941534
+Step 16901
+Call back training and testing
+GP Model Mean Squared Error (x): 19.551687976278995
+GP Model Mean Squared Error (y): 4.287058845881681
+NN Model Mean Squared Error (x): 18.887350442172043
+NN Model Mean Squared Error (y): 3.812994450958796
+Step 17001
+Call back training and testing
+GP Model Mean Squared Error (x): 25.195674520015277
+GP Model Mean Squared Error (y): 4.676923909944654
+NN Model Mean Squared Error (x): 18.66253887941421
+NN Model Mean Squared Error (y): 4.008338969519221
+Step 17101
+Call back training and testing
+GP Model Mean Squared Error (x): 18.53815805935489
+GP Model Mean Squared Error (y): 4.1596445320471105
+NN Model Mean Squared Error (x): 18.746150053286044
+NN Model Mean Squared Error (y): 4.11669979140608
+Step 17201
+Call back training and testing
+GP Model Mean Squared Error (x): 20.320662546354946
+GP Model Mean Squared Error (y): 3.7365322147190327
+NN Model Mean Squared Error (x): 25.432594556384345
+NN Model Mean Squared Error (y): 3.7773938219265903
+Step 17301
+Call back training and testing
+GP Model Mean Squared Error (x): 18.844664747447744
+GP Model Mean Squared Error (y): 3.8884063348105373
+NN Model Mean Squared Error (x): 18.633910088590508
+NN Model Mean Squared Error (y): 3.9657239908435455
+Step 17401
+Call back training and testing
+GP Model Mean Squared Error (x): 18.89670479104892
+GP Model Mean Squared Error (y): 4.245371633296134
+NN Model Mean Squared Error (x): 18.147592274868373
+NN Model Mean Squared Error (y): 4.039551124712692
+Step 17501
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 18.520599336013518
+GP Model Mean Squared Error (y): 3.9528893931896514
+NN Model Mean Squared Error (x): 19.292483320499073
+NN Model Mean Squared Error (y): 4.064600101990873
+Step 17601
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 18.640992903454205
+GP Model Mean Squared Error (y): 5.150728495944695
+NN Model Mean Squared Error (x): 19.290119987238985
+NN Model Mean Squared Error (y): 3.832187067983579
+Step 17701
+Call back training and testing
+GP Model Mean Squared Error (x): 19.95376574297279
+GP Model Mean Squared Error (y): 4.302121873310948
+NN Model Mean Squared Error (x): 19.018090340069655
+NN Model Mean Squared Error (y): 4.059378987454352
+Step 17801
+Call back training and testing
+GP Model Mean Squared Error (x): 28.483248800319245
+GP Model Mean Squared Error (y): 5.124722699944182
+NN Model Mean Squared Error (x): 19.776499764758803
+NN Model Mean Squared Error (y): 4.238798651098109
+Step 17901
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 20.11449375242878
+GP Model Mean Squared Error (y): 4.509796292975019
+NN Model Mean Squared Error (x): 20.116037445345253
+NN Model Mean Squared Error (y): 4.48564462523757
+Step 18001
+Call back training and testing
+GP Model Mean Squared Error (x): 23.325836461712516
+GP Model Mean Squared Error (y): 4.473248280111135
+NN Model Mean Squared Error (x): 19.950726874582696
+NN Model Mean Squared Error (y): 4.198159998534667
+Step 18101
+Call back training and testing
+GP Model Mean Squared Error (x): 20.343678266110444
+GP Model Mean Squared Error (y): 4.466547891950936
+NN Model Mean Squared Error (x): 20.690348557200753
+NN Model Mean Squared Error (y): 4.507348162616674
+Step 18201
+Call back training and testing
+GP Model Mean Squared Error (x): 20.638240326062434
+GP Model Mean Squared Error (y): 4.424111707871516
+NN Model Mean Squared Error (x): 20.641440384562316
+NN Model Mean Squared Error (y): 4.436409851114151
+Step 18301
+Call back training and testing
+GP Model Mean Squared Error (x): 26.11628801496285
+GP Model Mean Squared Error (y): 5.3774320393710395
+NN Model Mean Squared Error (x): 22.95673545474819
+NN Model Mean Squared Error (y): 4.973515372885537
+Step 18401
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 21.820216875903835
+GP Model Mean Squared Error (y): 4.7991153238899775
+NN Model Mean Squared Error (x): 22.06813995708019
+NN Model Mean Squared Error (y): 4.974593229891312
+Step 18501
+Call back training and testing
+GP Model Mean Squared Error (x): 20.99014789501449
+GP Model Mean Squared Error (y): 4.453929580432148
+NN Model Mean Squared Error (x): 21.352813913327434
+NN Model Mean Squared Error (y): 4.8135195961934425
+Step 18601
+Call back training and testing
+GP Model Mean Squared Error (x): 21.524668357808515
+GP Model Mean Squared Error (y): 4.7420374447058915
+NN Model Mean Squared Error (x): 21.619570635585923
+NN Model Mean Squared Error (y): 4.700563454156112
+Step 18701
+Call back training and testing
+GP Model Mean Squared Error (x): 31.064773847378827
+GP Model Mean Squared Error (y): 5.513547220458478
+NN Model Mean Squared Error (x): 21.798722126775147
+NN Model Mean Squared Error (y): 4.7733315720837615
+Step 18801
+Call back training and testing
+GP Model Mean Squared Error (x): 22.655071474616935
+GP Model Mean Squared Error (y): 4.366211591984282
+NN Model Mean Squared Error (x): 21.087984148075254
+NN Model Mean Squared Error (y): 4.406941879313655
+Step 18901
+Call back training and testing
+GP Model Mean Squared Error (x): 20.464826159291903
+GP Model Mean Squared Error (y): 4.323059988391266
+NN Model Mean Squared Error (x): 20.251084099504364
+NN Model Mean Squared Error (y): 4.3637872705748135
+Step 19001
+Call back training and testing
+GP Model Mean Squared Error (x): 22.13604785285959
+GP Model Mean Squared Error (y): 5.117058884851529
+NN Model Mean Squared Error (x): 22.147434719015934
+NN Model Mean Squared Error (y): 4.665474006603824
+Step 19101
+Call back training and testing
+GP Model Mean Squared Error (x): 21.71568959339304
+GP Model Mean Squared Error (y): 4.704452760723085
+NN Model Mean Squared Error (x): 22.391784071100968
+NN Model Mean Squared Error (y): 4.761281722952764
+Step 19201
+Call back training and testing
+GP Model Mean Squared Error (x): 23.23307865458911
+GP Model Mean Squared Error (y): 4.799465981013505
+NN Model Mean Squared Error (x): 20.970614226408788
+NN Model Mean Squared Error (y): 4.5057854154983605
+Step 19301
+Call back training and testing
+GP Model Mean Squared Error (x): 22.434889996074865
+GP Model Mean Squared Error (y): 5.024146900342076
+NN Model Mean Squared Error (x): 25.36553957779715
+NN Model Mean Squared Error (y): 5.082050173465859
+Step 19401
+Call back training and testing
+GP Model Mean Squared Error (x): 20.51838345971675
+GP Model Mean Squared Error (y): 4.38177263564377
+NN Model Mean Squared Error (x): 20.9952212901495
+NN Model Mean Squared Error (y): 4.397444568343826
+Step 19501
+Call back training and testing
+GP Model Mean Squared Error (x): 21.71521520611889
+GP Model Mean Squared Error (y): 5.909039160742602
+NN Model Mean Squared Error (x): 22.187458531406474
+NN Model Mean Squared Error (y): 4.916659555635437
+Step 19601
+Call back training and testing
+GP Model Mean Squared Error (x): 23.37332100127621
+GP Model Mean Squared Error (y): 5.222052195143533
+NN Model Mean Squared Error (x): 23.77334449943268
+NN Model Mean Squared Error (y): 5.084048062030363
+Step 19701
+Call back training and testing
+GP Model Mean Squared Error (x): 24.14910702666498
+GP Model Mean Squared Error (y): 4.818203760812156
+NN Model Mean Squared Error (x): 24.189568690534788
+NN Model Mean Squared Error (y): 5.139204114157727
+Step 19801
+Call back training and testing
+GP Model Mean Squared Error (x): 22.52612775307131
+GP Model Mean Squared Error (y): 6.172717454368955
+NN Model Mean Squared Error (x): 22.476913604242604
+NN Model Mean Squared Error (y): 4.567036549711948
+Step 19901
+Call back training and testing
+GP Model Mean Squared Error (x): 22.580391744410566
+GP Model Mean Squared Error (y): 4.904776995602403
+NN Model Mean Squared Error (x): 23.889132773155303
+NN Model Mean Squared Error (y): 5.016697712377398
+Step 20001
+Call back training and testing
+GP Model Mean Squared Error (x): 21.703472702240937
+GP Model Mean Squared Error (y): 4.542660780118169
+NN Model Mean Squared Error (x): 21.307377154608584
+NN Model Mean Squared Error (y): 4.5806140599163525
+Step 20101
+Call back training and testing
+GP Model Mean Squared Error (x): 21.63330281394794
+GP Model Mean Squared Error (y): 4.118465192040394
+NN Model Mean Squared Error (x): 23.061653264420315
+NN Model Mean Squared Error (y): 4.470400135954968
+Step 20201
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 21.244584579930113
+GP Model Mean Squared Error (y): 4.1465511000127595
+NN Model Mean Squared Error (x): 21.384205834304286
+NN Model Mean Squared Error (y): 4.345151343025254
+Step 20301
+Call back training and testing
+GP Model Mean Squared Error (x): 24.581307164391855
+GP Model Mean Squared Error (y): 6.889347877442377
+NN Model Mean Squared Error (x): 21.790902166230964
+NN Model Mean Squared Error (y): 4.4275638893173355
+Step 20401
+Call back training and testing
+GP Model Mean Squared Error (x): 24.288716343226206
+GP Model Mean Squared Error (y): 5.096309507582706
+NN Model Mean Squared Error (x): 22.951132697992513
+NN Model Mean Squared Error (y): 4.687791405971768
+Step 20501
+Call back training and testing
+GP Model Mean Squared Error (x): 23.221118010564027
+GP Model Mean Squared Error (y): 4.806620242344108
+NN Model Mean Squared Error (x): 24.274729899782624
+NN Model Mean Squared Error (y): 4.862568179073272
+Step 20601
+Call back training and testing
+GP Model Mean Squared Error (x): 22.932698461297946
+GP Model Mean Squared Error (y): 4.2945887450247815
+NN Model Mean Squared Error (x): 24.0509551133583
+NN Model Mean Squared Error (y): 4.418447367385547
+Step 20701
+Call back training and testing
+GP Model Mean Squared Error (x): 28.545073179025763
+GP Model Mean Squared Error (y): 5.0449200231653855
+NN Model Mean Squared Error (x): 25.703833168801456
+NN Model Mean Squared Error (y): 4.75960701693469
+Step 20801
+Call back training and testing
+GP Model Mean Squared Error (x): 29.15967328956683
+GP Model Mean Squared Error (y): 5.431867880136146
+NN Model Mean Squared Error (x): 25.25592992975896
+NN Model Mean Squared Error (y): 4.667645706189648
+Step 20901
+Call back training and testing
+GP Model Mean Squared Error (x): 25.2624956045309
+GP Model Mean Squared Error (y): 4.487618800360976
+NN Model Mean Squared Error (x): 23.096077630847116
+NN Model Mean Squared Error (y): 4.438319638637221
+Step 21001
+Call back training and testing
+GP Model Mean Squared Error (x): 27.118553715615086
+GP Model Mean Squared Error (y): 4.1382588147131
+NN Model Mean Squared Error (x): 21.795885500984813
+NN Model Mean Squared Error (y): 3.8097928583703444
+Step 21101
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 24.629693327363526
+GP Model Mean Squared Error (y): 4.249644579188444
+NN Model Mean Squared Error (x): 25.101839477476375
+NN Model Mean Squared Error (y): 4.323558335548152
+Step 21201
+Call back training and testing
+GP Model Mean Squared Error (x): 24.015549724626414
+GP Model Mean Squared Error (y): 4.150929254035878
+NN Model Mean Squared Error (x): 24.876494024513267
+NN Model Mean Squared Error (y): 4.167635328571371
+Step 21301
+Call back training and testing
+GP Model Mean Squared Error (x): 27.04927665602452
+GP Model Mean Squared Error (y): 4.6956195727002585
+NN Model Mean Squared Error (x): 27.8368723650972
+NN Model Mean Squared Error (y): 5.245133752243286
+Step 21401
+Call back training and testing
+GP Model Mean Squared Error (x): 25.18066316375627
+GP Model Mean Squared Error (y): 4.404604911697959
+NN Model Mean Squared Error (x): 29.666100451170905
+NN Model Mean Squared Error (y): 4.431290819612175
+Step 21501
+Call back training and testing
+GP Model Mean Squared Error (x): 22.97982660946085
+GP Model Mean Squared Error (y): 4.189997482371492
+NN Model Mean Squared Error (x): 23.025472007984973
+NN Model Mean Squared Error (y): 4.0560135347180495
+Step 21601
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 23.091245382851433
+GP Model Mean Squared Error (y): 3.9971104863459375
+NN Model Mean Squared Error (x): 27.228144969494824
+NN Model Mean Squared Error (y): 4.041561703806237
+Step 21701
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/neural_network/_multilayer_perceptron.py:690: ConvergenceWarning: Stochastic Optimizer: Maximum iterations (500) reached and the optimization hasn't converged yet.
+  warnings.warn(
+GP Model Mean Squared Error (x): 26.072978249181272
+GP Model Mean Squared Error (y): 4.475106933683158
+NN Model Mean Squared Error (x): 28.498536825358197
+NN Model Mean Squared Error (y): 4.617248151456397
+Step 21801
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 23.32390074450706
+GP Model Mean Squared Error (y): 4.045614734995656
+NN Model Mean Squared Error (x): 24.13158093093342
+NN Model Mean Squared Error (y): 4.03222783890692
+Step 21901
+Call back training and testing
+GP Model Mean Squared Error (x): 24.59010157023829
+GP Model Mean Squared Error (y): 4.809569290402328
+NN Model Mean Squared Error (x): 24.913328849614185
+NN Model Mean Squared Error (y): 4.348236014865533
+Step 22001
+Call back training and testing
+GP Model Mean Squared Error (x): 27.181010748184715
+GP Model Mean Squared Error (y): 4.4163234414360515
+NN Model Mean Squared Error (x): 25.042001991692846
+NN Model Mean Squared Error (y): 4.393423318758323
+Step 22101
+Call back training and testing
+GP Model Mean Squared Error (x): 29.780801808381746
+GP Model Mean Squared Error (y): 4.28878694218265
+NN Model Mean Squared Error (x): 26.377269090496913
+NN Model Mean Squared Error (y): 4.179032241986924
+Step 22201
+Call back training and testing
+GP Model Mean Squared Error (x): 25.109459299234214
+GP Model Mean Squared Error (y): 4.944062014531621
+NN Model Mean Squared Error (x): 25.555670074911845
+NN Model Mean Squared Error (y): 4.037289213862016
+Step 22301
+Call back training and testing
+GP Model Mean Squared Error (x): 31.20768097922905
+GP Model Mean Squared Error (y): 4.948633889732784
+NN Model Mean Squared Error (x): 24.97869779578755
+NN Model Mean Squared Error (y): 3.859967008479566
+Step 22401
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 24.261538505577604
+GP Model Mean Squared Error (y): 3.8592124856613093
+NN Model Mean Squared Error (x): 26.279182019099046
+NN Model Mean Squared Error (y): 3.847909169134903
+Step 22501
+Call back training and testing
+GP Model Mean Squared Error (x): 25.26073890371266
+GP Model Mean Squared Error (y): 4.078954110633121
+NN Model Mean Squared Error (x): 25.679884614569175
+NN Model Mean Squared Error (y): 4.1703672964196805
+Step 22601
+Call back training and testing
+GP Model Mean Squared Error (x): 24.384280207489606
+GP Model Mean Squared Error (y): 7.422643115019554
+NN Model Mean Squared Error (x): 24.145428084500086
+NN Model Mean Squared Error (y): 4.1262352192968885
+Step 22701
+Call back training and testing
+GP Model Mean Squared Error (x): 25.17340225177619
+GP Model Mean Squared Error (y): 3.8483507977708977
+NN Model Mean Squared Error (x): 25.096559697346493
+NN Model Mean Squared Error (y): 3.8572684689012084
+Step 22801
+Call back training and testing
+GP Model Mean Squared Error (x): 27.11027049501227
+GP Model Mean Squared Error (y): 4.0336134732607825
+NN Model Mean Squared Error (x): 28.436184934802817
+NN Model Mean Squared Error (y): 4.141903880687478
+Step 22901
+Call back training and testing
+GP Model Mean Squared Error (x): 27.512147895456447
+GP Model Mean Squared Error (y): 4.479710012164037
+NN Model Mean Squared Error (x): 28.210288302748385
+NN Model Mean Squared Error (y): 4.600490359379521
+Step 23001
+Call back training and testing
+GP Model Mean Squared Error (x): 34.54933395859565
+GP Model Mean Squared Error (y): 7.029690917076579
+NN Model Mean Squared Error (x): 23.72117796083943
+NN Model Mean Squared Error (y): 3.8910692572755474
+Step 23101
+Call back training and testing
+GP Model Mean Squared Error (x): 31.18226500734556
+GP Model Mean Squared Error (y): 4.536884847160785
+NN Model Mean Squared Error (x): 26.255238773022214
+NN Model Mean Squared Error (y): 4.281003992254992
+Step 23201
+Call back training and testing
+GP Model Mean Squared Error (x): 25.966258897031466
+GP Model Mean Squared Error (y): 4.343643654628408
+NN Model Mean Squared Error (x): 23.232205680336396
+NN Model Mean Squared Error (y): 3.8565159874971178
+Step 23301
+Call back training and testing
+GP Model Mean Squared Error (x): 24.132223089402284
+GP Model Mean Squared Error (y): 4.20590362430107
+NN Model Mean Squared Error (x): 23.666044057455185
+NN Model Mean Squared Error (y): 3.8234842336450465
+Step 23401
+Call back training and testing
+GP Model Mean Squared Error (x): 25.48294264918937
+GP Model Mean Squared Error (y): 4.8922475441348725
+NN Model Mean Squared Error (x): 25.763965206587137
+NN Model Mean Squared Error (y): 4.049572558123655
+Step 23501
+Call back training and testing
+GP Model Mean Squared Error (x): 24.838068611305278
+GP Model Mean Squared Error (y): 3.7656317906977748
+NN Model Mean Squared Error (x): 24.66048338625862
+NN Model Mean Squared Error (y): 3.857432158581923
+Step 23601
+Call back training and testing
+GP Model Mean Squared Error (x): 25.006992728759684
+GP Model Mean Squared Error (y): 4.288559771882412
+NN Model Mean Squared Error (x): 24.42867643874949
+NN Model Mean Squared Error (y): 4.267805862852019
+Step 23701
+Call back training and testing
+GP Model Mean Squared Error (x): 23.851178657309845
+GP Model Mean Squared Error (y): 3.7045250092652053
+NN Model Mean Squared Error (x): 24.862267408486314
+NN Model Mean Squared Error (y): 3.7623181116524
+Step 23801
+Call back training and testing
+GP Model Mean Squared Error (x): 25.385782568636213
+GP Model Mean Squared Error (y): 4.636796362473692
+NN Model Mean Squared Error (x): 26.50422997563276
+NN Model Mean Squared Error (y): 4.099270229234354
+Step 23901
+Call back training and testing
+GP Model Mean Squared Error (x): 26.33712502226864
+GP Model Mean Squared Error (y): 4.0134875302497655
+NN Model Mean Squared Error (x): 23.26277006213494
+NN Model Mean Squared Error (y): 3.824153436337632
+Step 24001
+Call back training and testing
+GP Model Mean Squared Error (x): 30.22141804460311
+GP Model Mean Squared Error (y): 4.371412455964645
+NN Model Mean Squared Error (x): 24.377086228101003
+NN Model Mean Squared Error (y): 3.5899122010059905
+Step 24101
+Call back training and testing
+GP Model Mean Squared Error (x): 26.701420138324735
+GP Model Mean Squared Error (y): 4.16174045680812
+NN Model Mean Squared Error (x): 25.08758828872885
+NN Model Mean Squared Error (y): 4.068228706861711
+Step 24201
+Call back training and testing
+GP Model Mean Squared Error (x): 28.52000111754896
+GP Model Mean Squared Error (y): 3.411794660173934
+NN Model Mean Squared Error (x): 22.47006714513036
+NN Model Mean Squared Error (y): 3.598012121011336
+Step 24301
+Call back training and testing
+GP Model Mean Squared Error (x): 25.484279608494226
+GP Model Mean Squared Error (y): 4.090649440603614
+NN Model Mean Squared Error (x): 24.463938255077274
+NN Model Mean Squared Error (y): 3.907789444035646
+Step 24401
+Call back training and testing
+GP Model Mean Squared Error (x): 26.1837152487537
+GP Model Mean Squared Error (y): 3.917304664062653
+NN Model Mean Squared Error (x): 24.80525847588854
+NN Model Mean Squared Error (y): 3.7209997281888976
+Step 24501
+Call back training and testing
+GP Model Mean Squared Error (x): 32.89278783181332
+GP Model Mean Squared Error (y): 4.582181957068377
+NN Model Mean Squared Error (x): 25.321639337777206
+NN Model Mean Squared Error (y): 3.780971688983738
+Step 24601
+Call back training and testing
+GP Model Mean Squared Error (x): 21.960928038230577
+GP Model Mean Squared Error (y): 5.091073581264243
+NN Model Mean Squared Error (x): 21.356414063636517
+NN Model Mean Squared Error (y): 3.3583008729719923
+Step 24701
+Call back training and testing
+GP Model Mean Squared Error (x): 24.109933933595933
+GP Model Mean Squared Error (y): 3.815132557818679
+NN Model Mean Squared Error (x): 23.36310295934425
+NN Model Mean Squared Error (y): 3.244453199525405
+Step 24801
+Call back training and testing
+GP Model Mean Squared Error (x): 25.272835178984188
+GP Model Mean Squared Error (y): 4.3281091353644205
+NN Model Mean Squared Error (x): 24.744730826977754
+NN Model Mean Squared Error (y): 3.721416876825077
+Step 24901
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/neural_network/_multilayer_perceptron.py:690: ConvergenceWarning: Stochastic Optimizer: Maximum iterations (500) reached and the optimization hasn't converged yet.
+  warnings.warn(
+GP Model Mean Squared Error (x): 22.866467062427596
+GP Model Mean Squared Error (y): 3.2425370596012453
+NN Model Mean Squared Error (x): 26.19949649587864
+NN Model Mean Squared Error (y): 4.823555109114755
+Step 25001
+Call back training and testing
+GP Model Mean Squared Error (x): 26.16805383761046
+GP Model Mean Squared Error (y): 4.25435062791525
+NN Model Mean Squared Error (x): 24.82749874079828
+NN Model Mean Squared Error (y): 3.792925072826754
+Step 25101
+Call back training and testing
+GP Model Mean Squared Error (x): 33.249327490193494
+GP Model Mean Squared Error (y): 4.98259444302174
+NN Model Mean Squared Error (x): 24.21091458375919
+NN Model Mean Squared Error (y): 3.6679991891059545
+Step 25201
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 23.50616592815519
+GP Model Mean Squared Error (y): 3.5832953149454196
+NN Model Mean Squared Error (x): 23.211501947016394
+NN Model Mean Squared Error (y): 3.518627645672403
+Step 25301
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 24.597319793953282
+GP Model Mean Squared Error (y): 3.4770084601423745
+NN Model Mean Squared Error (x): 24.99879774097217
+NN Model Mean Squared Error (y): 3.5346879954479498
+Step 25401
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 23.535943089609482
+GP Model Mean Squared Error (y): 3.5296498255590967
+NN Model Mean Squared Error (x): 23.122747204176225
+NN Model Mean Squared Error (y): 3.6190305735924295
+Step 25501
+Call back training and testing
+GP Model Mean Squared Error (x): 26.92322930739508
+GP Model Mean Squared Error (y): 4.581698503932225
+NN Model Mean Squared Error (x): 26.70637804952372
+NN Model Mean Squared Error (y): 3.9419670186476345
+Step 25601
+Call back training and testing
+GP Model Mean Squared Error (x): 25.964563596571814
+GP Model Mean Squared Error (y): 3.914977791572516
+NN Model Mean Squared Error (x): 23.131735648716816
+NN Model Mean Squared Error (y): 3.5857531886701293
+Step 25701
+Call back training and testing
+GP Model Mean Squared Error (x): 23.945654869499013
+GP Model Mean Squared Error (y): 3.8876129342707895
+NN Model Mean Squared Error (x): 23.97362374383156
+NN Model Mean Squared Error (y): 3.8163468726029826
+Step 25801
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 24.75941345493117
+GP Model Mean Squared Error (y): 3.7563369353883873
+NN Model Mean Squared Error (x): 24.737600084008797
+NN Model Mean Squared Error (y): 3.8793244284464663
+Step 25901
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 25.287813845326422
+GP Model Mean Squared Error (y): 3.8609503210379477
+NN Model Mean Squared Error (x): 26.748550453292196
+NN Model Mean Squared Error (y): 3.924308659058398
+Step 26001
+Call back training and testing
+GP Model Mean Squared Error (x): 30.208202028828186
+GP Model Mean Squared Error (y): 5.175123965204591
+NN Model Mean Squared Error (x): 28.956649921377238
+NN Model Mean Squared Error (y): 4.516183126818795
+Step 26101
+Call back training and testing
+GP Model Mean Squared Error (x): 38.70620248211455
+GP Model Mean Squared Error (y): 6.495665727524669
+NN Model Mean Squared Error (x): 22.01025517330968
+NN Model Mean Squared Error (y): 3.389617462909345
+Step 26201
+Call back training and testing
+GP Model Mean Squared Error (x): 27.047706233625515
+GP Model Mean Squared Error (y): 5.602112210462502
+NN Model Mean Squared Error (x): 24.472677828723256
+NN Model Mean Squared Error (y): 3.6934416232003504
+Step 26301
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 22.48431351180652
+GP Model Mean Squared Error (y): 3.602682925085259
+NN Model Mean Squared Error (x): 23.350770666289765
+NN Model Mean Squared Error (y): 3.6305021785957448
+Step 26401
+Call back training and testing
+/usr/local/lib/python3.10/dist-packages/sklearn/gaussian_process/kernels.py:442: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__length_scale is close to the specified lower bound 0.01. Decreasing the bound and calling fit again may find a better value.
+  warnings.warn(
+GP Model Mean Squared Error (x): 23.32297233962582
+GP Model Mean Squared Error (y): 3.4088534621468907
+NN Model Mean Squared Error (x): 24.682921691140685
+NN Model Mean Squared Error (y): 4.005928284002032
+Step 26501
+Call back training and testing
+GP Model Mean Squared Error (x): 24.132045165473876
+GP Model Mean Squared Error (y): 4.020353962939701
+NN Model Mean Squared Error (x): 24.580881252087423
+NN Model Mean Squared Error (y): 3.9081808360882317
+Step 26601
+Call back training and testing
+GP Model Mean Squared Error (x): 24.75263624347917
+GP Model Mean Squared Error (y): 4.1606946222621835
+NN Model Mean Squared Error (x): 25.160897922124494
+NN Model Mean Squared Error (y): 3.8456810912898107
+Step 26701
+Call back training and testing
+GP Model Mean Squared Error (x): 24.97475874790647
+GP Model Mean Squared Error (y): 3.699499832292529
+NN Model Mean Squared Error (x): 25.099244366258635
+NN Model Mean Squared Error (y): 3.6597277446290173
+Step 26801
+Call back training and testing
+GP Model Mean Squared Error (x): 37.09485022602343
+GP Model Mean Squared Error (y): 4.689949171419618
+NN Model Mean Squared Error (x): 24.7974444618198
+NN Model Mean Squared Error (y): 3.760331855620112
+Step 26901
+Call back training and testing
+GP Model Mean Squared Error (x): 24.044527814641587
+GP Model Mean Squared Error (y): 3.7801580742360126
+NN Model Mean Squared Error (x): 23.93377513716794
+NN Model Mean Squared Error (y): 3.739553588771159
+Step 27001
+Call back training and testing
+GP Model Mean Squared Error (x): 22.039386681436866
+GP Model Mean Squared Error (y): 3.518885081914738
+NN Model Mean Squared Error (x): 22.554856396935264
+NN Model Mean Squared Error (y): 3.6486075385605177
+Step 27101
+Call back training and testing
+GP Model Mean Squared Error (x): 23.541718427240404
+GP Model Mean Squared Error (y): 3.2634117555558735
+NN Model Mean Squared Error (x): 21.923023950900962
+NN Model Mean Squared Error (y): 3.1735035225947184
+Sim elapsed time: 135.82000000002145 Real elapsed time: 1592.9856159687042

@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/Workspace/MIT-REALM/ada_cbf/f1tenth_gym/examples/waypoint_follow_sysid.py", line 32, in <module>
+    from pyglet.gl import GL_POINTS
+  File "/usr/local/lib/python3.10/dist-packages/pyglet/gl/__init__.py", line 237, in <module>
+    import pyglet.window
+  File "/usr/local/lib/python3.10/dist-packages/pyglet/window/__init__.py", line 1890, in <module>
+    gl._create_shadow_window()
+  File "/usr/local/lib/python3.10/dist-packages/pyglet/gl/__init__.py", line 209, in _create_shadow_window
+    _shadow_window = Window(width=1, height=1, visible=False)
+  File "/usr/local/lib/python3.10/dist-packages/pyglet/window/xlib/__init__.py", line 171, in __init__
+    super(XlibWindow, self).__init__(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/pyglet/window/__init__.py", line 575, in __init__
+    display = pyglet.canvas.get_display()
+  File "/usr/local/lib/python3.10/dist-packages/pyglet/canvas/__init__.py", line 95, in get_display
+    return Display()
+  File "/usr/local/lib/python3.10/dist-packages/pyglet/canvas/xlib.py", line 123, in __init__
+    raise NoSuchDisplayException('Cannot connect to "%s"' % name)
+pyglet.canvas.xlib.NoSuchDisplayException: Cannot connect to "None"

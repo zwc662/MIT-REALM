@@ -9,6 +9,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.mixture import GaussianMixture
 
 
 import joblib
@@ -29,7 +30,7 @@ wandb.init(
 from numba import njit
 
 import pyglet
-from pyglet.gl import GL_POINTS
+#from pyglet.gl import GL_POINTS
 
  
 
@@ -53,15 +54,16 @@ class BicycleModel:
         # Initialize NN model 
         self.nn = MLPRegressor(hidden_layer_sizes=(64, 64), max_iter=500)
 
+
+        # Initialize NN model 
+        self.gmm = GaussianMixture(n_components=2, covariance_type='full', max_iter=500)
+    
         # Data storage for GP
         self.data = {'Xs': {'xs': [], 'ys': [], 'pose_theta': [], 'velocity_x': [], 'velocity_y': [], 'steering_angle': []},
                         'Ys': {'xs': [], 'ys': []}}
         
         self.X = None
-        self.Y = None
-         
-        self.gp_errs = {'xs': [], 'ys': []}
-        self.nn_errs = {'xs': [], 'ys': []}
+        self.Y = None 
 
         #self.load_models()
     
@@ -111,6 +113,7 @@ class BicycleModel:
     
 
 
+ 
     def update_models(self, test_size = 0.5, num_training = 500, random_seed = 100):
         
         X = np.array([self.data['Xs']['xs'],
@@ -137,11 +140,47 @@ class BicycleModel:
 
         self.train_gp(X_train[: num_training], y_train[-num_training:])
         self.train_nn(X_train[: num_training], y_train[-num_training:])
+        self.train_gmm(X_train[: num_training], y_train[-num_training:])
 
         self.test_gp(X_test, y_test)
         self.test_nn(X_test, y_test)
+        self.test_gmm(X_test, y_test)
 
+        self.save_models()
 
+    def train_gmm(self, X_train, Y_train, n_components=2):
+        # Combine X_train and Y_train for GMM fitting
+        data = np.hstack((X_train, Y_train))
+        self.gmm.fit(data)
+    
+    def test_gmm(self, X_test, Y_test):
+        # Predict the conditional mean of Y given X for GMM
+        predictions = []
+        for x in X_test:
+            data = np.hstack((np.tile(x, (self.gmm.n_components, 1)), np.zeros((self.gmm.n_components, Y_test.shape[1]))))
+            means = self.gmm.means_[:, X_test.shape[1]:]
+            covariances = self.gmm.covariances_[:, X_test.shape[1]:, X_test.shape[1]:]
+            weights = self.gmm.predict_proba(np.tile(x, (1, X_test.shape[1]))).T
+
+            pred = np.sum([w * mean for w, mean in zip(weights, means)], axis=0)
+            predictions.append(pred)
+        
+        predictions = np.array(predictions)
+        mse_x = np.mean((predictions[:, 0] - Y_test[:, 0]) ** 2)
+        mse_y = np.mean((predictions[:, 1] - Y_test[:, 1]) ** 2)
+        
+        print(f'GMM Model Mean Squared Error (x): {mse_x}')
+        print(f'GMM Model Mean Squared Error (y): {mse_y}')
+
+        wandb.log({
+            'gmm_x_mse': mse_x,
+            'gmm_y_mse': mse_y
+        })
+        
+        
+        return mse_x, mse_y
+
+         
     def train_gp(self, X_train, y_train):
         y_train_x = y_train[:, 0]
         y_train_y = y_train[:, 1]
@@ -170,6 +209,7 @@ class BicycleModel:
         })
         
         return mse_x, mse_y
+        
 
 
     def train_nn(self, X_train, y_train):
@@ -192,17 +232,21 @@ class BicycleModel:
         
         return mse_x, mse_y
   
-    def save_models(self, gp_x_file='gp_x.pkl', gp_y_file='gp_y.pkl', nn_file='nn.pkl'):
+    def save_models(self, gp_x_file='gp_x.pkl', gp_y_file='gp_y.pkl', nn_file='nn.pkl', gmm_file='gmm.pkl'):
         joblib.dump(self.gp_x, gp_x_file)
         joblib.dump(self.gp_y, gp_y_file)
         joblib.dump(self.nn, nn_file)
-        print(f"Models saved to {gp_x_file}, {gp_y_file}, and {nn_file}.")
+        joblib.dump(self.gmmm, gmm_file)
+        print(f"Models saved to {gp_x_file}, {gp_y_file}, {nn_file}, {gmm_file}.")
 
-    def load_models(self, gp_x_file='gp_x.pkl', gp_y_file='gp_y.pkl', nn_file='nn.pkl'):
+    def load_models(self, gp_x_file='gp_x.pkl', gp_y_file='gp_y.pkl', nn_file='nn.pkl', gmm_file='gmm.pkl'):
         self.gp_x = joblib.load(gp_x_file)
         self.gp_y = joblib.load(gp_y_file)
         self.nn = joblib.load(nn_file)
+        self.gmm = joblib.load(gmm_file)
         print(f"Models loaded from {gp_x_file}, {gp_y_file}, and {nn_file}.")
+
+
 
 
 """
@@ -489,10 +533,10 @@ def main():
         planner.render_waypoints(env_renderer) 
 
     env = gym.make('f110_gym:f110-v0', map=conf.map_path, map_ext=conf.map_ext, num_agents=1, timestep=0.01, integrator=Integrator.RK4)
-    env.add_render_callback(render_callback)
+    #env.add_render_callback(render_callback)
     
     obs, step_reward, done, info = env.reset(np.array([[conf.sx, conf.sy, conf.stheta]]))
-    env.render()
+    #env.render()
 
     laptime = 0.0
     start = time.time()
@@ -503,7 +547,7 @@ def main():
         speed, steer = planner.plan(obs, work)
         obs, step_reward, done, info = env.step(np.array([[steer, speed]]))
         laptime += step_reward
-        env.render(mode='human')
+        #env.render(mode='human')
         if step > 100 and step % 100 == 1:
             print(f'Step {step}')
             planner.call_back()
