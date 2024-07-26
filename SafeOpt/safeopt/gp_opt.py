@@ -376,7 +376,7 @@ class SafeOpt(GaussianProcessOptimization):
                           dtype=np.float64)
 
         # Safe set
-        self.S = np.zeros(self.inputs.shape[0], dtype=np.bool)
+        self.S = np.zeros(self.inputs.shape[0], dtype=np.bool_)
 
         # Switch to use confidence intervals for safety
         if lipschitz is None:
@@ -544,7 +544,7 @@ class SafeOpt(GaussianProcessOptimization):
             return array.argsort()[::-1]
 
         # set of safe expanders
-        G_safe = np.zeros(np.count_nonzero(s), dtype=np.bool)
+        G_safe = np.zeros(np.count_nonzero(s), dtype=np.bool_)
 
         if not full_sets:
             # Sort, element with largest variance first
@@ -963,7 +963,7 @@ class SafeOptSwarm(GaussianProcessOptimization):
                 raise AssertionError("Invalid swarm type")
 
         # boolean mask that tell if the particles are safe according to all gps
-        global_safe = np.ones(particles.shape[0], dtype=np.bool)
+        global_safe = np.ones(particles.shape[0], dtype=np.bool_)
         total_penalty = np.zeros(particles.shape[0], dtype=np.float64)
 
         for i, (gp, scaling) in enumerate(zip(self.gps, self.scaling)):
@@ -1100,7 +1100,7 @@ class SafeOptSwarm(GaussianProcessOptimization):
 
             # this mask keeps track of the points that we have added in the
             # safe set to account for them when adding a new point
-            mask = np.zeros(m, dtype=np.bool)
+            mask = np.zeros(m, dtype=np.bool_)
             mask[:initial_safe] = True
 
             for j in range(n):
