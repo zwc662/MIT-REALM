@@ -9,8 +9,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import train_test_split
-from sklearn.mixture import GaussianMixture
-
+from gmr import GMM
 
 import joblib
 
@@ -22,7 +21,7 @@ wandb.init(
     # Set the project where this run will be logged
     project="basic-intro",
     # We pass a run name (otherwise it’ll be randomly assigned, like sunshine-lollypop-10)
-    name=f"experiment",
+    name=f"experiment_rela_coord_test",
     # Track hyperparameters and run metadata
     )
 
@@ -56,16 +55,15 @@ class BicycleModel:
 
 
         # Initialize NN model 
-        self.gmm = GaussianMixture(n_components=2, covariance_type='full', max_iter=500)
+        self.gmm = GMM(n_components=3, random_state = 0)
     
         # Data storage for GP
-        self.data = {'Xs': {'xs': [], 'ys': [], 'pose_theta': [], 'velocity_x': [], 'velocity_y': [], 'steering_angle': []},
-                        'Ys': {'xs': [], 'ys': []}}
+        self.clear_cache()
         
         self.X = None
         self.Y = None 
 
-        #self.load_models()
+        self.load_models()
     
     def clear_cache(self):
         self.data = {'Xs': {'xs': [], 'ys': [], 'pose_theta': [], 'velocity_x': [], 'velocity_y': [], 'steering_angle': []},
@@ -115,9 +113,8 @@ class BicycleModel:
 
  
     def update_models(self, test_size = 0.5, num_training = 500, random_seed = 100):
-        
-        X = np.array([self.data['Xs']['xs'],
-                      self.data['Xs']['ys'],
+        X = np.array([#self.data['Xs']['xs'],
+                      #self.data['Xs']['ys'],
                       self.data['Xs']['pose_theta'],
                       self.data['Xs']['velocity_x'],
                       self.data['Xs']['velocity_y'],
@@ -126,21 +123,21 @@ class BicycleModel:
                       self.data['Ys']['ys']]).T
         
         if self.X is None and self.Y is None:
-            self.X = X
-            self.Y = Y
+            self.X = X[1:]
+            self.Y = Y[1:]
         else:
             self.X = np.vstack((self.X, X))
             self.Y = np.vstack((self.Y, Y))
         self.clear_cache()
 
         
-        assert X.shape[0] > 10
+        assert X.shape[0] > 20
         
-        X_train, X_test, y_train, y_test = train_test_split(self.X[:-10], self.Y[:-10], test_size=test_size, random_state=random_seed)
+        X_train, X_test, y_train, y_test = train_test_split(self.X[1:-10], self.Y[1:-10], test_size=test_size, random_state=random_seed)
 
-        self.train_gp(X_train[: num_training], y_train[-num_training:])
-        self.train_nn(X_train[: num_training], y_train[-num_training:])
-        self.train_gmm(X_train[: num_training], y_train[-num_training:])
+        #self.train_gp(X_train[: num_training], y_train[-num_training:])
+        #self.train_nn(X_train[: num_training], y_train[-num_training:])
+        #self.train_gmm(X_train[: num_training], y_train[-num_training:])
 
         self.test_gp(X_test, y_test)
         self.test_nn(X_test, y_test)
@@ -151,23 +148,13 @@ class BicycleModel:
     def train_gmm(self, X_train, Y_train, n_components=2):
         # Combine X_train and Y_train for GMM fitting
         data = np.hstack((X_train, Y_train))
-        self.gmm.fit(data)
+        self.gmm.from_samples(data)
     
     def test_gmm(self, X_test, Y_test):
         # Predict the conditional mean of Y given X for GMM
-        predictions = []
-        for x in X_test:
-            data = np.hstack((np.tile(x, (self.gmm.n_components, 1)), np.zeros((self.gmm.n_components, Y_test.shape[1]))))
-            means = self.gmm.means_[:, X_test.shape[1]:]
-            covariances = self.gmm.covariances_[:, X_test.shape[1]:, X_test.shape[1]:]
-            weights = self.gmm.predict_proba(np.tile(x, (1, X_test.shape[1]))).T
-
-            pred = np.sum([w * mean for w, mean in zip(weights, means)], axis=0)
-            predictions.append(pred)
-        
-        predictions = np.array(predictions)
-        mse_x = np.mean((predictions[:, 0] - Y_test[:, 0]) ** 2)
-        mse_y = np.mean((predictions[:, 1] - Y_test[:, 1]) ** 2)
+        preds = self.gmm.predict(np.arange(X_test.shape[-1]), X_test)
+        mse_x = np.mean((preds[:, 0] - Y_test[:, 0]) ** 2)
+        mse_y = np.mean((preds[:, 1] - Y_test[:, 1]) ** 2)
         
         print(f'GMM Model Mean Squared Error (x): {mse_x}')
         print(f'GMM Model Mean Squared Error (y): {mse_y}')
@@ -236,7 +223,7 @@ class BicycleModel:
         joblib.dump(self.gp_x, gp_x_file)
         joblib.dump(self.gp_y, gp_y_file)
         joblib.dump(self.nn, nn_file)
-        joblib.dump(self.gmmm, gmm_file)
+        joblib.dump(self.gmm, gmm_file)
         print(f"Models saved to {gp_x_file}, {gp_y_file}, {nn_file}, {gmm_file}.")
 
     def load_models(self, gp_x_file='gp_x.pkl', gp_y_file='gp_y.pkl', nn_file='nn.pkl', gmm_file='gmm.pkl'):

@@ -14,6 +14,16 @@
             "args": ["${workspaceFolder}/ada_cbf/f1tenth_gym/gym/f110_gym/unittest/random_trackgen.py", "--seed", "100"],
             "python": "/opt/anaconda3/envs/envelope/bin/python",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "(Remote) Python: sysID",
+            "type": "python",
+            "request": "launch",
+            "module": "torch.distributed.run",
+            "cwd": "${workspaceFolder}/ada_cbf/sysid/",
+            "args": ["${workspaceFolder}/ada_cbf/sysid/run.py"],
+            "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
+            "console": "integratedTerminal"
         }
     ] 
 }

@@ -15,3 +15,8 @@ gcbfplus/pretrained/LinearDrone/gcbf+/models/1000/cbf.pkl
 gcbfplus/pretrained/SingleIntegrator/gcbf+/config.yaml
 gcbfplus/pretrained/SingleIntegrator/gcbf+/models/1000/actor.pkl
 gcbfplus/pretrained/SingleIntegrator/gcbf+/models/1000/cbf.pkl
+ada_cbf/sysid/wandb
+ada_cbf/f1tenth_gym/examples/wandb
+*.pt
+ada_cbf/sysid/__pycache__
+ada_cbf/*/__pycache__
