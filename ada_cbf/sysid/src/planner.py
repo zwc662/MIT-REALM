@@ -8,6 +8,7 @@ from argparse import Namespace
 from numba import njit
 
 import pyglet
+from pyglet.gl import GL_POINTS
 
 """
 Planner Helpers
@@ -162,8 +163,6 @@ class PurePursuitPlanner:
         self.waypoints = np.loadtxt(conf.wpt_path, delimiter=conf.wpt_delim, skiprows=conf.wpt_rowskip)
 
     def render_waypoints(self, e):
-        from pyglet.gl import GL_POINT
-        
         """
         update waypoints being drawn by EnvRenderer
         """
