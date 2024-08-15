@@ -160,6 +160,12 @@ class PurePursuitPlanner:
         loads waypoints
         """
         self.waypoints = np.loadtxt(conf.wpt_path, delimiter=conf.wpt_delim, skiprows=conf.wpt_rowskip)
+    
+    def load_border(self, conf):
+        """
+        loads border
+        """
+        self.border = np.loadtxt(conf.bpt_path, delimiter=conf.bpt_delim, skiprows=conf.bpt_rowskip)
 
     def render_waypoints(self, GL_POINTS, e):
         """
@@ -168,17 +174,32 @@ class PurePursuitPlanner:
 
         #points = self.waypoints
 
-        points = np.vstack((self.waypoints[:, self.conf.wpt_xind], self.waypoints[:, self.conf.wpt_yind])).T
-        
-        scaled_points = 50.*points
+        waypoints = np.vstack((self.waypoints[:, self.conf.wpt_xind], self.waypoints[:, self.conf.wpt_yind])).T
+        scaled_points = 50.*waypoints
 
-        for i in range(points.shape[0]):
-            if len(self.drawn_waypoints) < points.shape[0]:
+        for i in range(waypoints.shape[0]):
+            if len(self.drawn_waypoints) < waypoints.shape[0]:
                 b = e.batch.add(1, GL_POINTS, None, ('v3f/stream', [scaled_points[i, 0], scaled_points[i, 1], 0.]),
                                 ('c3B/stream', [183, 193, 222]))
                 self.drawn_waypoints.append(b)
             else:
                 self.drawn_waypoints[i].vertices = [scaled_points[i, 0], scaled_points[i, 1], 0.]
+    
+    def render_border(self, GL_POINTS, e):
+        border= np.vstack((self.border[:, self.conf.bpt_xind], self.border[:, self.conf.bpt_yind])).T
+        
+        drawn_border = []
+        scaled_points = 50.*border
+
+        for i in range(border.shape[0]):
+            if len(drawn_border) < border.shape[0]:
+                b = e.batch.add(1, GL_POINTS, None, ('v3f/stream', [scaled_points[i, 0], scaled_points[i, 1], 0.]),
+                                ('c3B/stream', [255, 255, 255])) #[183, 193, 222]))
+                drawn_border.append(b)
+            else:
+                drawn_border[i].vertices = [scaled_points[i, 0], scaled_points[i, 1], 0.]
+            
+            
         
     def _get_current_waypoint(self, waypoints, lookahead_distance, position, theta):
         """
@@ -278,6 +299,7 @@ def main():
         e.bottom = bottom - 800
 
         planner.render_waypoints(GL_POINTS, env_renderer)
+        planner.render_border(GL_POINTS, env_renderer)
 
     env = gym.make('f110_gym:f110-v0', map=conf.map_path, map_ext=conf.map_ext, num_agents=1, timestep=0.01, integrator=Integrator.RK4)
     env.add_render_callback(render_callback)

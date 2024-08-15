@@ -24,6 +24,27 @@
             "args": ["${workspaceFolder}/ada_cbf/sysid/run.py", "--algo", "sn", "--params", "0"],
             "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
             "console": "integratedTerminal"
-        }
+        },
+        {
+            "name": "(Local) Python: sysID",
+            "type": "python",
+            "request": "launch",
+            "module": "torch.distributed.run",
+            "cwd": "${workspaceFolder}/ada_cbf/sysid/",
+            "args": ["${workspaceFolder}/ada_cbf/sysid/run.py", "--algo", "bm", "--params", "0", "--render"],
+            "python": "/opt/anaconda3/envs/envelope/bin/python",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "(Local) Python: create map",
+            "type": "python",
+            "request": "launch",
+            "module": "torch.distributed.run",
+            "cwd": "${workspaceFolder}/ada_cbf/sysid/",
+            "args": ["${workspaceFolder}/ada_cbf/sysid/utils/random_trackgen.py", "--seed", "100", "--num_maps", "4"],
+            "python": "/opt/anaconda3/envs/envelope/bin/python",
+            "console": "integratedTerminal"
+        },
+        
     ] 
 }

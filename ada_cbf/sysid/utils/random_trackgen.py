@@ -47,9 +47,9 @@ np.random.seed(args.seed)
 if not os.path.exists('maps'):
     print('Creating maps/ directory.')
     os.makedirs('maps')
-if not os.path.exists('centerline'):
-    print('Creating centerline/ directory.')
-    os.makedirs('centerline')
+if not os.path.exists('centerlines'):
+    print('Creating centerlines/ directory.')
+    os.makedirs('centerlines')
 
 NUM_MAPS = args.num_maps
 WIDTH = 10.0
@@ -171,10 +171,19 @@ def create_track():
     track_xy_offset_out_np = np.array(track_xy_offset_out.exterior.coords)
     return track_xy, track_xy_offset_in_np, track_xy_offset_out_np
 
+def get_map_origin(xy_pixels):
+    origin_x_pix = xy_pixels[0, 0]
+    origin_y_pix = xy_pixels[0, 1]
+
+    xy_pixels = xy_pixels - np.array([[origin_x_pix, origin_y_pix]])
+
+    map_origin_x = -origin_x_pix*0.05
+    map_origin_y = -origin_y_pix*0.05
+    return map_origin_x, map_origin_y
 
 def convert_track(track, track_int, track_ext, iter):
 
-    # converts track to image and saves the centerline as waypoints
+    # converts track to image and saves the centerlines as waypoints
     fig, ax = plt.subplots()
     fig.set_size_inches(20, 20)
     ax.plot(*track_int.T, color='black', linewidth=3)
@@ -188,16 +197,15 @@ def convert_track(track, track_int, track_ext, iter):
 
     map_width, map_height = fig.canvas.get_width_height()
     print('map size: ', map_width, map_height)
-
+ 
+    
     # transform the track center line into pixel coordinates
-    xy_pixels = ax.transData.transform(track)
-    origin_x_pix = xy_pixels[0, 0]
-    origin_y_pix = xy_pixels[0, 1]
+    centerline_xy_pixels = ax.transData.transform(track)
+    map_origin_x, map_origin_y = get_map_origin(centerline_xy_pixels)
 
-    xy_pixels = xy_pixels - np.array([[origin_x_pix, origin_y_pix]])
-
-    map_origin_x = -origin_x_pix*0.05
-    map_origin_y = -origin_y_pix*0.05
+    int_xy_pixels = ax.transData.transform(track_int)
+    ext_xy_pixels = ax.transData.transform(track_ext)
+    
 
     # convert image using cv2
     cv_img = cv2.imread('maps/map' + str(iter) + '.png', -1)
@@ -216,11 +224,18 @@ def convert_track(track, track_int, track_ext, iter):
     yaml.close()
     plt.close()
 
-    # saving track centerline as a csv in ros coords
-    waypoints_csv = open('centerline/map' + str(iter) + '.csv', 'w')
-    for row in xy_pixels:
+    # saving track centerlines as a csv in ros coords
+    waypoints_csv = open('centerlines/map' + str(iter) + '.csv', 'w')
+    for row in centerline_xy_pixels:
         waypoints_csv.write(str(0.05*row[0]) + ', ' + str(0.05*row[1]) + '\n')
     waypoints_csv.close()
+
+    # saving track centerlines as a csv in ros coords
+    borderpoints_csv = open('borderlines/map' + str(iter) + '.csv', 'w')
+    for xy_pixels in [int_xy_pixels, ext_xy_pixels]:
+        for row in xy_pixels:
+            borderpoints_csv.write(str(0.05*row[0]) + ', ' + str(0.05*row[1]) + '\n')
+    borderpoints_csv.close()
 
 
 
@@ -231,5 +246,5 @@ if __name__ == '__main__':
         except:
             print('Random generator failed, retrying')
             continue
-        print(track_int)
+        print(len(track_int), len(track_ext), len(track))
         convert_track(track, track_int, track_ext, i)
