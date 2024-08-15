@@ -150,7 +150,7 @@ class PurePursuitPlanner:
     def __init__(self, conf, wb):
         self.wheelbase = wb
         self.conf = conf
-        self.load_waypoints(conf)
+        #self.load_waypoints(conf)
         self.max_reacquire = 20.
 
         self.drawn_waypoints = []
@@ -216,7 +216,7 @@ class PurePursuitPlanner:
         lookahead_distance = work['tlad']
         vgain = work['vgain']
         
-        position = np.array([pose_x, pose_y])
+        position = np.asarray([pose_x, pose_y])
         lookahead_point = self._get_current_waypoint(self.waypoints, lookahead_distance, position, pose_theta)
 
         if lookahead_point is None:

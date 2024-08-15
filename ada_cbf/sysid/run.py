@@ -4,22 +4,26 @@ import numpy as np
 import yaml
 import os
 
+from copy import deepcopy
 import argparse
 from argparse import Namespace
 
 import jax
+#import jax.numpy as jnp
+from jax import lax
 jax.config.update('jax_platform_name', 'cpu')
 
-from f110_gym.envs.base_classes import Integrator
-
-from sysid.waypoint_follow import PurePursuitPlanner
+from f110_gym.envs.base_classes import Integrator 
+from sysid.src.planner import PurePursuitPlanner
 from sysid.src.model import BicycleModel
 from sysid.src.constants import Logging_Level
 from sysid.src.learner import Learner
+from sysid.src.simulator import Simulator
+
+from sysid.utils.plot import draw_plot
 
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
+import math
 
 
 import logging
@@ -34,19 +38,28 @@ import wandb
 # Use wandb-core
 wandb.require("core")
 wandb.login()
-
-wandb.init(
-    mode="disabled",
-    # Set the project where this run will be logged
-    project="basic-intro",
-    # We pass a run name (otherwise it’ll be randomly assigned, like sunshine-lollypop-10)
-    name="safeopt",
-    # Track hyperparameters and run metadata
-    )
-
  
+ 
+class RecursiveNamespace(Namespace):
+    def __init__(self, **kwargs):
+        dict_kwargs = {}
+        for name in kwargs:
+            if type(kwargs[name]) == dict:
+                dict_kwargs[name] = kwargs[name]
+        super().__init__(**kwargs)
+        
+        for name in dict_kwargs:
+            setattr(self, name, RecursiveNamespace(**dict_kwargs[name]))
+
+        self.name_lst = list(kwargs.keys())
+    
+    def update(self, namespace):
+        for name in namespace.name_lst:
+            setattr(self, name, getattr(namespace, name))
 
 
+
+        
 def render_callback(env_renderer, planner):
     # custom extra drawing function
 
@@ -64,127 +77,181 @@ def render_callback(env_renderer, planner):
     e.bottom = bottom - 800
 
     planner.render_waypoints(env_renderer) 
-
+ 
 def collect_data_call_back(self):
     wandb.log({
-            'x': self.buffer['Ys']['xs'][-1],
-            'y': self.buffer['Ys']['ys'][-1],
+            'x': self.buffer['Xs']['xs'][-1],
+            'y': self.buffer['Xs']['ys'][-1],
             'poses_theta': self.buffer['Xs']['poses_theta'][-1],
             'velocity_x': self.buffer['Xs']['velocity_x'][-1],
             'velocity_y': self.buffer['Xs']['velocity_y'][-1],
             'accelerate': self.buffer['Xs']['accelerate'][-1],
             'steering': self.buffer['Xs']['steering'][-1],
-            'pred_x': self.buffer['Ys']['xs'][-1],
-            'pred_y': self.buffer['Ys']['ys'][-1],
-            'res_x': self.buffer['Ys']['xs'][-2] if len(self.buffer['Ys']['xs']) > 1 else 0,
-            'res_y': self.buffer['Ys']['ys'][-2] if len(self.buffer['Ys']['ys']) > 1 else 0
+            'pred_x': self.buffer['Ys']['pred_xs'][-1],
+            'pred_y': self.buffer['Ys']['pred_ys'][-1],
+            'bm_x': self.buffer['Ys']['xs'][-1],
+            'bm_y': self.buffer['Ys']['ys'][-1],
+            'label_x': self.buffer['Xs']['xs'][-1] - self.buffer['Ys']['xs'][-2] if len(self.buffer['Ys']['xs']) > 1 else 0,
+            'label_x': self.buffer['Xs']['ys'][-1] - self.buffer['Ys']['ys'][-2] if len(self.buffer['Ys']['ys']) > 1 else 0,
+            'err_x': abs(self.buffer['Xs']['xs'][-1] - self.buffer['Ys']['pred_xs'][-2]) if len(self.buffer['Ys']['pred_xs']) > 1 else 0,
+            'err_y': abs(self.buffer['Xs']['ys'][-1] - self.buffer['Ys']['pred_ys'][-2]) if len(self.buffer['Ys']['pred_ys']) > 1 else 0
         }
     )
     
 
 def update_models_call_back(info):
-     wandb.log(info)
+    wandb.log(info)
 
-    
-class Simulator(object):
-    def __init__(self, learner, bm, planner, work):
-        self.learner = learner
-        self.bm = bm 
-        self.planner = planner
-        self.work = work
 
-    def forward(self, obs, steps = 100, logger = None):
-        """
-        (Simulated) Step function for the gym env
+def run_one_step(env, obs, simulator, work, obs_points, laptime, step):
+    obs_points['x'].append(obs['poses_x'][0])
+    obs_points['y'].append(obs['poses_y'][0])
 
-        Args:
-            action (np.ndarray(num_agents, 2))
-
-        Returns:
-            obs (dict): observation of the current step
-            reward (float, default=self.timestep): step reward, currently is physics timestep
-            done (bool): if the simulation is done
-            info (dict): auxillary information dictionary
-        """
+    step += 1 
         
-        obss = [] 
-        #acts = []
-        cur_obs = {k: v for k, v in obs.items()}
-        for _ in range(steps):
-            # call simulation step
+    acc, steer = simulator.planner.plan(
+        obs, 
+        work
+        )
 
-            #print(cur_obs)
-            acc, steer = self.planner.plan(cur_obs, self.work)
+    pred_nxt_obs = simulator.bm.step(obs, acc, steer, None, logger)
 
-            
-            noise = np.random.normal([2]) * 0.1
-            
-            obss.append(cur_obs)
-            #acts.append((acc + noise[0], steer + noise[0]))
-            
-            pred = self.bm.step(obs, acc + noise[0], steer + noise[0], None, logger = logger)
-            
-            dx, dy = self.learner.pred(obs, acc + noise[0], steer + noise[0], logger = logger)
+    simulator.learner.collect_data_one_step(obs, pred_nxt_obs, acc, steer, call_back = collect_data_call_back, logger = logger)
 
-            cur_obs = pred
-            
-            cur_obs.update({
-                'poses_x': pred['poses_x'] + dx,
-                'poses_y': pred['poses_y'] + dy,
-                }
-            )
-
-            cur_obs = {k: np.asarray([v]).reshape(1).tolist() for k, v in cur_obs.items()}
-
-            
-        return obss
-
-
-
-# Function to draw the plot
-def draw_plot(obs_points, all_sim_traj_points, filename):
-    plt.figure()
-    # Plot observation points in red
-    plt.scatter(obs_points['x'], obs_points['y'], color='red', label='Observations')
+    obs, step_reward, done, info = env.step(np.array([[steer, acc]]))
     
-    # Create a color map
-    colors = cm.rainbow(np.linspace(0, 1, len(all_sim_traj_points)))
+    laptime += step_reward
+
+    return laptime, step, (obs, step_reward, done, info)
+
     
-    # Plot each simulated trajectory with a different color
-    for i, sim_traj_points in enumerate(all_sim_traj_points):
-        plt.scatter(sim_traj_points['x'], sim_traj_points['y'], color=colors[i], label=f'Sim Traj {i+1}')
+def run(env, simulator, work, args, logger, train = True):
+    waypoints = {
+        'x': simulator.planner.waypoints[:, simulator.planner.conf.wpt_xind].tolist(), 
+        'y': simulator.planner.waypoints[:, simulator.planner.conf.wpt_yind].tolist()
+        }
     
-    plt.xlabel('X Coordinate')
-    plt.ylabel('Y Coordinate')
-    plt.title('2D Plot of Observations and Simulated Trajectories')
-    plt.legend()
-    plt.savefig(filename)
+    if args.params == 1:
+        # Perturb dynamics
+        params = {'mu': 0.08985050194246735, 'C_Sf': 6.461633476571456, 'C_Sr': 5.5608394350107035, 'lf': 0.15607724893972566, 'lr': 0.24182564159074513, 'h': 0.06362648398675183, 'm': 4.589965637775949, 'I': 0.028435271112269407, 's_min': -0.6054291058749389, 's_max': 0.057440274511241785, 'sv_min': -3.046571558607359, 'sv_max': 2.2955848726053194, 'v_switch': 10.308033363723174, 'a_max': 3.8618681689800463, 'v_min': -2.3970177032927924, 'v_max': 19.91587002985152, 'width': 0.1416204581583914}#, 'length': 0.5438096805680749}
+        env.update_params(params)
+    elif args.params == 2:
+        params = env.params
+        for k, v in params.items():
+            params[k] = np.random.normal(loc = params[k], scale = 0.5 * abs(params[k]))
+    
+     
+    env.timestep =  simulator.bm.dt
+    
+    #env.timestep = 0.04
+    #env.add_render_callback(render_callback)
+   
+    # Initialize data storage
+    obs_pointss = []
+    all_sim_traj_points = []
+    
+    init_x = simulator.planner.waypoints[0][0]
+    init_y = simulator.planner.waypoints[0][1]
+    obs, step_reward, done, info = env.reset(np.array([[init_x, init_y, 0]]))
+    #env.render()
+    
+    last_sim = 0
+    sim_interval = 10 
+
+    laptime = 0.0
+    start = time.time()
+
+    step = 0
+    obs_points = {'x': [], 'y': []}
+    while not done and step * env.timestep < 40 * sim_interval:
+
+        lap_time, step, (obs, step_reward, done, info) = run_one_step(env, obs, simulator, work, obs_points, laptime, step)
+        #env.render(mode='human')
+        if step == 3001:
+            pass
+        if train and step > 50 and step % 100 == 1:
+            print(f'Train @ {step=}') #logger.log(Logging_Level.INFO.value, f'Step {step}')
+            simulator.learner.update_model(call_back = update_models_call_back, logger = logger)
+         
+        if step * env.timestep >= last_sim + sim_interval:
+            print(f'Simulation @ {step=}') #logger.log(Logging_Level.INFO.value, f'Step {step}')
+            pre_sim_obs = deepcopy({k: v for k, v in obs.items()})
+            sim_traj = simulator.forward(obs, math.floor(sim_interval / simulator.bm.dt), logger = logger)
+            for k, v in pre_sim_obs.items():
+                assert (np.asarray([v]).flatten() == np.asarray([obs[k]]).flatten()).all()
+
+            sim_traj_points = {'x': [], 'y': []}
+            for sim_obs in sim_traj:
+                sim_x = sim_obs['poses_x'][0]
+                sim_y = sim_obs['poses_y'][0]
+                sim_traj_points['x'].append(sim_x)
+                sim_traj_points['y'].append(sim_y)
+            print(f'from {sim_traj[0]} to {sim_traj[-1]}')
+            all_sim_traj_points.append(sim_traj_points)
+             
+            obs_pointss.append(obs_points)
+            obs_points = {'x': [], 'y': []}
+            
+            last_sim += step * env.timestep
+
+            try:
+                draw_plot(waypoints, obs_pointss, all_sim_traj_points, '_'.join([f'params_{args.params}', f'work_{args.work}', f'algo_{args.algo}', f'{os.path.basename(env.map_name)}.png']))
+            except:
+                pass
 
  
+    logger.log(Logging_Level.INFO.value, f'Sim elapsed time: {laptime} | Real elapsed time: {time.time()-start}')
+    # Draw the plot after collecting all data
+    try:
+        draw_plot(waypoints, obs_pointss, all_sim_traj_points, '_'.join([f'params_{args.params}', f'work_{args.work}', f'algo_{args.algo}', f'{os.path.basename(env.map_name)}.png']))
+    except:
+        pass
+
 def main():
     """
     main entry point
     """
-    
-
+   
     parser = argparse.ArgumentParser()
     parser.add_argument('--algo', type=str, required=True, help='Path to the map without extensions')
+    parser.add_argument('--work', type=int, required=False, default = 0, help='Path to the map without extensions')
+    parser.add_argument('--params', type=int, required=False, default = 0, help='Path to the map without extensions')
     args = parser.parse_args()
-    
-    
-    work = {'mass': 3.463388126201571, 'lf': 0.15597534362552312, 'tlad': 0.82461887897713965, 'vgain': 0.90338203837889}
-    
+    wandb.init(
+        #mode="disabled",
+        # Set the project where this run will be logged
+        project="basic-intro",
+        # We pass a run name (otherwise it’ll be randomly assigned, like sunshine-lollypop-10)
+        name=f"{args.algo}_forward_sim",
+        # Track hyperparameters and run metadata
+        )
     with open('config_example_map.yaml') as file:
         conf_dict = yaml.load(file, Loader=yaml.FullLoader)
-    conf = Namespace(**conf_dict)
+    conf = RecursiveNamespace(**conf_dict)
+    
+    work = {'mass': 3.463388126201571, 'lr': 0.17145, 'lf': 0.15597534362552312, 'tlad': 0.82461887897713965, 'vgain': 0.90338203837889}
+    if args.work == 1:
+        # perturb planner
+        work = {'mass': 7.319960348652749, 'lr': 0.2543618539794769, 'lf': 0.3438519625296129, 'tlad': 0.5460865538470376, 'vgain': 2.684377437220065}
 
-    planner = PurePursuitPlanner(conf, (0.17145+0.15875)) #FlippyPlanner(speed=0.2, flip_every=1, steer=10)
+    #work['tlad'] = 4.0
+    #work['vgain'] = 1
+    #work['mass'] = .1
+    #work['lr'] *= 5
+
     
-    bm = BicycleModel(planner.wheelbase)
+    wb =  work['lf'] + work['lr']
     
-    env = gym.make('f110_gym:f110-v0', map=conf.map_path, map_ext=conf.map_ext, num_agents=1, timestep=0.01, integrator=Integrator.RK4)
-    #env.add_render_callback(render_callback)
+    planner = PurePursuitPlanner(conf, wb) #FlippyPlanner(speed=0.2, flip_every=1, steer=10)
     
+    bm = BicycleModel(
+        lf = work['lf'], 
+        lr = work['lr'],
+        d =  0., #.1 - work['vgain'],
+        m = work['mass'],
+        dt = 0.01)
+    
+     
     learner = Learner(
         algo = args.algo, 
         rng = 0,
@@ -195,59 +262,21 @@ def main():
 
     simulator = Simulator(learner, bm, planner, work)
 
-    # Initialize data storage
-    obs_points = {'x': [], 'y': []}
-    all_sim_traj_points = []
-
-    obs, step_reward, done, info = env.reset(np.array([[conf.sx, conf.sy, conf.stheta]]))
-    #env.render()
-    
      
-    laptime = 0.0
-    start = time.time()
-
-    step = 0
-    while not done and step < 300:
-        obs_points['x'].append(obs['poses_x'][0])
-        obs_points['y'].append(obs['poses_y'][0])
-
-
-        step += 1 
-
-        acc, steer = planner.plan(obs, work)
-        acc *= 0.5
-        noise = [0, 0] #np.random.normal([2]) * 0.001
-        
-        pred = bm.step(obs, acc + noise[0], steer + noise[1], None, logger)
-
-        learner.collect_data_one_step(obs, acc + noise[0], steer + noise[1],  pred, call_back = collect_data_call_back, logger = logger)
-
-
-
-        obs, step_reward, done, info = env.step(np.array([[steer + noise[0], acc + noise[1]]]))
-        
-        laptime += step_reward
-        #env.render(mode='human')
-        if False and step > 50 and step % 100 == 1:
-            print(f'{step=}') #logger.log(Logging_Level.INFO.value, f'Step {step}')
-            learner.update_model(call_back = update_models_call_back, logger = logger)
-
-        if False and step > 200:
-            sim_traj = simulator.forward(obs, 200, logger = logger)
-            sim_traj_points = {'x': [], 'y': []}
-            for sim_obs in sim_traj:
-                sim_x = sim_obs['poses_x'][0]
-                sim_y = sim_obs['poses_y'][0]
-                sim_traj_points['x'].append(sim_x)
-                sim_traj_points['y'].append(sim_y)
-            all_sim_traj_points.append(sim_traj_points)
-        
-
-        step += 1
-        
-    logger.log(Logging_Level.INFO.value, f'Sim elapsed time: {laptime} | Real elapsed time: {time.time()-start}')
-    # Draw the plot after collecting all data
-    draw_plot(obs_points, all_sim_traj_points, args.algo + '.png')
-
+    print(f"Training in map {conf.train.map_path}")
+    simulator.planner.conf.update(planner.conf.train) 
+    simulator.planner.load_waypoints(conf.train)
+    env = gym.make('f110_gym:f110-v0', map=simulator.planner.conf.map_path, map_ext=simulator.planner.conf.map_ext , num_agents=1, timestep=0.01, integrator=Integrator.RK4)
+    run(env, simulator, work, args, logger, train = True)
+    
+    for name in conf.name_lst:
+        if 'test' not in name:
+            continue
+        print(f"Testing in map {name.split('test')[-1]}")
+        simulator.planner.conf.update(getattr(planner.conf, name))
+        simulator.planner.load_waypoints(simulator.planner.conf)
+        env = gym.make('f110_gym:f110-v0', map=simulator.planner.conf.map_path, map_ext=simulator.planner.conf.map_ext , num_agents=1, timestep=0.01, integrator=Integrator.RK4)
+        run(env, simulator, work, args, logger, train = False)
+    
 if __name__ == '__main__':
     main()  

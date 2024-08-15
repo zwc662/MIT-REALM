@@ -104,8 +104,8 @@ class BicycleModel:
                 'velocity_y': self.data['Xs']['velocity_y'][-1],
                 'bm_x': self.data['Ys']['xs'][-1],
                 'bm_y': self.data['Ys']['ys'][-1],
-                'res_x': self.data['Ys']['xs'][-2] if len(self.data['Ys']['xs']) > 1 else 0,
-                'res_y': self.data['Ys']['ys'][-2] if len(self.data['Ys']['ys']) > 1 else 0
+                'label_x': self.data['Ys']['xs'][-2] if len(self.data['Ys']['xs']) > 1 else 0,
+                'label_x': self.data['Ys']['ys'][-2] if len(self.data['Ys']['ys']) > 1 else 0
             }
         )
     

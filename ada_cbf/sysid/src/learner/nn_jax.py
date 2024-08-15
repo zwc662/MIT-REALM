@@ -12,6 +12,7 @@ from sysid.src.constants import Logging_Level
 
 from sklearn.model_selection import train_test_split
 
+
 import math
 
 import pickle
@@ -42,17 +43,17 @@ def train(carry, _):
 def eval(carry, _):
     state, rng, batch = carry
     rng, new_rng = jax.random.split(rng)
-    preds =  state.apply_fn(state.params, batch['inputs'], training=True, rngs={'dropout': rng})
+    preds =  state.apply_fn(state.params, batch['inputs'], training=False, rngs={'dropout': rng})
     return (state, new_rng, batch), preds
 
 
 
-class NN_Learner:
+class _JAX_NN_Learner_:
     def __init__(self, 
                 random_key,                
                 learning_rate: float =1e-3, 
                 hidden_sizes: Tuple[int] = (32, 32, 2),
-                input_shape: Tuple[int]=(1,4),
+                input_shape: Tuple[int]=(1,5),
                 nn_file_path: Optional[str] = None,
                 random_state: float = 0, 
                 test_size: float = 0.5, 
@@ -139,7 +140,7 @@ class NN_Learner:
 
         X_train, X_test, y_train, y_test = train_test_split(X[1:-10, 2:], Y[1:-10], test_size=self.test_size, random_state=self.random_state)
 
-        sampled_X, sampled_Y = self.downsample(X_train, y_train, logger)
+        #sampled_X, sampled_Y = self.downsample(X_train, y_train, logger)
 
         
         X_train = jnp.array(X_train)
@@ -232,19 +233,8 @@ class NN_Learner:
         self.state = train_state.TrainState.create(apply_fn=model.apply, params=params, tx=optax.adam(1e-3))
         #logger.log(Logging_Level.INFO, f"Model parameters loaded from {filepath}")
         
+    def eval(self, Xs, logger):
+        preds = self.state.apply_fn(self.state.params, Xs, training=False)
+        return preds, 0 * preds
 
-
-    
-
-
-class MLP(nn.Module):
-    hidden: List = (16, 16, 2)
- 
-    @nn.compact
-    def __call__(self, x, training: bool = False):
-        for hid in self.hidden[:-1]:
-            x = nn.Dense(hid)(x)
-            x = nn.relu(x)
-            x = nn.Dropout(0.5)(x, deterministic=not training)
-        x = nn.Dense(self.hidden[-1])(x)
-        return x
+     

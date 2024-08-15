@@ -21,7 +21,7 @@
             "request": "launch",
             "module": "torch.distributed.run",
             "cwd": "${workspaceFolder}/ada_cbf/sysid/",
-            "args": ["${workspaceFolder}/ada_cbf/sysid/run.py", "--algo", "lin"],
+            "args": ["${workspaceFolder}/ada_cbf/sysid/run.py", "--algo", "sn", "--params", "0"],
             "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
             "console": "integratedTerminal"
         }

@@ -21,9 +21,16 @@ import numpy as np
 #from docs.examples.utils import clean_legend
 
 
-from sklearn.model_selection import train_test_split
+ 
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.preprocessing import StandardScaler, MinMaxScaler 
+
+from sklearn.compose import TransformedTargetRegressor
+
 
 class GP_Learner:
 
@@ -38,7 +45,20 @@ class GP_Learner:
         self.random_key = random_key
         self.random_state = random_state
         kernel = DotProduct() + WhiteKernel() 
-        self.model =  GaussianProcessRegressor(kernel=kernel, random_state=self.random_state)
+
+        scaler_X = MinMaxScaler(feature_range=(-1, 1))
+        scaler_y = MinMaxScaler(feature_range=(-1, 1))
+         
+        model =  GaussianProcessRegressor(kernel=kernel, random_state=self.random_state)
+        #self.model = make_pipeline(StandardScaler(), model)
+
+
+        pipeline = Pipeline([
+            ('scaler', scaler_X),
+            ('regress', model)
+        ])
+        self.model = TransformedTargetRegressor(regressor=pipeline, transformer=scaler_y)
+            
 
         self.Ds = [] 
 
@@ -48,22 +68,24 @@ class GP_Learner:
         self.num_samples = num_samples
         self.test_size = test_size
         self.likelihoods = jnp.array([])
+ 
       
-    def eval(self, Xs, logger):    
+    def eval(self, Xs, logger = None):    
         means_lst, vars_lst = [], []
         for i, (X, y) in enumerate(self.Ds):
+            
             opt_posterior = self.model.fit(X, y)
             logger.log(Logging_Level.STASH.value, f'get posterior with dim {i}') 
             logger.log(Logging_Level.STASH.value, f'{X[0]=}')
         
-            means, vars = [], []
+            means = opt_posterior.predict(Xs, return_std=False)
             
-            means, vars = opt_posterior.predict(Xs, return_std=True)
-          
+        
             means_lst.append(means)
-            vars_lst.append(vars)
+            #vars_lst.append(vars)
 
-        return jnp.stack(means_lst, axis=-1), jnp.stack(vars_lst, axis=-1)
+        return jnp.stack(means_lst, axis=-1).reshape(-1, 2), jnp.ones((means_lst[0].shape[0], len(self.Ds))).reshape(-1, 2) #jnp.stack(vars_lst, axis=-1)
+    
     
       
     def downsample(self, ids, X, Y, logger):
