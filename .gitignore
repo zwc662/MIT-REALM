@@ -34,3 +34,5 @@ ada_cbf/*/__pycache__
 ./ada_cbf/sysid/wandb/run-20240722_145415-4ek1g4wg/files/output.log
 ./ada_cbf/sysid/wandb/run-20240814_121339-4qk5ssvn/run-4qk5ssvn.wandb
 ./ada_cbf/sysid/wandb/run-20240812_080854-tkdfipco/run-tkdfipco.wandb
+ada_cbf/.DS_Store
+ada_cbf/sysid/log
