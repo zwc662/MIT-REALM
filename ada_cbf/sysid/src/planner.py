@@ -8,7 +8,6 @@ from argparse import Namespace
 from numba import njit
 
 import pyglet
-from pyglet.gl import GL_POINTS
 
 """
 Planner Helpers
@@ -162,7 +161,7 @@ class PurePursuitPlanner:
         """
         self.waypoints = np.loadtxt(conf.wpt_path, delimiter=conf.wpt_delim, skiprows=conf.wpt_rowskip)
 
-    def render_waypoints(self, e):
+    def render_waypoints(self, GL_POINTS, e):
         """
         update waypoints being drawn by EnvRenderer
         """
@@ -261,9 +260,10 @@ def main():
 
     planner = PurePursuitPlanner(conf, (0.17145+0.15875)) #FlippyPlanner(speed=0.2, flip_every=1, steer=10)
 
+    from pyglet.gl import GL_POINTS
     def render_callback(env_renderer):
         # custom extra drawing function
-
+        
         e = env_renderer
 
         # update camera to follow car
@@ -277,7 +277,7 @@ def main():
         e.top = top + 800
         e.bottom = bottom - 800
 
-        planner.render_waypoints(env_renderer)
+        planner.render_waypoints(GL_POINTS, env_renderer)
 
     env = gym.make('f110_gym:f110-v0', map=conf.map_path, map_ext=conf.map_ext, num_agents=1, timestep=0.01, integrator=Integrator.RK4)
     env.add_render_callback(render_callback)

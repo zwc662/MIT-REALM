@@ -153,7 +153,7 @@ def run(env, simulator, work, args, logger, train = True):
     init_x = simulator.planner.waypoints[0][0]
     init_y = simulator.planner.waypoints[0][1]
     obs, step_reward, done, info = env.reset(np.array([[init_x, init_y, 0]]))
-    #env.render()
+    env.render()
     
     last_sim = 0
     sim_interval = 10 
@@ -166,7 +166,8 @@ def run(env, simulator, work, args, logger, train = True):
     while not done and step * env.timestep < 40 * sim_interval:
 
         lap_time, step, (obs, step_reward, done, info) = run_one_step(env, obs, simulator, work, obs_points, laptime, step)
-        #env.render(mode='human')
+        env.render(mode='human')
+
         if step == 3001:
             pass
         if train and step > 50 and step % 100 == 1:
@@ -216,6 +217,7 @@ def main():
     parser.add_argument('--algo', type=str, required=True, help='Path to the map without extensions')
     parser.add_argument('--work', type=int, required=False, default = 0, help='Path to the map without extensions')
     parser.add_argument('--params', type=int, required=False, default = 0, help='Path to the map without extensions')
+    parser.add_argument('--render', type=bool, required=False, default = False, help='render track')
     args = parser.parse_args()
     wandb.init(
         #mode="disabled",
@@ -267,6 +269,31 @@ def main():
     simulator.planner.conf.update(planner.conf.train) 
     simulator.planner.load_waypoints(conf.train)
     env = gym.make('f110_gym:f110-v0', map=simulator.planner.conf.map_path, map_ext=simulator.planner.conf.map_ext , num_agents=1, timestep=0.01, integrator=Integrator.RK4)
+
+    if args.render:
+        from pyglet.gl import GL_POINTS
+        def render_callback(env_renderer):
+            # custom extra drawing function
+
+            e = env_renderer
+
+            # update camera to follow car
+            x = e.cars[0].vertices[::2]
+            y = e.cars[0].vertices[1::2]
+            top, bottom, left, right = max(y), min(y), min(x), max(x)
+            e.score_label.x = left
+            e.score_label.y = top - 700
+            e.left = left - 800
+            e.right = right + 800
+            e.top = top + 800
+            e.bottom = bottom - 800
+
+            planner.render_waypoints(GL_POINTS, env_renderer)
+        env.add_render_callback(render_callback)
+        env.render()
+    else:
+        env.render = lambda **kwargs: None
+
     run(env, simulator, work, args, logger, train = True)
     
     for name in conf.name_lst:
