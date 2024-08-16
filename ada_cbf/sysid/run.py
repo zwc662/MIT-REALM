@@ -141,14 +141,16 @@ def run(env, simulator, work, args, logger, train = True):
     
     init_x = simulator.planner.waypoints[0][0]
     init_y = simulator.planner.waypoints[0][1]
+     
     obs, step_reward, done, info = env.reset(np.array([[init_x, init_y, 0]]))
-    env.render() 
      
     last_sim = 0
     sim_interval = 10 
 
     laptime = 0.0
     start = time.time()
+    env.render()
+ 
 
     step = 0
     obs_points = {'x': [], 'y': []}
@@ -253,8 +255,8 @@ def main():
 
     simulator = Simulator(learner, bm, planner, work)
 
-    np.random.shuffle(conf.sub_spaces)
-    for name in conf.sub_spaces:
+    #np.random.shuffle(conf.sub_spaces)
+    for name in conf.sub_spaces[:1]:
         print(f"{name} in map {getattr(conf, name).map_path}")
             
         simulator.planner.conf.update(getattr(simulator.planner.conf, name))
@@ -262,7 +264,7 @@ def main():
         simulator.planner.load_border(getattr(simulator.planner.conf, name))
 
         env = gym.make('f110_gym:f110-v0', map=simulator.planner.conf.map_path, map_ext=simulator.planner.conf.map_ext , num_agents=1, timestep=0.01, integrator=Integrator.RK4)
-
+         
         if args.render:
             from pyglet.gl import GL_POINTS
             def render_callback(env_renderer):
@@ -280,15 +282,15 @@ def main():
                 e.right = right + 800
                 e.top = top + 800
                 e.bottom = bottom - 800
-
+ 
                 simulator.planner.render_waypoints(GL_POINTS, e)
                 simulator.planner.render_border(GL_POINTS, e)
-
-            env.render_callbacks = [] 
+     
             env.render_callbacks.append(render_callback)
+            
         else:
             env.render = lambda **kwargs: None
-
+         
         run(env, simulator, work, args, logger, train = True if 'train' in name else False)
 
 

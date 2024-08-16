@@ -8,7 +8,7 @@ from argparse import Namespace
 from numba import njit
 
 import pyglet
-from pyglet.gl import GL_POINTS
+#from pyglet.gl import GL_POINTS
 
 """
 Planner Helpers
@@ -162,13 +162,13 @@ class PurePursuitPlanner:
         """
         self.waypoints = np.loadtxt(conf.wpt_path, delimiter=conf.wpt_delim, skiprows=conf.wpt_rowskip)
 
-    def render_waypoints(self, e):
+    def render_waypoints(self, GL_POINTS, e):
         """
         update waypoints being drawn by EnvRenderer
         """
 
         #points = self.waypoints
-
+        
         points = np.vstack((self.waypoints[:, self.conf.wpt_xind], self.waypoints[:, self.conf.wpt_yind])).T
         
         scaled_points = 50.*points
@@ -177,7 +177,7 @@ class PurePursuitPlanner:
             if len(self.drawn_waypoints) < points.shape[0]:
                 b = e.batch.add(1, GL_POINTS, None, ('v3f/stream', [scaled_points[i, 0], scaled_points[i, 1], 0.]),
                                 ('c3B/stream', [183, 193, 222]))
-                self.drawn_waypoints.append(b)
+                self.drawn_waypoints.append(b) 
             else:
                 self.drawn_waypoints[i].vertices = [scaled_points[i, 0], scaled_points[i, 1], 0.]
         
@@ -252,6 +252,8 @@ def main():
 
     planner = PurePursuitPlanner(conf, (0.17145+0.15875)) #FlippyPlanner(speed=0.2, flip_every=1, steer=10)
 
+    from pyglet.gl import GL_POINTS
+
     def render_callback(env_renderer):
         # custom extra drawing function
 
@@ -268,7 +270,7 @@ def main():
         e.top = top + 800
         e.bottom = bottom - 800
 
-        planner.render_waypoints(env_renderer)
+        planner.render_waypoints(GL_POINTS, env_renderer)
 
     env = gym.make('f110_gym:f110-v0', map=conf.map_path, map_ext=conf.map_ext, num_agents=1, timestep=0.01, integrator=Integrator.RK4)
     env.add_render_callback(render_callback)
@@ -280,7 +282,9 @@ def main():
     start = time.time()
     step = 0
     while not done:
-        print(step)
+        print(step, obs)
+        print(planner.waypoints[0])
+        exit(0)
         step += 1
         speed, steer = planner.plan(obs['poses_x'][0], obs['poses_y'][0], obs['poses_theta'][0], work['tlad'], work['vgain'])
         obs, step_reward, done, info = env.step(np.array([[steer, speed]]))

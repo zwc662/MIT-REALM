@@ -175,7 +175,7 @@ class PurePursuitPlanner:
         #points = self.waypoints
 
         waypoints = np.vstack((self.waypoints[:, self.conf.wpt_xind], self.waypoints[:, self.conf.wpt_yind])).T
-        scaled_points = 50.*waypoints
+        scaled_points = 50. * waypoints
 
         for i in range(waypoints.shape[0]):
             if len(self.drawn_waypoints) < waypoints.shape[0]:
@@ -189,7 +189,7 @@ class PurePursuitPlanner:
         border= np.vstack((self.border[:, self.conf.bpt_xind], self.border[:, self.conf.bpt_yind])).T
         
         drawn_border = []
-        scaled_points = 50.*border
+        scaled_points = 50. * border
 
         for i in range(border.shape[0]):
             if len(drawn_border) < border.shape[0]:
