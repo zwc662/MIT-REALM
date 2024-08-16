@@ -165,7 +165,7 @@ class PurePursuitPlanner:
         """
         loads border
         """
-        self.border = np.loadtxt(conf.bpt_path, delimiter=conf.bpt_delim, skiprows=conf.bpt_rowskip)
+        self.border = np.loadtxt(conf.bpt_path, delimiter=conf.bpt_delim, skiprows=conf.bpt_rowskip) #- np.asarray([-52.09937597984384,-48.64305184191518])
 
     def render_waypoints(self, GL_POINTS, e):
         """
@@ -189,7 +189,7 @@ class PurePursuitPlanner:
         border= np.vstack((self.border[:, self.conf.bpt_xind], self.border[:, self.conf.bpt_yind])).T
         
         drawn_border = []
-        scaled_points = 50. * border
+        scaled_points = 50 * border
 
         for i in range(border.shape[0]):
             if len(drawn_border) < border.shape[0]:

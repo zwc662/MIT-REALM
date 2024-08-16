@@ -39,7 +39,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--seed', type=int, default=123, help='Seed for the numpy rng.')
-parser.add_argument('--num_maps', type=int, default=1, help='Number of maps to generate.')
+parser.add_argument('--num_maps', type=int, default=5, help='Number of maps to generate.')
 args = parser.parse_args()
 
 np.random.seed(args.seed)
@@ -171,19 +171,10 @@ def create_track():
     track_xy_offset_out_np = np.array(track_xy_offset_out.exterior.coords)
     return track_xy, track_xy_offset_in_np, track_xy_offset_out_np
 
-def get_map_origin(xy_pixels):
-    origin_x_pix = xy_pixels[0, 0]
-    origin_y_pix = xy_pixels[0, 1]
-
-    xy_pixels = xy_pixels - np.array([[origin_x_pix, origin_y_pix]])
-
-    map_origin_x = -origin_x_pix*0.05
-    map_origin_y = -origin_y_pix*0.05
-    return map_origin_x, map_origin_y
 
 def convert_track(track, track_int, track_ext, iter):
 
-    # converts track to image and saves the centerlines as waypoints
+    # converts track to image and saves the centerline as waypoints
     fig, ax = plt.subplots()
     fig.set_size_inches(20, 20)
     ax.plot(*track_int.T, color='black', linewidth=3)
@@ -197,15 +188,21 @@ def convert_track(track, track_int, track_ext, iter):
 
     map_width, map_height = fig.canvas.get_width_height()
     print('map size: ', map_width, map_height)
- 
-    
-    # transform the track center line into pixel coordinates
-    centerline_xy_pixels = ax.transData.transform(track)
-    map_origin_x, map_origin_y = get_map_origin(centerline_xy_pixels)
 
-    int_xy_pixels = ax.transData.transform(track_int)
-    ext_xy_pixels = ax.transData.transform(track_ext)
+    # transform the track center line into pixel coordinates
+    xy_pixels = ax.transData.transform(track)
+    origin_x_pix = xy_pixels[0, 0]
+    origin_y_pix = xy_pixels[0, 1]
+
+    xy_pixels = xy_pixels - np.array([[origin_x_pix, origin_y_pix]])
+
+    int_xy_pixels = ax.transData.transform(track_int) - np.array([[origin_x_pix, origin_y_pix]])
     
+    ext_xy_pixels = ax.transData.transform(track_ext) - np.array([[origin_x_pix, origin_y_pix]])
+
+
+    map_origin_x = -origin_x_pix*0.05
+    map_origin_y = -origin_y_pix*0.05
 
     # convert image using cv2
     cv_img = cv2.imread('maps/map' + str(iter) + '.png', -1)
@@ -224,9 +221,9 @@ def convert_track(track, track_int, track_ext, iter):
     yaml.close()
     plt.close()
 
-    # saving track centerlines as a csv in ros coords
+    # saving track centerline as a csv in ros coords
     waypoints_csv = open('centerlines/map' + str(iter) + '.csv', 'w')
-    for row in centerline_xy_pixels:
+    for row in xy_pixels:
         waypoints_csv.write(str(0.05*row[0]) + ', ' + str(0.05*row[1]) + '\n')
     waypoints_csv.close()
 
@@ -240,11 +237,10 @@ def convert_track(track, track_int, track_ext, iter):
 
 
 if __name__ == '__main__':
-    for i in range(NUM_MAPS):
+    for i in range(1, NUM_MAPS + 1):
         try:
             track, track_int, track_ext = create_track()
         except:
             print('Random generator failed, retrying')
             continue
-        print(len(track_int), len(track_ext), len(track))
         convert_track(track, track_int, track_ext, i)

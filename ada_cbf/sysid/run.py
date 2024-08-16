@@ -11,8 +11,9 @@ from argparse import Namespace
 import jax
 #import jax.numpy as jnp
 from jax import lax
-jax.config.update('jax_platform_name', 'cpu')
+jax.config.update('jax_platform_name', 'cuda')
 
+from f110_gym.envs.f110_env import F110Env
 from f110_gym.envs.base_classes import Integrator 
 from sysid.src.planner import PurePursuitPlanner
 from sysid.src.model import BicycleModel
@@ -32,8 +33,8 @@ logging.basicConfig(
     filemode='w',
     format='%(name)s -  %(lineno)d - %(message)s')
 logger = logging.getLogger()
-logger.setLevel(Logging_Level.DEBUG.value)
- 
+logger.setLevel(Logging_Level.INFO.value)
+logger.log = lambda level, *args, **kwargs: logger.info(*args, **kwargs) if level >= logging.INFO else ''
 import wandb
 # Use wandb-core
 wandb.require("core")
@@ -122,8 +123,25 @@ def run(env, simulator, work, args, logger, train = True):
     
     if args.params == 1:
         # Perturb dynamics
-        params = {'mu': 0.08985050194246735, 'C_Sf': 6.461633476571456, 'C_Sr': 5.5608394350107035, 'lf': 0.15607724893972566, 'lr': 0.24182564159074513, 'h': 0.06362648398675183, 'm': 4.589965637775949, 'I': 0.028435271112269407, 's_min': -0.6054291058749389, 's_max': 0.057440274511241785, 'sv_min': -3.046571558607359, 'sv_max': 2.2955848726053194, 'v_switch': 10.308033363723174, 'a_max': 3.8618681689800463, 'v_min': -2.3970177032927924, 'v_max': 19.91587002985152, 'width': 0.1416204581583914}#, 'length': 0.5438096805680749}
-        env.update_params(params)
+        params = {
+            'mu': 0.08985050194246735, 
+            'C_Sf': 6.461633476571456, 
+            'C_Sr': 5.5608394350107035, 
+            'lf': 0.15607724893972566, 
+            'lr': 0.24182564159074513, 
+            'h': 0.06362648398675183, 
+            'm': 4.589965637775949, 
+            'I': 0.028435271112269407, 
+            's_min': -0.6054291058749389, 
+            's_max': 0.057440274511241785, 
+            'sv_min': -3.046571558607359, 
+            'sv_max': 2.2955848726053194, 
+            'v_switch': 10.308033363723174, 
+            'a_max': 3.8618681689800463, 
+            'v_min': -2.3970177032927924, 
+            'v_max': 19.91587002985152, 
+            'width': 0.1416204581583914}#, 'length': 0.5438096805680749}
+        env.params.update(params)
     elif args.params == 2:
         params = env.params
         for k, v in params.items():
@@ -154,19 +172,20 @@ def run(env, simulator, work, args, logger, train = True):
 
     step = 0
     obs_points = {'x': [], 'y': []}
-    while not done and step * env.timestep < 1 * sim_interval:
+    while step * env.timestep < 6 * sim_interval:
 
         lap_time, step, (obs, step_reward, done, info) = run_one_step(env, obs, simulator, work, obs_points, laptime, step)
-        env.render(mode='human')
-
+        env.render(mode='human') 
         if step == 3001:
             pass
         if train and step > 50 and step % 100 == 1:
-            print(f'Train @ {step=}') #logger.log(Logging_Level.INFO.value, f'Step {step}')
+            print(f'Train @ {step=}') 
+            logger.log(Logging_Level.INFO.value, f'Train @ {step=}')
             simulator.learner.update_model(call_back = update_models_call_back, logger = logger)
          
         if step * env.timestep >= last_sim + sim_interval:
-            print(f'Simulation @ {step=}') #logger.log(Logging_Level.INFO.value, f'Step {step}')
+            print(f'Simulation @ {step=}') 
+            logger.info(f'Simulation @ {step=}')
             pre_sim_obs = deepcopy({k: v for k, v in obs.items()})
             sim_traj = simulator.forward(obs, math.floor(sim_interval / simulator.bm.dt), logger = logger)
             for k, v in pre_sim_obs.items():
@@ -177,8 +196,7 @@ def run(env, simulator, work, args, logger, train = True):
                 sim_x = sim_obs['poses_x'][0]
                 sim_y = sim_obs['poses_y'][0]
                 sim_traj_points['x'].append(sim_x)
-                sim_traj_points['y'].append(sim_y)
-            print(f'from {sim_traj[0]} to {sim_traj[-1]}')
+                sim_traj_points['y'].append(sim_y) 
             all_sim_traj_points.append(sim_traj_points)
              
             obs_pointss.append(obs_points)
@@ -252,19 +270,25 @@ def main():
         num_epochs = 10,
         num_samples = 100
         )
+    
 
     simulator = Simulator(learner, bm, planner, work)
 
+    
+   
+
     #np.random.shuffle(conf.sub_spaces)
-    for name in conf.sub_spaces[:1]:
-        print(f"{name} in map {getattr(conf, name).map_path}")
+    for name in conf.sub_spaces[1:2]:
+        
             
         simulator.planner.conf.update(getattr(simulator.planner.conf, name))
         simulator.planner.load_waypoints(getattr(simulator.planner.conf, name))
-        simulator.planner.load_border(getattr(simulator.planner.conf, name))
+        simulator.planner.load_border(getattr(simulator.planner.conf, name)) 
 
         env = gym.make('f110_gym:f110-v0', map=simulator.planner.conf.map_path, map_ext=simulator.planner.conf.map_ext , num_agents=1, timestep=0.01, integrator=Integrator.RK4)
-         
+
+        print(f"{name} in {simulator.planner.conf.map_path + simulator.planner.conf.map_ext}")
+        
         if args.render:
             from pyglet.gl import GL_POINTS
             def render_callback(env_renderer):
@@ -293,9 +317,10 @@ def main():
          
         run(env, simulator, work, args, logger, train = True if 'train' in name else False)
 
-
+        env.renderer = None
         env = None
         GL_POINTS = None 
+        
 
 
 if __name__ == '__main__':

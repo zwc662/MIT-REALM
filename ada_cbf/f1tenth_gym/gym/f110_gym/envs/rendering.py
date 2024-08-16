@@ -135,7 +135,7 @@ class EnvRenderer(pyglet.window.Window):
         map_img = np.array(Image.open(map_path + map_ext).transpose(Image.FLIP_TOP_BOTTOM)).astype(np.float64)
         map_height = map_img.shape[0]
         map_width = map_img.shape[1]
-
+        
         # convert map pixels to coordinates
         range_x = np.arange(map_width)
         range_y = np.arange(map_height)
@@ -305,7 +305,7 @@ class EnvRenderer(pyglet.window.Window):
         Returns:
             None
         """
-
+        
         self.ego_idx = obs['ego_idx']
         poses_x = obs['poses_x']
         poses_y = obs['poses_y']
