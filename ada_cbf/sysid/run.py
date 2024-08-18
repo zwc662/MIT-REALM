@@ -65,7 +65,7 @@ class RecursiveNamespace(Namespace):
     def update(self, namespace):
         for name in namespace.name_lst:
             setattr(self, name, getattr(namespace, name))
-
+     
  
  
 def collect_data_call_back(self):
@@ -224,7 +224,7 @@ def main():
    
     parser = argparse.ArgumentParser()
     parser.add_argument('--algo', type=str, required=True, help='Path to the map without extensions')
-    parser.add_argument('--work', type=int, required=False, default = 0, help='Path to the map without extensions')
+    parser.add_argument('--work', type=int, required=False, d©efault = 0, help='Path to the map without extensions')
     parser.add_argument('--params', type=int, required=False, default = 0, help='Path to the map without extensions')
     parser.add_argument('--render', action='store_true', help='render track')
     args = parser.parse_args()
