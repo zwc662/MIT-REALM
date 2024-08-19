@@ -93,7 +93,7 @@ class EFPPOInnerTrainer:
         plt.close(fig)
 
     def train(
-        self, key: PRNGKey, alg_cfg: EFPPOInner.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: TrainerCfg
+        self, key: PRNGKey, alg_cfg: EFPPOInner.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: TrainerCfg, iteratively: bool = False
     ):
         key0, key1 = jr.split(key, 2)
         alg: EFPPOInner = EFPPOInner.create(key0, self.task, alg_cfg)
@@ -116,7 +116,7 @@ class EFPPOInnerTrainer:
             should_ckpt = idx % trainer_cfg.ckpt_every == 0
 
             t0 = time.time()
-            collector, col_data = alg.collect(collector)
+            collector, col_data = alg.collect(collector, iteratively)
             t1 = time.time()
             alg, update_info = alg.update(col_data)
             t2 = time.time()
