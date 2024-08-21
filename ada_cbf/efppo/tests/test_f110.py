@@ -1,12 +1,7 @@
 import pytest
 import os
 import sys
-sys.path.append(
-    os.path.join(
-        os.path.dirname(__file__).split('test')[0],
-        'src'
-    )
-)
+ 
 
 import numpy as np
 import jax
@@ -23,28 +18,27 @@ def task():
 
 
 def test_reset(task):
-    obs0, reward0, done0, info0 = task.reset(mode='train')
-    print(obs0, reward0, done0, info0)
+    obs0  = task.reset(mode='train')
+    
+    print(obs0, task.NOBS)
 
 def test_step(task):
-    obs0, reward0, done0, info0 = task.reset(mode='train')
-
-
+    obs0 = task.reset(mode='train')
     control = np.ones([2])
-    obs, reward, done, info = task.step(None, np.ones([2]))
-    print(obs, reward, done, info)
+    obs = task.step(None, np.ones([2]))
+    print(obs)
 
 def test_scan(task):
     # Define the step function for jax.lax.scan
   
     def step_fn(carry, _):
         control = np.ones([2])
-        obs, reward, done, info = task.step(carry, control)
-        return obs, (obs, reward, done, info)
-    obs0, reward0, done0, info0 = task.reset(mode='train')
-    print(obs0, reward0)
-    final_obs, (obs_seq, reward_seq, done_seq, info_seq) = lax.scan(step_fn, obs0, None, length=10)
-    print(final_obs, (obs_seq, reward_seq, done_seq, info_seq))
+        obs = task.step(carry, control)
+        return obs, (obs)
+    obs0  = task.reset(mode='train')
+    print(obs0 )
+    final_obs, (obs_seq) = lax.scan(step_fn, obs0, None, length=10)
+    print(final_obs, (obs_seq))
 
 
 

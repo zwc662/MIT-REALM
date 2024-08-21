@@ -20,6 +20,8 @@ from typing import List, Dict, Any
 from f110_gym.envs.f110_env import F110Env
 from f110_gym.envs.base_classes import Integrator 
 
+from matplotlib import pyplot as plt
+
 from efppo.task.dyn_types import Control, HFloat, LFloat, Obs, State 
 from efppo.task.task import Task, TaskState
 from efppo.utils.angle_utils import rotx, roty, rotz
@@ -261,8 +263,8 @@ def partition_line(points, n):
     points = np.asarray(points)
     
     # If all points are the same, create a straight line from start to end
-    #if np.all(points == points[0]):
-    #    return points.tolist()
+    if np.all(points == points[0]):
+        return [points[0]] * n
     
     # Calculate cumulative distances between consecutive points
     distances = np.linalg.norm(np.diff(points, axis=0), axis=1)
@@ -303,8 +305,7 @@ class Planner:
 
         self.drawn_waypoints = []
 
-        self.cur_waypoint_ids = []
-        self.pre_waypoint_ids = []
+         
         """
         loads waypoints
         """
@@ -367,6 +368,9 @@ class Planner:
         if nearest_dist < lookahead_distance:
             lookahead_points, i2s, t2s = all_points_on_trajectory_within_circle(position, lookahead_distance, wpts, i+t, wrap=True)
             return np.sort(i2s)
+        else:
+            return np.asarray([i])
+        '''
             if i2s == None:
                 return None
             current_waypoints = np.empty((len(i2s), 2))
@@ -379,27 +383,34 @@ class Planner:
             return np.append(wpts[i, :], 1).reshape(1, 2) #waypoints[i, self.conf.wpt_vind])
         else:
             return None
+        '''
 
-    def plan(self, obs, work):
+    def plan(self, state, work):
         """
         gives actuation given observation
         """
-        pose_x = obs['poses_x'][0]
-        pose_y = obs['poses_y'][0]
-        pose_theta = obs['poses_theta'][0] 
+        pose_x = state['poses_x'][0]
+        pose_y = state['poses_y'][0]
+        pose_theta = state['poses_theta'][0] 
  
         lookahead_distance = work.tlad
          
         position = np.asarray([pose_x, pose_y])
-        self.pre_waypoint_ids = self.cur_waypoint_ids[:]
-        self.cur_waypoint_ids = self._get_current_waypoints(lookahead_distance, position, pose_theta)
-        waypoints = self.waypoints[self.cur_waypoint_ids]
+        waypoint_ids = self._get_current_waypoints(lookahead_distance, position, pose_theta)
+        waypoints = self.waypoints[waypoint_ids]
         lookahead_points = partition_line(waypoints, work.nlad)
  
-        return lookahead_points
+        return lookahead_points, waypoint_ids
 
 
 class F1TenthWayPoint(Task):
+    X = 0
+    Y = 1
+    YAW = 2
+    VEL_X = 3
+    VEL_Y = 4
+    FST_LAD = 5
+
     def __init__(self, seed = 10, assets_location = None):
        
         self.dt = 0.05
@@ -419,9 +430,52 @@ class F1TenthWayPoint(Task):
 
         self.cur_state = None
         self.cur_collision = None
+        self.cur_done = np.asarray([0])
         self.cur_step = 0
 
+        self.cur_waypoint_ids = None
+        self.pre_waypoints_ids = None
+
         self.width = 0
+
+        self._lb = np.array([0, -3])
+        self._ub = np.array([3, 3])
+        
+        
+
+    @property
+    def nx(self):
+        return 5 + 2 * self.conf.work.nlad
+        
+    @property
+    def lb(self):
+        return self._lb
+    
+    @property
+    def ub(self):
+        return self._ub
+    
+    
+    def get2d_idxs(self):
+        return [self.X, self.Y] 
+    
+    def x_labels(self):
+        base = [
+            r"$x$",
+            r"$y",
+            r"$\theta$",
+            r"$v_x$",
+            r"$v_y$"
+        ] 
+
+        for i in range(self.conf.work.nlad):
+            base += [f"lad_{i}_x", f"lad_{i}_y"]
+        assert len(base) == self.nx
+        return base
+        
+    @property
+    def x_labels(self) -> list[str]:
+        return ['x', 'y', ]
  
     def load_assets(self, location = None):
         if self.assets_location is None:
@@ -466,6 +520,7 @@ class F1TenthWayPoint(Task):
 
 
     def reset(self, mode: str = 'train'):
+        self.cur_done = np.array([0.])
         gen_new_map = random.random() > 0.5
         
         if self.cur_mode.lower() != mode.lower() or self.cur_map_name is None:
@@ -501,49 +556,86 @@ class F1TenthWayPoint(Task):
                 )
 
 
-        init_pose_ind = np.random.choice(int(self.cur_planner.waypoints.shape[0]/10))
-        init_pose = self.cur_planner.waypoints[init_pose_ind].reshape(-1, 2)
-        init_pose += np.random.normal(
-            loc = 0 * init_pose,  
-            scale = 1e-1 * np.ones(init_pose.shape) 
-        )
+        init_pose_ind = np.random.choice(int(self.cur_planner.waypoints.shape[0]))
+        init_pose = self.cur_planner.waypoints[init_pose_ind][np.array(
+            [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
+            )]
+         
         init_angle = np.random.normal(
-            loc = np.zeros(init_pose.shape[:-1]).reshape(-1, 1),
-            scale = 3 * np.ones(init_pose.shape[:-1]).reshape(-1, 1)
+            loc = np.zeros([1]),
+            scale = 0.7 * np.pi * np.ones([1])
         )
-        init_state = np.concatenate((init_pose, init_angle), axis = -1)
-        state, step_reward, done, info = self.cur_env.reset(init_state)
-        self.cur_collision = state['collisions']
-        self.cur_lookahead_points = self.cur_planner.plan(state, self.conf.work) 
-        self.cur_state = self.get_state(state, self.cur_lookahead_points)
+        init_state = np.concatenate((init_pose, init_angle))
+        state_dict, step_reward, done, info = self.cur_env.reset(init_state.reshape(1, -1))
+        self.cur_collision = state_dict['collisions']
+        lookahead_points, waypoint_ids = self.cur_planner.plan(state_dict, self.conf.work) 
+        self.pre_waypoint_ids = waypoint_ids[:]
+        self.cur_waypoint_ids = waypoint_ids[:]
+        if not self.check_lad(lookahead_points):
+            lookahead_points = self.cur_lookahead_points[:]
+        else: 
+            self.cur_lookahead_points = lookahead_points[:]
+
+        self.cur_state = self.get_state(state_dict, lookahead_points)
         self.cur_step = 0
         return self.cur_state#, 0, done, info
     
+    def check_lad(self, lookahead_points):
+        for lookahead_point in lookahead_points:
+            if np.isnan(lookahead_point).any():
+                return False
+        return True
+
     @override
     def get_obs(self, state: State) -> Obs:
-        assert state.shape[-1] == 5 + 2 * self.conf.work.nlad
-        pose = state[np.array([0, 1])]
-        lookahead_points = state[5:].reshape(-1, 2)
+
+        assert state.shape[-1] == self.nx
+         
+        pose = state[np.array([self.X, self.Y])]
+        lookahead_points = state[self.FST_LAD:].reshape(-1, 2)
         lookahead_fts = (lookahead_points - pose).reshape(-1)
-        other_fts = state[2:5]
+        other_fts = state[self.Y + 1:self.FST_LAD]
         return np.concatenate((other_fts, lookahead_fts))
         
 
     @override
     def step(self, state: State, control: Control) -> State:
-        assert control.shape[-1] == 2
-        assert state.shape[-1] == 5 + 2 * self.conf.work.nlad
-        nxt_state, step_reward, done, info = self.cur_env.step(control.reshape(-1, 2))
-        lookahead_points = self.cur_planner.plan(nxt_state, self.conf.work)
-        self.cur_state = self.get_state(nxt_state, lookahead_points)
+        
+        if (self.cur_done > 0.).any():
+            print(state)
+            self.cur_step += 1
+            return state
+        
+        assert control.shape[-1] == 2 or control.shape == (2,), f"{control}"
+        assert state.shape[-1] == self.nx
+        action = np.clip(control.reshape(-1, 2), self.lb, self.ub)
+         
+        nxt_state, step_reward, done, info = self.cur_env.step(action)
+        lookahead_points, waypoint_ids = self.cur_planner.plan(nxt_state, self.conf.work) 
+        self.pre_waypoint_ids = self.cur_waypoint_ids[:] if self.cur_waypoint_ids is not None else waypoint_ids[:]
+        self.cur_waypoint_ids = waypoint_ids[:]
+        if not self.check_lad(lookahead_points):
+            lookahead_points = self.cur_lookahead_points[:]
+        else:
+            self.cur_lookahead_points = lookahead_points[:]
+
+        nxt_state = self.get_state(nxt_state, lookahead_points)
+        if jnp.isnan(nxt_state).any() or jnp.isinf(nxt_state).any():
+            print('Out of bound', f'{self.cur_state=}')
+            print('Simulation fronzen. No longer update state ... ')
+            self.cur_done += 1
+        else:
+            self.cur_state = nxt_state
+
         self.cur_step += 1
         return self.cur_state #, step_reward, done, info
          
     def l(self, state: State, control: Control) -> LFloat:
         weights = np.array([1.2e-2])
-        return weights * (self.cur_planner.cur_waypoint_ids[0] - self.cur_planner.pre_waypoint_ids[0])
+        return weights * (self.cur_waypoint_ids[0] - self.pre_waypoint_ids[0])
     
     def h_components(self, state: State) -> HFloat:
+        return self.cur_collision.item()
         fts = self.get_obs(state)
         offsets = fts[5:].reshape(-1, 2)
         min_dist = np.min(jax.vmap(lambda coord: jnp.sqrt(jnp.dot(coord, coord)))(offsets))
@@ -557,9 +649,73 @@ class F1TenthWayPoint(Task):
     
 
     def sample_x0_train(self, key: PRNGKey, num: int = 1) -> TaskState:
-        state = self.reset()
-        return state.reshape(1, *state.shape)
+        return self.reset()
 
     def should_reset(self, state: State) -> BoolScalar:
         # Reset the state if it is frozen.
-        return self.cur_step > 1e6
+        return (self.cur_done > 0).any() or state.shape[0] > 1e5
+
+    def get_x0_eval(self) -> TaskState:
+        state = self.reset(mode='test')
+        return state.reshape(1, *state.shape)
+    
+
+    @property
+    def discrete_actions(self):
+        
+        controls = [
+            [self.lb[0], self.ub[0]],
+            [self.lb[1], self.ub[1]],
+        ]
+        
+        return controls
+    
+
+    @property
+    def n_actions(self) -> int:
+        return len(self.discrete_actions)
+    
+    @property
+    def h_labels(self) -> int:
+        return ["dist"]
+    
+
+    def setup_traj_plot(self, ax: plt.Axes):
+        ax.set(xlabel=r"$x$", ylabel=r"$y$")
+        ax.scatter(
+            self.cur_planner.waypoints[:, self.cur_planner.conf.wpt_xind], 
+            self.cur_planner.waypoints[:, self.cur_planner.conf.wpt_yind], 
+            color='blue', label='WPs', s = .01
+            )
+        
+    def setup_traj2_plot(self, axes: list[plt.Axes]):
+        # Plot the avoid set.
+        axes[self.X].scatter(
+            np.arange(len(self.cur_planner.waypoints)), self.cur_planner.waypoints[:, self.cur_planner.conf.wpt_xind],
+            color='black', label='xs', s = .05
+            )
+        axes[self.Y].scatter(
+            np.arange(len(self.cur_planner.waypoints)), self.cur_planner.waypoints[:, self.cur_planner.conf.wpt_yind],
+            color='black', label='ys', s = .05
+            )
+        
+            
+    def grid_contour(self) -> tuple[BBFloat, BBFloat, TaskState]:
+        # Contour with ( x axis=θ, y axis=H )
+        n_xs = 2
+        n_ys = 2
+        b_xs = np.linspace(-0.1, 0.1, num=n_xs)
+        b_ys = np.linspace(-0.1, 0.1, num=n_ys)
+
+        x0 = jnp.zeros([self.nx])
+        bb_x0 = ei.repeat(x0, "nx -> b1 b2 nx", b1=n_ys, b2=n_xs)
+
+        bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
+        bb_x0 = bb_x0.at[:, :, self.X].set(bb_X)
+        bb_x0 = bb_x0.at[:, :, self.Y].set(bb_Y)
+
+        return bb_X, bb_Y, bb_x0
+    
+        state = self.reset()
+        return state.reshape(1, *state.shape)
+

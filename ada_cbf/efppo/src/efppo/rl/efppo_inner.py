@@ -294,8 +294,13 @@ class EFPPOInner(struct.PyTreeNode):
 
     @ft.partial(jax.jit, donate_argnums=1)
     def collect(self, collector: Collector) -> tuple[Collector, Collector.Rollout]:
-        z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
+        z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max 
         return collector.collect_batch(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
+
+    def collect_iteratively(self, collector: Collector) -> tuple[Collector, Collector.Rollout]:
+        z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
+        return collector.collect_batch_iteratively(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
+
 
     @ft.partial(jax.jit, static_argnames=["rollout_T"])
     def eval(self, rollout_T: int) -> EvalData:

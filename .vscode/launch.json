@@ -75,6 +75,27 @@
             "--name", "efppo_f16_run1"],
             "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "(Remote) f110",
+            "type": "python",
+            "request": "launch",
+            "module": "torch.distributed.run",
+            "cwd": "${workspaceFolder}/ada_cbf/efppo/scripts/",
+            "args": ["${workspaceFolder}/ada_cbf/efppo/scripts/train_f110_wp.py", 
+            "--name", "efppo_f110_run1"],
+            "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "(Remote) Pytest: eval_f110",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "cwd": "${workspaceFolder}/ada_cbf/efppo/tests",
+            "args": ["${workspaceFolder}/ada_cbf/efppo/tests/test_f110_eval.py", "-s"],
+            "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
+            "console": "integratedTerminal"
         }
     ] 
 }

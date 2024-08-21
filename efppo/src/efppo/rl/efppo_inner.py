@@ -293,10 +293,8 @@ class EFPPOInner(struct.PyTreeNode):
         return self.replace(policy=policy), pol_info
 
     @ft.partial(jax.jit, donate_argnums=1)
-    def collect(self, collector: Collector, iteratively: bool = False) -> tuple[Collector, Collector.Rollout]:
+    def collect(self, collector: Collector) -> tuple[Collector, Collector.Rollout]:
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
-        if iteratively:
-            return collector.collect_batch_iteratively(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
         return collector.collect_batch(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
 
     @ft.partial(jax.jit, static_argnames=["rollout_T"])

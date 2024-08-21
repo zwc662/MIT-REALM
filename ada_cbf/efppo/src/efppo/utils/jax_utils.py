@@ -34,8 +34,7 @@ def jax2np(pytree: _PyTree) -> _PyTree:
 
 def merge01(x):
     return ei.rearrange(x, "n1 n2 ... -> (n1 n2) ...")
-
-
+ 
 def tree_copy(tree: _PyTree) -> _PyTree:
     return jtu.tree_map(lambda x: x.copy(), tree)
 

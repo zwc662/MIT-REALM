@@ -93,7 +93,7 @@ class EFPPOInnerTrainer:
         plt.close(fig)
 
     def train(
-        self, key: PRNGKey, alg_cfg: EFPPOInner.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: TrainerCfg
+        self, key: PRNGKey, alg_cfg: EFPPOInner.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: TrainerCfg, iteratively: bool = False
     ):
         key0, key1 = jr.split(key, 2)
         alg: EFPPOInner = EFPPOInner.create(key0, self.task, alg_cfg)
@@ -116,7 +116,11 @@ class EFPPOInnerTrainer:
             should_ckpt = idx % trainer_cfg.ckpt_every == 0
 
             t0 = time.time()
-            collector, col_data = alg.collect(collector)
+            if iteratively:
+                collector, col_data = alg.collect_iteratively(collector)
+            else:
+                collector, col_data = alg.collect(collector)
+            
             t1 = time.time()
             alg, update_info = alg.update(col_data)
             t2 = time.time()
@@ -133,7 +137,7 @@ class EFPPOInnerTrainer:
                 logger.info(f"[{idx:8}]   {loss_info}")
 
             eval_rollout_T = 128
-            if should_eval:
+            if False and should_eval:
                 data = jax2np(alg.eval(eval_rollout_T))
                 logger.info(f"[{idx:8}]   {data.info}")
 

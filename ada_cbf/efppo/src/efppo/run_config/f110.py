@@ -25,7 +25,7 @@ def get():
     eval_cfg = EFPPOCfg.EvalCfg()
     alg_cfg = EFPPOCfg(net_cfg, train_cfg, eval_cfg)
 
-    n_envs = 10
+    n_envs = 1
     rollout_T = 1000
     mean_age = 96
     max_T = 256000

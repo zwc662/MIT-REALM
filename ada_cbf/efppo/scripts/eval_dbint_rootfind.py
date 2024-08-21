@@ -39,7 +39,7 @@ def main(ckpt_path: pathlib.Path):
     # -----------------------------------------------------
     plot_dir = mkdir(run_dir / "eval_plots")
 
-    rollout_T = 512
+    rollout_T = 10240
 
     b_x0 = task.get_x0_eval(64)
     batch_size = len(b_x0)

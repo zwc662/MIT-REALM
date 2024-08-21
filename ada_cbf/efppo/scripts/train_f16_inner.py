@@ -17,9 +17,11 @@ def main(
     alg_cfg, collect_cfg = efppo.run_config.f16.get()
     trainer = EFPPOInnerTrainer(task)
     trainer_cfg = TrainerCfg(n_iters=10_000_000, log_every=100, eval_every=2_000, ckpt_every=10_000)
-    trainer.train(jr.PRNGKey(seed), alg_cfg, collect_cfg, name, trainer_cfg)
+    trainer.train(jr.PRNGKey(seed), alg_cfg, collect_cfg, name, trainer_cfg, iteratively = True)
 
 
 if __name__ == "__main__":
+    main()
+    exit(0)
     with ipdb.launch_ipdb_on_exception():
         typer.run(main)
