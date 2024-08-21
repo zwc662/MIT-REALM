@@ -42,8 +42,9 @@ def main(ckpt_path: pathlib.Path = None):
     alg: EFPPOInner = EFPPOInner.create(jr.PRNGKey(0), task, alg_cfg)
      
     for vgain in [1, 0.1, 0.2, 0.5, 0.8, 1, 2]:
+        steer_fn = lambda obs_pol: np.arctan(obs_pol[-1] / obs_pol[-2])
         rootfind_pol = lambda obs_pol, z: tfd.Normal(
-            loc=(0, vgain), # np.arctan(obs_pol[-1] / obs_pol[-2]) - obs_pol[task.OBS_YAW]), 
+            loc=(steer_fn (obs_pol), vgain), 
             scale=(0.1, np.pi * 0.5 * 0.7)
             ) #[jnp.array([-2, -1])])
         # -----------------------------------------------------
