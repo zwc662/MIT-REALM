@@ -581,6 +581,7 @@ class F1TenthWayPoint(Task):
         state_dict, step_reward, done, info = self.cur_env.reset(init_state.reshape(1, -1))
         
         if 'render' in mode.lower():
+            print("????")
             self.render = True
             self.init_render()
             self.cur_env.render()
@@ -621,7 +622,7 @@ class F1TenthWayPoint(Task):
             e.top = top + 800
             e.bottom = bottom - 800
 
-            self.planner.render_waypoints(GL_POINTS, e)
+            self.cur_planner.render_waypoints(GL_POINTS, e)
         self.cur_env.render_callbacks.append(render_callback)
     
 
@@ -655,6 +656,8 @@ class F1TenthWayPoint(Task):
          
         nxt_state_dict, step_reward, done, info = self.cur_env.step(action)
         if self.render:
+            print(f"control: {control}")
+            print(f"state: {nxt_state_dict}")
             self.cur_env.render(mode='human')
          
         lookahead_points, waypoint_ids = self.cur_planner.plan(nxt_state_dict, self.conf.work) 

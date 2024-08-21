@@ -45,7 +45,7 @@ def test_eval():
      
     for vgain in [1, 0.1, 0.2, 0.5, 0.8, 1, 2]:
         rootfind_pol = lambda obs_pol, z: tfd.Normal(
-            loc=(vgain, 0), # np.arctan(obs_pol[-1] / obs_pol[-2]) - obs_pol[task.OBS_YAW]), 
+            loc=(0, vgain), # np.arctan(obs_pol[-1] / obs_pol[-2]) - obs_pol[task.OBS_YAW]), 
             scale=(0.1, np.pi * 0.5 * 0.7)
             ) #[jnp.array([-2, -1])])
         # -----------------------------------------------------
