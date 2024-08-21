@@ -646,6 +646,7 @@ class F1TenthWayPoint(Task):
 
     @override
     def step(self, state: State, control: Control) -> State:
+        
         if (self.cur_done > 0.).any(): 
             print(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}')
             return self.cur_state
@@ -674,9 +675,12 @@ class F1TenthWayPoint(Task):
             print(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}')
             self.cur_done += 1
         else:
+            
             self.cur_state_dict = {k: v for k, v in nxt_state_dict.items()}
             self.cur_state = nxt_state
             self.cur_step += 1
+            if self.cur_step % 1000 == 1:
+                print(f"Step {self.cur_step}")
         return self.cur_state #, step_reward, done, info
          
     def l(self, state: State, control: Control) -> LFloat:

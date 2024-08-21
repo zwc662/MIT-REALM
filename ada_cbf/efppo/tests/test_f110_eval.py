@@ -32,8 +32,9 @@ from efppo.utils.tfp import tfd
 def get_pol():
     def help(obs_pol, state_z):
         return tfd.Bernoulli(logits=obs_pol[jnp.array([-2, -1])])
- 
     return help
+
+
  
  
 def test_eval():
@@ -51,7 +52,7 @@ def test_eval():
         # -----------------------------------------------------
         plot_dir = plot_dir = pathlib.Path(os.path.dirname(__file__))
 
-        rollout_T = 102400
+        rollout_T = 10240
 
         bb_X, bb_Y, bb_x0 = jax2np(task.grid_contour())
         b1, b2 = bb_X.shape
