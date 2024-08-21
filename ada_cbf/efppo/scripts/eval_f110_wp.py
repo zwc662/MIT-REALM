@@ -48,7 +48,7 @@ def main(ckpt_path: pathlib.Path = None):
             ) #[jnp.array([-2, -1])])
         # -----------------------------------------------------
         
-        rollout_T = 102400
+        rollout_T = 10240
 
         bb_X, bb_Y, bb_x0 = jax2np(task.grid_contour())
         b1, b2 = bb_X.shape
