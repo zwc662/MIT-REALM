@@ -34,9 +34,8 @@ def get_pol():
         return tfd.Bernoulli(logits=obs_pol[jnp.array([-2, -1])])
  
     return help
-
-
-
+ 
+ 
 def test_eval():
     task = F1TenthWayPoint()
     # For prettier trajectories.
@@ -44,15 +43,15 @@ def test_eval():
     alg_cfg, collect_cfg = f110_config.get()
     alg: EFPPOInner = EFPPOInner.create(jr.PRNGKey(0), task, alg_cfg)
      
-    for vgain in [0.1, 0.2, 0.5, 0.8, 1, 2]:
+    for vgain in [1, 0.1, 0.2, 0.5, 0.8, 1, 2]:
         rootfind_pol = lambda obs_pol, z: tfd.Normal(
-            loc=(vgain, np.arctan(obs_pol[-1] / obs_pol[-2])) - obs_pol[0], 
-            scale=1e-2 * np.ones(2)
+            loc=(vgain, 0), # np.arctan(obs_pol[-1] / obs_pol[-2]) - obs_pol[task.OBS_YAW]), 
+            scale=(0.1, np.pi * 0.5 * 0.7)
             ) #[jnp.array([-2, -1])])
         # -----------------------------------------------------
         plot_dir = plot_dir = pathlib.Path(os.path.dirname(__file__))
 
-        rollout_T = 10240
+        rollout_T = 102400
 
         bb_X, bb_Y, bb_x0 = jax2np(task.grid_contour())
         b1, b2 = bb_X.shape
@@ -68,11 +67,17 @@ def test_eval():
             rollout_T=rollout_T,
         )
         print("Collecting rollouts...")
-        bb_rollouts = [] #: list[list[RolloutOutput]] = []
+        bb_rollouts: list[list[RolloutOutput]] = []
         for i in range(bb_x0.shape[0]):
             bb_rollouts.append([])
             for j in range(bb_x0.shape[1]): 
-                bb_rollouts[-1].append(collect_fn(task.reset() + 0 * bb_x0[i][j], bb_z0[i][j]))
+                state_0 = 0
+                if (i, j) == 0:
+                    state_0 = task.reset(mode='eval+render', random_map = True)
+                else:
+                    state_0 = task.reset(mode='eval') 
+                state_0 += 0 * bb_x0[i][j]
+                bb_rollouts[-1].append(collect_fn(state_0, bb_z0[i][j]))
             bb_rollouts[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_rollouts[-1])
             
         print("Done collecting rollouts.")
@@ -105,6 +110,7 @@ def test_eval():
         fig_path = plot_dir / f"eval_traj_time_{vgain}.jpg"
         fig.savefig(fig_path, bbox_inches="tight")
         plt.close(fig)
+ 
  
 if __name__ == "__main__":
     pytest.main()
