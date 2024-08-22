@@ -180,7 +180,7 @@ def collect_single_env_mode(
         Th_h.append(h)
 
         
-        shouldreset = (task.cur_done > 0.).any() | task.should_reset(envstate_new) | collect_state.steps > 10
+        shouldreset = (task.cur_done > 0.).any() | task.should_reset(envstate_new)  
         if shouldreset:
             collect_state = collect_state._replace(steps = rollout_T - 1)
             T_envstate += [envstate_new] * (rollout_T - len(T_envstate))

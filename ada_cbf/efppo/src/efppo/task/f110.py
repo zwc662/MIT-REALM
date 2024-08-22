@@ -649,8 +649,10 @@ class F1TenthWayPoint(Task):
     @override
     def step(self, state: State, control: Control) -> State:
         ## Ensure pausing the simulator when the agent is already out of bound (out of lane boundary or inf/nan in states)
-        if (self.cur_done > 0.).any(): 
-            #print(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}')
+        if np.any(self.cur_done > 0.): 
+            print(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}')
+            if self.render:
+                input(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}. Say something ??')
             return self.cur_state
         
         assert control.shape[-1] == 2 or control.shape == (2,), f"{control}"
@@ -690,8 +692,9 @@ class F1TenthWayPoint(Task):
             self.cur_overflow = np.array([1])
 
         if np.any(self.cur_overflow > 0.) or np.any(self.cur_collision > 0.): 
-            #print(f'Out of bound @ {self.cur_step}', f'{nxt_state_dict}')
-            #print(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}')
+            if self.render:
+                input(f'Out of bound @ {self.cur_step}', f'{nxt_state_dict}')
+                input(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}')
             self.cur_done = np.asarray([1])
         else:
             self.pre_waypoint_ids = self.cur_waypoint_ids[:] if self.cur_waypoint_ids is not None else waypoint_ids[:]
@@ -732,8 +735,8 @@ class F1TenthWayPoint(Task):
 
     def should_reset(self, state: State) -> BoolScalar:
         # Reset the state if it is frozen.
-        return (self.cur_done > 0).any() or state.shape[0] > 1e5
-
+        return np.any(self.cur_done > 0)
+    
     def get_x0_eval(self) -> TaskState:
         state = self.reset(mode='test')
         return state.reshape(1, *state.shape)
