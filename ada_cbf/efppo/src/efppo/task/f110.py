@@ -669,8 +669,8 @@ class F1TenthWayPoint(Task):
             #print(f"state: {nxt_state_dict}")
             self.cur_env.render(mode='human')
         
+        
         self.cur_collision = nxt_state_dict['collisions']
-
 
         nxt_state = np.empty(self.nx)
         if np.all(self.cur_collision <= 0):
@@ -696,9 +696,7 @@ class F1TenthWayPoint(Task):
             if self.render:
                 input(f'Out of bound @ {self.cur_step}: {nxt_state_dict}')
                 input(f'Simulation fronzen @ {self.cur_step}: {self.cur_state_dict}')
-                
                 F110Env.renderer = None
-               
 
             self.cur_done = np.asarray([1])
         else:
@@ -716,11 +714,13 @@ class F1TenthWayPoint(Task):
         return self.cur_state #, step_reward, done, info
          
     def l(self, state: State, control: Control) -> LFloat:
-        weights = np.array([1.2e-2])
-        return (weights * (self.cur_waypoint_ids[0] - self.pre_waypoint_ids[0] - 1)).item()
+        weights = 1 #np.array([1.2e-2])
+        return (weights * (self.cur_waypoint_ids[0] - self.pre_waypoint_ids[0] - 1)).item() + \
+            self.cur_collision.item() + \
+            np.sqrt(np.sum(state[self.STATE_FST_LAD:]**2)).item()
     
     def h_components(self, state: State) -> HFloat:
-        return (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
+        return  - np.ones(len(self.h_labels)) # (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
     
         return self.cur_collision.item() + self.cur_done.item()
         fts = self.get_obs(state)
