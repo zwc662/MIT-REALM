@@ -23,8 +23,8 @@ def main(
  
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
     exit(0)
     
-    with ipdb.launch_ipdb_on_exception():
-        typer.run(main)
+    #with ipdb.launch_ipdb_on_exception():
+        

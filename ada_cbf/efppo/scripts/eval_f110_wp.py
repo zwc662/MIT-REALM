@@ -2,8 +2,9 @@ import pytest
 import os
 import sys
 
-from typing import Optional
+from typing import Optional, Annotated
  
+import argparse
 import functools as ft
 import pathlib
 import numpy as np
@@ -30,7 +31,13 @@ from efppo.utils.tfp import tfd
 
 
 
-def main(alg: Optional[EFPPOInner] = None, ckpt_path: Optional[pathlib.Path] = None, **kwargs):
+
+def main(
+        alg: Optional[EFPPOInner] = None, 
+        ckpt_path: Optional[pathlib.Path] = None,
+        render: bool = False,
+        pursuit: bool = False,
+        **kwargs):
     set_logger_format()
 
     plot_dir = pathlib.Path(os.path.dirname(__file__))
@@ -38,7 +45,8 @@ def main(alg: Optional[EFPPOInner] = None, ckpt_path: Optional[pathlib.Path] = N
         #plot_dir = get_run_dir_from_ckpt_path(ckpt_path)
         plot_dir = mkdir(plot_dir / str(ckpt_path).split('runs/')[-1].split('/ckpts')[0])
   
-    task = F1TenthWayPoint()
+    task = F1TenthWayPoint(mode = 'pursuit' if pursuit else '')
+    
     # For prettier trajectories.
     # task.dt /= 2
     alg_cfg, collect_cfg = f110_config.get()
@@ -88,9 +96,9 @@ def main(alg: Optional[EFPPOInner] = None, ckpt_path: Optional[pathlib.Path] = N
                 print('Initialization state coord', (i, j))
                 state_0 = None
                 if (i, j) == (0, 0):
-                    state_0 = task.reset(mode='eval', random_map = True)
+                    state_0 = task.reset(mode=f"eval{'+render' if render else ''}", random_map = True)
                 else:
-                    state_0 = task.reset(mode='eval') 
+                    state_0 = task.reset(mode=f"eval{'+render' if render else ''}") 
                 state_0 += 0 * bb_x0[i][j]
                 bb_rollouts[-1].append(collect_fn(state_0, bb_z0[i][j]))
             bb_rollouts[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_rollouts[-1])
@@ -173,6 +181,14 @@ def main(alg: Optional[EFPPOInner] = None, ckpt_path: Optional[pathlib.Path] = N
             plt.close(fig)
 
 if __name__ == "__main__":
-    main(ckpt_path = pathlib.Path(sys.argv[-1]))
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--ckpt', type=str, required=False, default = None, help='Path to the ckpt folder')
+    parser.add_argument('--work', type=int, required=False, default = 0, help='Path to the map without extensions')
+    parser.add_argument('--params', type=int, required=False, default = 0, help='Path to the map without extensions')
+    parser.add_argument('--pursuit', action='store_true', help='use pursuit planner to override any control input')
+    parser.add_argument('--render', action='store_true', help='render track')
+    args = parser.parse_args()
+
+    main(ckpt_path = args.ckpt, render = args.render, pursuit = args.pursuit)
     #with ipdb.launch_ipdb_on_exception():
     #    typer.run(main)

@@ -292,6 +292,18 @@ def partition_line(points, n):
 
     return boundary_points
 
+@njit(fastmath=False, cache=True)
+def get_actuation(pose_theta, lookahead_point, position, lookahead_distance, wheelbase):
+    """
+    Returns actuation
+    """
+    waypoint_y = np.dot(np.array([np.sin(-pose_theta), np.cos(-pose_theta)]), lookahead_point[0:2]-position)
+    speed = lookahead_point[2]
+    if np.abs(waypoint_y) < 1e-6:
+        return speed, 0.
+    radius = 1/(2.0*waypoint_y/lookahead_distance**2)
+    steering_angle = np.arctan(wheelbase/radius)
+    return speed, steering_angle
 
 
 class Planner:
@@ -301,7 +313,7 @@ class Planner:
     def __init__(self, conf, wheelbase):
         
         self.conf = conf
-        self.wheelbase = wheelbase 
+        self.wheelbase = wheelbase  
         #self.load_waypoints(conf)
         self.max_reacquire = 20.
 
@@ -393,7 +405,7 @@ class Planner:
         """
         pose_x = state['poses_x'][0]
         pose_y = state['poses_y'][0]
-        pose_theta = state['poses_theta'][0] 
+        pose_theta = state['poses_theta'][0] % (2 * np.pi)
  
         lookahead_distance = work.tlad
          
@@ -401,8 +413,13 @@ class Planner:
         waypoint_ids = self._get_current_waypoints(lookahead_distance, position, pose_theta)
         waypoints = self.waypoints[waypoint_ids]
         lookahead_points = partition_line(waypoints, work.nlad)
+
+
+        speed, steer = get_actuation(pose_theta, waypoints[-1], position, lookahead_distance, self.wheelbase)
+        speed = 1 #work.vgain * speed
+
  
-        return lookahead_points, waypoint_ids
+        return lookahead_points, waypoint_ids, np.asarray([[steer, speed]])
 
 
 
@@ -422,7 +439,7 @@ class F1TenthWayPoint(Task):
     PLOT_2D_INDXS = [STATE_X, STATE_Y]
 
 
-    def __init__(self, seed = 10, assets_location = None):
+    def __init__(self, seed = 10, assets_location = None, mode = ''):
        
         self.dt = 0.05
         self.conf = None
@@ -440,6 +457,8 @@ class F1TenthWayPoint(Task):
         self.cur_env = None
 
         self.cur_state = None
+        self.cur_action = None
+        self.cur_pursuit_action = None
         self.cur_state_dict = {}
         self.cur_collision = np.asarray([0])
         self.cur_overflow = np.asarray([0])
@@ -455,6 +474,10 @@ class F1TenthWayPoint(Task):
         self._ub = np.array([1.5, 3.])
         
         self.render = False
+
+        if mode not in ['pursuit', '']:
+            raise NotImplementedError
+        self.mode = mode
  
     @property
     def nx(self):
@@ -531,6 +554,7 @@ class F1TenthWayPoint(Task):
             self.render = True
 
         self.cur_state = None
+        self.cur_action = None
         self.cur_state_dict = {}
         
         self.cur_collision = np.asarray([0])
@@ -571,7 +595,7 @@ class F1TenthWayPoint(Task):
             timestep=self.dt, 
             integrator=Integrator.RK4
             )
-         
+        self.cur_env.timestep =  self.dt
         init_pose_ind = np.random.choice(int(self.cur_planner.waypoints.shape[0]))
         init_pose = self.cur_planner.waypoints[init_pose_ind][np.array(
             [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
@@ -595,7 +619,8 @@ class F1TenthWayPoint(Task):
             
         self.cur_collision = state_dict['collisions']
         self.cur_state_dict = {k: v for k, v in state_dict.items()}
-        lookahead_points, waypoint_ids = self.cur_planner.plan(state_dict, self.conf.work) 
+        lookahead_points, waypoint_ids, self.cur_pursuit_action = self.cur_planner.plan(state_dict, self.conf.work) 
+   
         self.pre_waypoint_ids = waypoint_ids[:]
         self.cur_waypoint_ids = waypoint_ids[:]
         if not self.check_lad(lookahead_points):
@@ -628,6 +653,26 @@ class F1TenthWayPoint(Task):
             self.cur_planner.render_waypoints(GL_POINTS, e)
         self.cur_env.render_callbacks.append(render_callback)
     
+    def render_points(self, pts):
+        from pyglet.gl import GL_POINTS
+        def render_callback(env_renderer):
+            # custom extra drawing function
+
+            e = env_renderer
+
+            pts = pts[:, 0:2].T
+            scaled_points = 50. * pts
+            drawn_waypoints = []
+
+            for i in range(pts.shape[0]):
+                if len(drawn_waypoints) < pts.shape[0]:
+                    b = e.batch.add(1, GL_POINTS, None, ('v3f/stream', [scaled_points[i, 0], scaled_points[i, 1], 0.]),
+                                    ('c3B/stream', [183, 193, 222]))
+                    drawn_waypoints.append(b)
+                else:
+                    drawn_waypoints[i].vertices = [scaled_points[i, 0], scaled_points[i, 1], 0.]
+             
+        self.cur_env.render_callbacks.append(render_callback)
 
     def check_lad(self, lookahead_points):
         for lookahead_point in lookahead_points:
@@ -661,12 +706,13 @@ class F1TenthWayPoint(Task):
 
         ## The control policy's output mean is constrained to be within (0, 3) using sigmoid scaling (check /efppo/src/efppo/networks/poly_net.py: 23)
         ## Therefore, the input control needs to be linearly transformed to be within [self.lb, self.ub]
-        action = (control.reshape(2) * (self.ub - self.lb) / 3. + self.lb).reshape(-1, 2)
+        self.cur__action = np.asarray(control.reshape(2) * (self.ub - self.lb) / 3. + self.lb).reshape(-1, 2)
 
         #action = np.clip(control.reshape(-1, 2), self.lb, self.ub)
        
-         
-        nxt_state_dict, step_reward, done, info = self.cur_env.step(action)
+        self.cur_action = getattr(self, f"cur_{self.mode}_action")
+
+        nxt_state_dict, step_reward, done, info = self.cur_env.step(self.cur_action)
         #print(self.cur_step, nxt_state_dict, action)
              
         if self.render:
@@ -679,13 +725,15 @@ class F1TenthWayPoint(Task):
 
         nxt_state = np.empty(self.nx)
         if np.all(self.cur_collision <= 0):
-            lookahead_points, waypoint_ids = self.cur_planner.plan(nxt_state_dict, self.conf.work) 
+            lookahead_points, waypoint_ids, self.cur_pursuit_action = self.cur_planner.plan(nxt_state_dict, self.conf.work) 
             nxt_state = self.get_state(nxt_state_dict, lookahead_points)
         else:
             if self.render:
                 print(f'Collision @ {self.cur_step}. Frozen state: {self.cur_state}')
                 input(f'Collision @ {self.cur_step}. Frozen state: {self.cur_state}. Say something.')
             pass
+
+        
             
 
         if np.any(np.isnan(nxt_state)) or \
