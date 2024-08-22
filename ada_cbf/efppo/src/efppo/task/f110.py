@@ -527,6 +527,9 @@ class F1TenthWayPoint(Task):
 
 
     def reset(self, mode: str = 'train', random_map = False):
+        if 'render' in mode.lower():
+            self.render = True
+
         self.cur_state = None
         self.cur_state_dict = {}
         
@@ -545,31 +548,30 @@ class F1TenthWayPoint(Task):
                 self.train_map_names if 'train' in mode.lower() else self.test_map_names
                 )
             
-            cur_map_conf = getattr(self.conf, self.cur_map_name).copy()
-            for attr in cur_map_conf.name_lst:
-                if 'path' in attr.lower():
-                    setattr(
-                        cur_map_conf, 
-                        attr, 
-                        os.path.join(
-                            self.assets_location,
-                            getattr(cur_map_conf, attr)
-                            )
-                    )
-
-            wheelbase = self.conf.work.lf + self.conf.work.lr
-            self.cur_planner = Planner(cur_map_conf, wheelbase)
-
-            self.cur_env = gym.make(
-                'f110_gym:f110-v0', 
-                map=cur_map_conf.map_path,
-                map_ext=getattr(self.conf, self.cur_map_name).map_ext, 
-                num_agents=1, 
-                timestep=self.dt, 
-                integrator=Integrator.RK4
+        cur_map_conf = getattr(self.conf, self.cur_map_name).copy()
+        for attr in cur_map_conf.name_lst:
+            if 'path' in attr.lower():
+                setattr(
+                    cur_map_conf, 
+                    attr, 
+                    os.path.join(
+                        self.assets_location,
+                        getattr(cur_map_conf, attr)
+                        )
                 )
 
+        wheelbase = self.conf.work.lf + self.conf.work.lr
+        self.cur_planner = Planner(cur_map_conf, wheelbase)
 
+        self.cur_env = gym.make(
+            'f110_gym:f110-v0', 
+            map=cur_map_conf.map_path,
+            map_ext=getattr(self.conf, self.cur_map_name).map_ext, 
+            num_agents=1, 
+            timestep=self.dt, 
+            integrator=Integrator.RK4
+            )
+         
         init_pose_ind = np.random.choice(int(self.cur_planner.waypoints.shape[0]))
         init_pose = self.cur_planner.waypoints[init_pose_ind][np.array(
             [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
@@ -580,16 +582,15 @@ class F1TenthWayPoint(Task):
             scale = 0.7 * np.pi / 2 * np.ones([1])
         )
         init_state = np.concatenate((init_pose, init_angle))
+
+        print(f"Reset from {init_state}")
         state_dict, step_reward, done, info = self.cur_env.reset(init_state.reshape(1, -1))
         
-        if 'render' in mode.lower():
-            input("render and reset. Say something ????")
-            self.render = True
+        
+        if self.render:  
+            input("render and reset. Say something ????")  
             self.init_render()
-            self.cur_env.render()
-        else:
-            self.render = False
-            
+            self.cur_env.render(mode='human')
         
             
         self.cur_collision = state_dict['collisions']
@@ -693,8 +694,8 @@ class F1TenthWayPoint(Task):
 
         if np.any(self.cur_overflow > 0.) or np.any(self.cur_collision > 0.): 
             if self.render:
-                input(f'Out of bound @ {self.cur_step}', f'{nxt_state_dict}')
-                input(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}')
+                input(f'Out of bound @ {self.cur_step}: {nxt_state_dict}')
+                input(f'Simulation fronzen @ {self.cur_step}: {self.cur_state_dict}')
             self.cur_done = np.asarray([1])
         else:
             self.pre_waypoint_ids = self.cur_waypoint_ids[:] if self.cur_waypoint_ids is not None else waypoint_ids[:]
