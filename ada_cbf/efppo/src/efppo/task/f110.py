@@ -658,7 +658,12 @@ class F1TenthWayPoint(Task):
         
         assert control.shape[-1] == 2 or control.shape == (2,), f"{control}"
         assert state.shape[-1] == self.nx
-        action = np.clip(control.reshape(-1, 2), self.lb, self.ub)
+
+        ## The control policy's output mean is constrained to be within (0, 3) using sigmoid scaling (check /efppo/src/efppo/networks/poly_net.py: 23)
+        ## Therefore, the input control needs to be linearly transformed to be within [self.lb, self.ub]
+        action = (control.reshape(2) * (self.ub - self.lb) / 3. + self.lb).reshape(-1, 2)
+
+        #action = np.clip(control.reshape(-1, 2), self.lb, self.ub)
        
          
         nxt_state_dict, step_reward, done, info = self.cur_env.step(action)
@@ -685,7 +690,7 @@ class F1TenthWayPoint(Task):
 
         if np.any(np.isnan(nxt_state)) or \
             np.any(np.isinf(nxt_state)) or \
-                False: #np.any(np.abs(nxt_state) > 1e3):
+                np.any(np.abs(nxt_state) > 1e6):
             if self.render:
                 print(f"State overflow: {nxt_state} @ {self.cur_step}. Frozen state: {self.cur_state}")
                 input(f"State overflow: {nxt_state} @ {self.cur_step}. Frozen state: {self.cur_state}. Say something.")

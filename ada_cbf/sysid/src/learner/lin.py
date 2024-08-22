@@ -29,8 +29,8 @@ from sklearn.pipeline import Pipeline
 
 from sklearn.compose import TransformedTargetRegressor
 
-import GPy
-import safeopt
+#import GPy
+#import safeopt
 
 
 

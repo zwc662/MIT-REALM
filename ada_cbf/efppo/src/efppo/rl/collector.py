@@ -167,7 +167,7 @@ def collect_single_env_mode(
 
     for t in range(rollout_T):
         collect_state, (envstate_new, obs_pol, z_new, l, h, control) = _body(collect_state, None)
-        print(collect_state.steps)
+        print(f"Step: {collect_state.steps} | State: {envstate_new} | Control: {control} | l: {l} | h: {h}")
         assert not np.any(np.isnan(envstate_new))
         assert not np.any(np.isnan(obs_pol))
         assert not np.any(np.isnan(control)) 

@@ -12,8 +12,8 @@ import pickle
   
 from sysid.src.constants import Logging_Level
 #from sysid.src.learner.nn import NN_Learner
-from sysid.src.learner.gp import GP_Learner
-from sysid.src.learner.safeopt import SafeOpt_Learner
+#from sysid.src.learner.gp import GP_Learner
+#from sysid.src.learner.safeopt import SafeOpt_Learner
 from sysid.src.learner.lin import Linear_Learner, NN_Learner, Poly_Learner
 from sysid.src.learner.nn_torch import SN_NN_Learner
 

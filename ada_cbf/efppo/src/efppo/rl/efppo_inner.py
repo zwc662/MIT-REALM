@@ -63,10 +63,13 @@ class EFPPOCfg(Cfg):
         act: ActLiteral
         pol_hids: HidSizes
         val_hids: HidSizes
-
+  
         nz_enc: int
         z_mean: float
         z_scale: float
+
+        act_final: bool = True
+       
 
     net: NetCfg
     train: TrainCfg
@@ -124,7 +127,7 @@ class EFPPOInner(struct.PyTreeNode):
         z_base_cls = ft.partial(ZEncoder, nz=cfg.net.nz_enc, z_mean=cfg.net.z_mean, z_scale=cfg.net.z_scale)
 
         # Define policy network.
-        pol_base_cls = ft.partial(MLP, cfg.net.pol_hids, act, act_final=True, scale_final=1e-2)
+        pol_base_cls = ft.partial(MLP, cfg.net.pol_hids, act, act_final=cfg.net.act_final, scale_final=1e-2)
         pol_cls = ft.partial(DiscretePolicyNet, pol_base_cls, task.n_actions)
         pol_def = EFWrapper(pol_cls, z_base_cls)
         pol_tx = get_default_tx(as_schedule(cfg.net.pol_lr).make())
