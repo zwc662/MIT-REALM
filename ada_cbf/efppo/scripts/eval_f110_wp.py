@@ -55,6 +55,7 @@ def main(alg: Optional[EFPPOInner] = None, ckpt_path: Optional[pathlib.Path] = N
         # -----------------------------------------------------
         if alg is not None or ckpt_path is not None:
             if alg is None:
+                print(f'Load from {ckpt_path}')
                 ckpt_dict = load_ckpt_ez(ckpt_path, {"alg": alg})
                 alg = ckpt_dict["alg"]
 
@@ -83,11 +84,12 @@ def main(alg: Optional[EFPPOInner] = None, ckpt_path: Optional[pathlib.Path] = N
         for i in range(bb_x0.shape[0]):
             bb_rollouts.append([])
             for j in range(bb_x0.shape[1]): 
-                state_0 = 0
+                print('Initialization state coord', (i, j))
+                state_0 = None
                 if (i, j) == (0, 0):
-                    state_0 = task.reset(mode='eval', random_map = True)
+                    state_0 = task.reset(mode='eval+render', random_map = True)
                 else:
-                    state_0 = task.reset(mode='eval') 
+                    state_0 = task.reset(mode='eval+render') 
                 state_0 += 0 * bb_x0[i][j]
                 bb_rollouts[-1].append(collect_fn(state_0, bb_z0[i][j]))
             bb_rollouts[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_rollouts[-1])

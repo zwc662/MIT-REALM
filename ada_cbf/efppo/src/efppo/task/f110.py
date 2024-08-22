@@ -583,7 +583,7 @@ class F1TenthWayPoint(Task):
         state_dict, step_reward, done, info = self.cur_env.reset(init_state.reshape(1, -1))
         
         if 'render' in mode.lower():
-            print("????")
+            input("render and reset. Say something ????")
             self.render = True
             self.init_render()
             self.cur_env.render()
@@ -649,7 +649,6 @@ class F1TenthWayPoint(Task):
     @override
     def step(self, state: State, control: Control) -> State:
         ## Ensure pausing the simulator when the agent is already out of bound (out of lane boundary or inf/nan in states)
-        print(self.cur_step)
         if (self.cur_done > 0.).any(): 
             #print(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}')
             return self.cur_state
@@ -663,8 +662,8 @@ class F1TenthWayPoint(Task):
         #print(self.cur_step, nxt_state_dict, action)
              
         if self.render:
-            print(f"control: {control}")
-            print(f"state: {nxt_state_dict}")
+            #print(f"control: {control}")
+            #print(f"state: {nxt_state_dict}")
             self.cur_env.render(mode='human')
         
         self.cur_collision = nxt_state_dict['collisions']
@@ -675,13 +674,19 @@ class F1TenthWayPoint(Task):
             lookahead_points, waypoint_ids = self.cur_planner.plan(nxt_state_dict, self.conf.work) 
             nxt_state = self.get_state(nxt_state_dict, lookahead_points)
         else:
+            if self.render:
+                print(f'Collision @ {self.cur_step}. Frozen state: {self.cur_state}')
+                input(f'Collision @ {self.cur_step}. Frozen state: {self.cur_state}. Say something.')
             pass
-            #print(f'Collision @ {self.cur_step}. Frozen state: {self.cur_state}')
+            
 
         if np.any(np.isnan(nxt_state)) or \
             np.any(np.isinf(nxt_state)) or \
-                np.any(np.abs(nxt_state) > 1e3):
-            #print(f"State overflow: {nxt_state} @ {self.cur_step}. Frozen state: {self.cur_state}")
+                False: #np.any(np.abs(nxt_state) > 1e3):
+            if self.render:
+                print(f"State overflow: {nxt_state} @ {self.cur_step}. Frozen state: {self.cur_state}")
+                input(f"State overflow: {nxt_state} @ {self.cur_step}. Frozen state: {self.cur_state}. Say something.")
+            
             self.cur_overflow = np.array([1])
 
         if np.any(self.cur_overflow > 0.) or np.any(self.cur_collision > 0.): 
