@@ -35,7 +35,8 @@ def main(alg: Optional[EFPPOInner] = None, ckpt_path: Optional[pathlib.Path] = N
 
     plot_dir = pathlib.Path(os.path.dirname(__file__))
     if ckpt_path is not None:
-        plot_dir = get_run_dir_from_ckpt_path(ckpt_path)
+        #plot_dir = get_run_dir_from_ckpt_path(ckpt_path)
+        plot_dir = mkdir(plot_dir / str(ckpt_path).split('runs/')[-1].split('/ckpts')[0])
   
     task = F1TenthWayPoint()
     # For prettier trajectories.

@@ -50,4 +50,4 @@ def get_ckpt_manager_sync(ckpt_dir: pathlib.Path, max_to_keep: int = 50, minutes
 
 def get_run_dir_from_ckpt_path(ckpt_path: pathlib.Path):
     # 0006-curio-eleva/ckpts/00020000/default/
-    return ckpt_path.parent.parent.parent
+    return ckpt_path.parent.parent.parent 
