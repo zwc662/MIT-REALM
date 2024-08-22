@@ -88,9 +88,9 @@ def main(alg: Optional[EFPPOInner] = None, ckpt_path: Optional[pathlib.Path] = N
                 print('Initialization state coord', (i, j))
                 state_0 = None
                 if (i, j) == (0, 0):
-                    state_0 = task.reset(mode='eval+render', random_map = True)
+                    state_0 = task.reset(mode='eval', random_map = True)
                 else:
-                    state_0 = task.reset(mode='eval+render') 
+                    state_0 = task.reset(mode='eval') 
                 state_0 += 0 * bb_x0[i][j]
                 bb_rollouts[-1].append(collect_fn(state_0, bb_z0[i][j]))
             bb_rollouts[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_rollouts[-1])

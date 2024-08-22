@@ -696,6 +696,10 @@ class F1TenthWayPoint(Task):
             if self.render:
                 input(f'Out of bound @ {self.cur_step}: {nxt_state_dict}')
                 input(f'Simulation fronzen @ {self.cur_step}: {self.cur_state_dict}')
+                
+                F110Env.renderer = None
+               
+
             self.cur_done = np.asarray([1])
         else:
             self.pre_waypoint_ids = self.cur_waypoint_ids[:] if self.cur_waypoint_ids is not None else waypoint_ids[:]
