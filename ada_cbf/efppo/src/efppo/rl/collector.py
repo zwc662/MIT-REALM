@@ -150,44 +150,45 @@ def collect_single_env_mode(
 
         # Z dynamics.
         l = task.l(envstate_new, control)
+        h = task.h_components(envstate_new)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
-        new_state = CollectorState(state.steps, envstate_new.reshape(-1), z_new)
-        return new_state, (envstate_new, obs_pol, z_new, control)
+        new_state = CollectorState(state.steps + 1, envstate_new.reshape(-1), z_new)
+        return new_state, (envstate_new, obs_pol, z_new, l, h, control)
  
     colstate0 = CollectorState(0, x0, z0)
     
     T_envstate = []
     T_obs = []
     T_z = []
-    T_u = [] 
+    T_u = []
+    T_l = []
+    Th_h = [] 
 
     for t in range(rollout_T):
-        collect_state, (envstate_new, obs_pol, z_new, control) = _body(colstate0, None)
-        assert not jnp.isnan(envstate_new).any()
-        assert not jnp.isnan(obs_pol).any()
-        assert not jnp.isnan(control).any() 
+        collect_state, (envstate_new, obs_pol, z_new, l, h, control) = _body(colstate0, None)
+        assert not np.any(np.isnan(envstate_new))
+        assert not np.any(np.isnan(obs_pol))
+        assert not np.any(np.isnan(control)) 
         
         T_envstate.append(envstate_new)
         T_obs.append(obs_pol)
         T_z.append(z_new)
         T_u.append(control) 
+        T_l.append(l)
+        Th_h.append(h)
+
     obs_final = task.get_obs(collect_state.state)
 
     # Add the initial observations.
     Tp1_state = jnp.stack((colstate0.state, *T_envstate))
     T_state_fr, T_state_to = Tp1_state[:-1], Tp1_state[1:]
     Tp1_obs = jnp.stack((*T_obs, obs_final)) 
-    Tp1_z = jnp.stack((jnp.asarray([z0]), *T_z)).reshape(-1)
-    T_l = []
-    Th_h = []
-    for state_to, u in zip(T_state_to, T_u):
-        T_l.append(task.l(state_to, T_u))
-        Th_h.append(task.h_components(state_to))
+    Tp1_z = jnp.concatenate((jnp.asarray([z0]), jnp.asarray(T_z))).reshape(-1)
+    T_l = jnp.concatenate((jnp.asarray([0]), jnp.asarray(T_l))).reshape(-1)
+    Th_h = jnp.stack((-jnp.ones(len(task.h_labels)), *Th_h)).reshape(-1, len(task.h_labels))
     
-    T_l = jnp.stack(T_l)
-    Th_h = jnp.stack(Th_h)
-
+                     
     return RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, None, T_l, Th_h)
 
 def collect_single_env(
@@ -200,20 +201,24 @@ def collect_single_env(
     z_min: float,
     z_max: float,
     rollout_T: int,
+    max_T: int,
+    p_reset: float,
+    key_reset_bernoulli: PRNGKey,
+    key_reset: PRNGKey
 ):
     def _body(state: CollectorState, key):
         obs_pol = task.get_obs(state.state)
         a_pol: tfd.Distribution = get_pol(obs_pol, state.z.squeeze())
         control, logprob = a_pol.experimental_sample_and_log_prob(seed=key)
         envstate_new = jnp.asarray(task.step(state.state, np.asarray(control).reshape(2)))
-
         # Z dynamics.
         l = task.l(envstate_new, control)
+        h = task.h_components(envstate_new)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
 
-        new_state = CollectorState(state.steps, envstate_new.reshape(-1), z_new)
-        return new_state, (envstate_new, obs_pol, z_new, control, logprob)
+        new_state = CollectorState(state.steps + 1, envstate_new.reshape(-1), z_new)
+        return new_state, (envstate_new, obs_pol, z_new, l, h, control, logprob)
 
     # Randomly sample z0.
     key_z0, key_step = jr.split(key0)
@@ -228,11 +233,13 @@ def collect_single_env(
     T_z = []
     T_u = []
     T_logprob = []
-    collect_state = colstate0
+    T_l = []
+    Th_h = []
 
+    collect_state = colstate0 
     # Perform the loop over rollout_T
-    for t in range(rollout_T):
-        collect_state, (envstate_new, obs_pol, z_new, control, logprob) = _body(collect_state, T_keys[t])
+    for t in range(rollout_T):        
+        collect_state, (envstate_new, obs_pol, z_new, l, h, control, logprob) = _body(collect_state, T_keys[t])
         assert not jnp.isnan(envstate_new).any()
         assert not jnp.isnan(obs_pol).any()
         assert not jnp.isnan(control).any()
@@ -243,6 +250,31 @@ def collect_single_env(
         T_z.append(z_new)
         T_u.append(control)
         T_logprob.append(logprob)
+        T_l.append(l)
+        Th_h.append(h)
+
+         
+      
+        shouldreset = jr.bernoulli(key_reset_bernoulli, p_reset)
+        shouldreset = jnp.logical_or(shouldreset, t >= max_T).item()
+        shouldreset = (task.cur_done > 0.).any() | shouldreset | task.should_reset(envstate_new)
+        if shouldreset:
+            random_map = jr.bernoulli(key_reset, p_reset)
+    
+            # Randomly sample z0.
+            key_z0, key_step = jr.split(key0)
+            z0 = jr.uniform(key_z0, minval=z_min, maxval=z_max)
+    
+            collect_state = collect_state._replace(
+                steps = 0,
+                state = task.reset(mode='train', random_map = random_map),
+                z=z0
+                )
+
+        if t % 1000 == 999:
+            #print(f"Step {t} / {rollout_T}")
+            pass
+        
 
     # Convert lists to jnp arrays
     T_envstate = jnp.stack(T_envstate)
@@ -250,6 +282,9 @@ def collect_single_env(
     T_z = jnp.stack(T_z)
     T_u = jnp.stack(T_u)
     T_logprob = jnp.stack(T_logprob)
+    T_l = jnp.stack(T_l)
+    Th_h = jnp.stack(Th_h)
+
     collect_state = collect_state._replace(steps=collect_state.steps + rollout_T)
 
     obs_final = task.get_obs(collect_state.state)
@@ -258,16 +293,10 @@ def collect_single_env(
     Tp1_state = jnp.stack((colstate0.state, *T_envstate))
     T_state_fr, T_state_to = Tp1_state[:-1], Tp1_state[1:]
     Tp1_obs = jnp.stack((*T_obs, obs_final)) 
-    Tp1_z = jnp.stack((jnp.asarray([z0]), *T_z)).reshape(-1)
-    T_l = []
-    Th_h = []
-    for state_to, u in zip(T_state_to, T_u):
-        T_l.append(task.l(state_to, T_u))
-        Th_h.append(task.h_components(state_to))
+    Tp1_z = jnp.concatenate((jnp.asarray([z0]), jnp.asarray(T_z))).reshape(-1)
+    #T_l = jnp.concatenate((jnp.asarray([0]), jnp.asarray(T_l))).reshape(-1)
+    #Th_h = jnp.stack((jnp.asarray([-1]), *Th_h)).reshape(-1, len(task.h_labels))
     
-    T_l = jnp.stack(T_l)
-    Th_h = jnp.stack(Th_h)
-
     return collect_state, RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, T_logprob, T_l, Th_h)
 
 class Collector(struct.PyTreeNode):
@@ -332,9 +361,9 @@ class Collector(struct.PyTreeNode):
         return new_self, bT_outputs
 
     def _collect_single_env(
-        self, env_idx: int, key0: PRNGKey, colstate0: CollectorState, get_pol, disc_gamma: float, z_min: float, z_max: float
-    ) -> tuple[CollectorState, RolloutOutput]:
-        return collect_single_env(env_idx, self.task, key0, colstate0, get_pol, disc_gamma, z_min, z_max, self.cfg.rollout_T)
+        self, env_idx: int, key0: PRNGKey, colstate0: CollectorState, get_pol, disc_gamma: float, z_min: float, z_max: float, **kwargs
+    ) -> tuple[CollectorState, RolloutOutput]: 
+        return collect_single_env(env_idx, self.task, key0, colstate0, get_pol, disc_gamma, z_min, z_max, self.cfg.rollout_T, **kwargs)
 
 
     def collect_batch_iteratively(
@@ -349,7 +378,11 @@ class Collector(struct.PyTreeNode):
         # Use a for loop instead of jax.vmap
  
         for i in range(self.cfg.n_envs):
-            collect_state_i = jtu.tree_map(lambda array: array[i], self.collect_state)
+            #print(f"Env {i} / {self.cfg.n_envs}")
+            state_0 = self.task.reset(mode='train', random_map = True)
+            collect_state_i = jtu.tree_map(lambda x: x[i], self.collect_state)
+            #state_0[np.asarray(self.task.PLOT_2D_INDXS)] += collect_state_i.state[np.asarray(self.task.PLOT_2D_INDXS)]
+            collect_state_i = collect_state_i._replace(state = state_0)
             collect_state_i, bT_output = self._collect_single_env(
                 i, 
                 b_keys[i], 
@@ -357,21 +390,20 @@ class Collector(struct.PyTreeNode):
                 get_pol=get_pol, 
                 disc_gamma=disc_gamma, 
                 z_min=z_min, 
-                z_max=z_max
+                z_max=z_max,
+                max_T = self.cfg.max_T,
+                p_reset = self.p_reset,
+                key_reset_bernoulli = key_reset_bernoulli, 
+                key_reset = key_reset
                 )
        
             # Resample x0
-            shouldreset_i = jr.bernoulli(key_reset_bernoulli, self.p_reset)
-            shouldreset_i = jnp.logical_or(shouldreset_i, self.collect_state_i.steps >= self.cfg.max_T).item()
-            shouldreset_i = shouldreset_i | self.task.should_reset(collect_state_i.state)
-            if shouldreset_i:
-                collect_state_i.state = self.task.sample_x0_train(key_reset, 1)[0]
-                collect_state_i.steps *= 0
-
+            
             bT_outputs.append(bT_output)
             self.collect_state.state.at[i].set(collect_state_i.state)
-            self.collect_state.steps.at[i].set(collect_state_i.steps.item())
+            self.collect_state.steps.at[i].set(collect_state_i.steps)
             self.collect_state.z.at[i].set(collect_state_i.z.item())
+
 
         assert self.collect_state.steps.shape == (self.cfg.n_envs,)
         # Stack the collected states and outputs

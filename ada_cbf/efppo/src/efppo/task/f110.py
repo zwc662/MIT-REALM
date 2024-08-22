@@ -13,6 +13,8 @@ from numba import njit
 
 import random
 
+import warnings
+
 from typing_extensions import override
 
 from typing import List, Dict, Any
@@ -417,6 +419,8 @@ class F1TenthWayPoint(Task):
     OBS_VEL_Y = 2
     OBS_FST_LAD = 3
 
+    PLOT_2D_INDXS = [STATE_X, STATE_Y]
+
 
     def __init__(self, seed = 10, assets_location = None):
        
@@ -438,7 +442,8 @@ class F1TenthWayPoint(Task):
         self.cur_state = None
         self.cur_state_dict = {}
         self.cur_collision = np.asarray([0])
-        self.cur_done = np.asarray([0])
+        self.cur_overflow = np.asarray([0])
+        self.cur_done = np.asarray([-1])
         self.cur_step = 0
 
         self.cur_waypoint_ids = None
@@ -446,11 +451,11 @@ class F1TenthWayPoint(Task):
 
         self.width = 0
 
-        self._lb = np.array([0, -1.5])
-        self._ub = np.array([3, 1.5])
+        self._lb = np.array([-1.5, 0. ])
+        self._ub = np.array([1.5, 3.])
         
         self.render = False
-
+ 
     @property
     def nx(self):
         return 5 + 2 * self.conf.work.nlad
@@ -463,11 +468,8 @@ class F1TenthWayPoint(Task):
     def ub(self):
         return self._ub
     
-    
-    def get2d_idxs(self):
-        return [self.STATE_X, self.STATE_Y] 
-    
-    def x_labels(self):
+    @property
+    def x_labels(self) -> list[str]:
         base = [
             r"$x$",
             r"$y",
@@ -480,10 +482,7 @@ class F1TenthWayPoint(Task):
             base += [f"lad_{i}_x", f"lad_{i}_y"]
         assert len(base) == self.nx
         return base
-        
-    @property
-    def x_labels(self) -> list[str]:
-        return ['x', 'y', ]
+     
  
     def load_assets(self, location = None):
         if self.assets_location is None:
@@ -530,8 +529,11 @@ class F1TenthWayPoint(Task):
     def reset(self, mode: str = 'train', random_map = False):
         self.cur_state = None
         self.cur_state_dict = {}
+        
         self.cur_collision = np.asarray([0])
-        self.cur_done = np.asarray([0])
+        self.cur_overflow = np.asarray([0])
+        self.cur_done = np.asarray([-1])
+
         self.cur_step = 0
 
         self.cur_waypoint_ids = None
@@ -635,7 +637,7 @@ class F1TenthWayPoint(Task):
     @override
     def get_obs(self, state: State) -> Obs:
 
-        assert state.shape[-1] == self.nx
+        assert state.shape[-1] == self.nx, f"{state.shape=}"
          
         pose = state[np.array([self.STATE_X, self.STATE_Y])]
         lookahead_points = state[self.STATE_FST_LAD:].reshape(-1, 2)
@@ -646,48 +648,67 @@ class F1TenthWayPoint(Task):
 
     @override
     def step(self, state: State, control: Control) -> State:
-        
+        ## Ensure pausing the simulator when the agent is already out of bound (out of lane boundary or inf/nan in states)
+        print(self.cur_step)
         if (self.cur_done > 0.).any(): 
-            print(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}')
+            #print(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}')
             return self.cur_state
         
         assert control.shape[-1] == 2 or control.shape == (2,), f"{control}"
         assert state.shape[-1] == self.nx
         action = np.clip(control.reshape(-1, 2), self.lb, self.ub)
+       
          
         nxt_state_dict, step_reward, done, info = self.cur_env.step(action)
+        #print(self.cur_step, nxt_state_dict, action)
+             
         if self.render:
             print(f"control: {control}")
             print(f"state: {nxt_state_dict}")
             self.cur_env.render(mode='human')
-         
-        lookahead_points, waypoint_ids = self.cur_planner.plan(nxt_state_dict, self.conf.work) 
-        self.pre_waypoint_ids = self.cur_waypoint_ids[:] if self.cur_waypoint_ids is not None else waypoint_ids[:]
-        self.cur_waypoint_ids = waypoint_ids[:]
-        if not self.check_lad(lookahead_points):
-            lookahead_points = self.cur_lookahead_points[:]
-        else:
-            self.cur_lookahead_points = lookahead_points[:]
+        
+        self.cur_collision = nxt_state_dict['collisions']
 
-        nxt_state = self.get_state(nxt_state_dict, lookahead_points)
-        if jnp.isnan(nxt_state).any() or jnp.isinf(nxt_state).any():
-            print(f'Out of bound @ {self.cur_step}', f'{nxt_state_dict}')
-            print(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}')
-            self.cur_done += 1
+
+        nxt_state = np.empty(self.nx)
+        if np.all(self.cur_collision <= 0):
+            lookahead_points, waypoint_ids = self.cur_planner.plan(nxt_state_dict, self.conf.work) 
+            nxt_state = self.get_state(nxt_state_dict, lookahead_points)
         else:
+            pass
+            #print(f'Collision @ {self.cur_step}. Frozen state: {self.cur_state}')
+
+        if np.any(np.isnan(nxt_state)) or \
+            np.any(np.isinf(nxt_state)) or \
+                np.any(np.abs(nxt_state) > 1e3):
+            #print(f"State overflow: {nxt_state} @ {self.cur_step}. Frozen state: {self.cur_state}")
+            self.cur_overflow = np.array([1])
+
+        if np.any(self.cur_overflow > 0.) or np.any(self.cur_collision > 0.): 
+            #print(f'Out of bound @ {self.cur_step}', f'{nxt_state_dict}')
+            #print(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}')
+            self.cur_done = np.asarray([1])
+        else:
+            self.pre_waypoint_ids = self.cur_waypoint_ids[:] if self.cur_waypoint_ids is not None else waypoint_ids[:]
+            self.cur_waypoint_ids = waypoint_ids[:]
+
+            if not self.check_lad(lookahead_points):
+                lookahead_points = self.cur_lookahead_points[:]
+            else:
+                self.cur_lookahead_points = lookahead_points[:]
             
             self.cur_state_dict = {k: v for k, v in nxt_state_dict.items()}
             self.cur_state = nxt_state
             self.cur_step += 1
-            if self.cur_step % 1000 == 1:
-                print(f"Step {self.cur_step}")
         return self.cur_state #, step_reward, done, info
          
     def l(self, state: State, control: Control) -> LFloat:
         weights = np.array([1.2e-2])
-        return weights * (self.cur_waypoint_ids[0] - self.pre_waypoint_ids[0] - 1)
+        return (weights * (self.cur_waypoint_ids[0] - self.pre_waypoint_ids[0] - 1)).item()
     
     def h_components(self, state: State) -> HFloat:
+        return (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
+    
         return self.cur_collision.item() + self.cur_done.item()
         fts = self.get_obs(state)
         offsets = fts[5:].reshape(-1, 2)
@@ -702,7 +723,7 @@ class F1TenthWayPoint(Task):
     
 
     def sample_x0_train(self, key: PRNGKey, num: int = 1) -> TaskState:
-        return self.reset()
+        return jnp.asarray(np.random.normal(loc = np.zeros([num, self.nx]), scale = 0.7 * 1e-2 * np.ones([num, self.nx])))
 
     def should_reset(self, state: State) -> BoolScalar:
         # Reset the state if it is frozen.
@@ -730,7 +751,12 @@ class F1TenthWayPoint(Task):
     
     @property
     def h_labels(self) -> int:
-        return ["dist"]
+        return ["pose", "theta"]
+     
+    def get2d_idxs(self):
+        #return [self.STATE_FST_LAD, self.STATE_FST_LAD + 1] 
+        #return [self.STATE_FST_LAD + (self.conf.work.nlad - 1) * 2, self.STATE_FST_LAD + (self.conf.work.nlad - 1) * 2 + 1] 
+        return self.PLOT_2D_INDXS #[self.STATE_X, self.STATE_Y] 
     
 
     def setup_traj_plot(self, ax: plt.Axes):
@@ -738,18 +764,18 @@ class F1TenthWayPoint(Task):
         ax.scatter(
             self.cur_planner.waypoints[:, self.cur_planner.conf.wpt_xind], 
             self.cur_planner.waypoints[:, self.cur_planner.conf.wpt_yind], 
-            color='blue', label='WPs', s = .01
+            color='blue', label='WPs', s = 0.01
             )
-        
+    
     def setup_traj2_plot(self, axes: list[plt.Axes]):
         # Plot the avoid set.
         axes[self.STATE_X].scatter(
             np.arange(len(self.cur_planner.waypoints)), self.cur_planner.waypoints[:, self.cur_planner.conf.wpt_xind],
-            color='black', label='xs', s = .05
+            color='black', label='xs', s = 0.01
             )
         axes[self.STATE_Y].scatter(
             np.arange(len(self.cur_planner.waypoints)), self.cur_planner.waypoints[:, self.cur_planner.conf.wpt_yind],
-            color='black', label='ys', s = .05
+            color='black', label='ys', s = 0.01
             )
         
             

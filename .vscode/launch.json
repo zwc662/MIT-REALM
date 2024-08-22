@@ -96,6 +96,19 @@
             "args": ["${workspaceFolder}/ada_cbf/efppo/tests/test_f110_eval.py", "-s"],
             "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "(Remote) Pytest: train_f110",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "cwd": "${workspaceFolder}/ada_cbf/efppo/tests",
+            "args": [
+                "${workspaceFolder}/ada_cbf/efppo/tests/test_f110_train.py", 
+                "-s"
+            ],
+            "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
+            "console": "integratedTerminal"
         }
     ] 
 }

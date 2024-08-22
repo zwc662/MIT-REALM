@@ -18,18 +18,17 @@ from efppo.networks.network_utils import ActLiteral, HidSizes, get_act_from_str,
 from efppo.networks.policy_net import DiscretePolicyNet
 from efppo.networks.train_state import TrainState
 from efppo.networks.value_net import ConstrValueNet, CostValueNet
-from efppo.rl.collector import Collector, RolloutOutput, collect_single_mode
+from efppo.rl.collector import Collector, RolloutOutput, collect_single_mode, collect_single_env_mode
 from efppo.rl.gae_utils import compute_efocp_gae, compute_efocp_V
 from efppo.task.dyn_types import BControl, BHFloat, BObs, HFloat, LFloat, ZBBControl, ZBBFloat, ZBTState, ZFloat
 from efppo.task.task import Task
 from efppo.utils.cfg_utils import Cfg
 from efppo.utils.grad_utils import compute_norm_and_clip
 from efppo.utils.jax_types import BFloat, FloatScalar
-from efppo.utils.jax_utils import jax_vmap, merge01, tree_split_dims, tree_stack
+from efppo.utils.jax_utils import jax_vmap, merge01, tree_split_dims, tree_stack, jax2np
 from efppo.utils.rng import PRNGKey
 from efppo.utils.schedules import Schedule, as_schedule
-from efppo.utils.tfp import tfd
-
+from efppo.utils.tfp import tfd 
 
 @define
 class EFPPOCfg(Cfg):
@@ -302,6 +301,21 @@ class EFPPOInner(struct.PyTreeNode):
         return collector.collect_batch_iteratively(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
 
 
+    def eval_iteratively(self, rollout_T: int) -> EvalData:
+        # Evaluate for a range of zs.
+        val_zs = np.linspace(self.train_cfg.z_min, self.train_cfg.z_max, num=8)
+
+        Z_datas = []
+        for z in val_zs:
+            data = self.eval_single_z_iteratively(z, rollout_T)
+            Z_datas.append(data)
+        Z_data = tree_stack(Z_datas)
+
+        info = jtu.tree_map(lambda arr: {"0": arr[0], "4": arr[4], "7": arr[7]}, Z_data.info)
+        info["update_idx"] = self.update_idx
+        return Z_data._replace(info=info)
+    
+
     @ft.partial(jax.jit, static_argnames=["rollout_T"])
     def eval(self, rollout_T: int) -> EvalData:
         # Evaluate for a range of zs.
@@ -357,6 +371,85 @@ class EFPPOInner(struct.PyTreeNode):
         )
         b_rollout: RolloutOutput = jax_vmap(collect_fn)(b_x0, b_z0)
 
+        b_h = jnp.max(b_rollout.Th_h, axis=(1, 2))
+        assert b_h.shape == (batch_size,)
+        b_issafe = b_h <= 0
+        p_unsafe = 1 - b_issafe.mean()
+        h_mean = jnp.mean(b_h)
+
+        b_l = jnp.sum(b_rollout.T_l, axis=1)
+        l_mean = jnp.mean(b_l)
+
+        b_l_final = b_rollout.T_l[:, -1]
+        l_final = jnp.mean(b_l_final)
+        # --------------------------------------------
+
+        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean, "l_final": l_final}
+        return self.EvalData(z, bb_pol, bb_prob, bb_Vl, bb_Vh, b_rollout.Tp1_state, info)
+
+    def eval_single_z_iteratively(self, z: float, rollout_T: int):
+        # --------------------------------------------
+        # Plot value functions.
+        bb_X, bb_Y, bb_state = jax2np(self.task.grid_contour())
+        bb_obs = []
+        for i in range(bb_state.shape[0]):
+            bb_obs.append([])
+            for j in range(bb_state.shape[1]): 
+                bb_obs[-1].append(self.task.get_obs(bb_state[i][j]))
+            bb_obs[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs[-1]) 
+        bb_obs = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs)
+        bb_z = jnp.full(bb_X.shape, z)
+
+        bb_pol = []
+        bb_prob = []  
+        bb_Vl = []  
+        bb_Vh = [] 
+
+        for i in range(bb_obs.shape[0]):
+            for bb in [bb_pol, bb_prob, bb_Vl, bb_Vh]:
+                bb.append([])
+                 
+            for j in range(bb_obs.shape[1]):
+                pol, prob = self.get_mode_and_prob(bb_obs[i][j], bb_z[i][j])
+                bb_pol[-1].append(pol)
+                bb_prob[-1].append(prob)
+                
+                Vl = self.Vl.apply(bb_obs[i][j], bb_z[i][j])
+                bb_Vl[-1].append(Vl)
+
+                Vh = self.get_Vh(bb_obs[i][j], bb_z[i][j])
+                bb_Vh[-1].append(Vh)
+
+            for bb in [bb_pol, bb_prob, bb_Vl, bb_Vh]:
+                bb[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb[-1])
+        
+        bb_pol = jtu.tree_map(lambda *x: jnp.stack(x), *bb_pol)
+        bb_prob = jtu.tree_map(lambda *x: jnp.stack(x), *bb_prob)
+        bb_Vl = jtu.tree_map(lambda *x: jnp.stack(x), *bb_Vl)
+        bb_Vh = jtu.tree_map(lambda *x: jnp.stack(x), *bb_Vh)
+         
+        # --------------------------------------------
+        # Rollout trajectories and get stats.
+        z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
+
+        b_x0 = self.task.get_x0_eval()
+        batch_size = len(b_x0)
+        b_z0 = jnp.full(batch_size, z)
+
+        collect_fn = ft.partial(
+            collect_single_env_mode,
+            self.task,
+            get_pol=self.policy.apply,
+            disc_gamma=self.disc_gamma,
+            z_min=z_min,
+            z_max=z_max,
+            rollout_T=rollout_T,
+        )
+        bb_rollouts: list[RolloutOutput] = []
+        for i in range(batch_size):
+            bb_rollouts.append(collect_fn(b_x0[i], b_z0[i]))
+        b_rollout: RolloutOutput = jtu.tree_map(lambda *x: jnp.stack(x), *bb_rollouts)
+ 
         b_h = jnp.max(b_rollout.Th_h, axis=(1, 2))
         assert b_h.shape == (batch_size,)
         b_issafe = b_h <= 0

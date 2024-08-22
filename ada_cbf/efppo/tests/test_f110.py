@@ -22,6 +22,12 @@ def test_reset(task):
     
     print(obs0, task.NOBS)
 
+
+def test_reset(task):
+    obs0, reward0, done0, info0 = task.reset(mode='train')
+    print(obs0, reward0, done0, info0)
+    
+
 def test_step(task):
     obs0 = task.reset(mode='train')
     control = np.ones([2])
@@ -39,7 +45,7 @@ def test_scan(task):
     print(obs0 )
     final_obs, (obs_seq) = lax.scan(step_fn, obs0, None, length=10)
     print(final_obs, (obs_seq))
-
+ 
 
 
 ''' 

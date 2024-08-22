@@ -35,8 +35,11 @@ class Plotter:
         colors = C(1)
         if multicolor:
             colors = [C(ii) for ii in range(bT_line.shape[1])]
-        line_col = LineCollection(bT_line, lw=1.0, zorder=5, colors=colors)
-        ax.add_collection(line_col)
+        #line_col = LineCollection(bT_line, lw=1.0, zorder=5, colors=colors)
+        #ax.add_collection(line_col)
+
+        for i in range(bT_x.shape[0]):
+            ax.scatter(bT_x[i, 1:-1], bT_y[i, 1:-1], color = colors[i], zorder=5, s=1**2)
 
         # Starts and Ends.
         ax.scatter(bT_x[:, 0], bT_y[:, 0], color="black", s=1**2, zorder=6, marker="s")
@@ -64,3 +67,44 @@ class Plotter:
             ax.set_ylabel(self.task.x_labels[ii])
         self.task.setup_traj2_plot(axes)
         return fig
+
+
+    def plot_traj3(self, bT_x, bT_h, bT_l):
+        figsize = 1.5 * np.array([8, 2 * (self.task.nx + 2)])
+
+        b, T, _ = bT_x.shape
+        T_t = np.arange(T)
+        bT_t = ei.repeat(T_t, "T -> b T", b=b)
+
+        assert b == bT_l.shape[0] == bT_h.shape[0]
+        assert T == bT_l.shape[1] == bT_h.shape[1]
+        
+
+        fig, axes = plt.subplots(self.task.nx + 1 + len(self.task.h_labels), figsize=figsize, sharex=True, layout="constrained")
+        
+
+        for ii, ax in enumerate(axes):
+            bT_line = []
+            if ii < self.task.nx:
+                bT_xi = bT_x[:, :, ii]
+                bT_line = np.stack([bT_t, bT_xi], axis=-1)
+                ax.set_ylabel(self.task.x_labels[ii])
+            elif ii - self.task.nx == 0:
+                bT_line = np.stack([bT_t, bT_l], axis=-1)
+                ax.set_ylabel('l')
+            elif ii - self.task.nx >= 1:
+                bT_line = np.stack([bT_t, bT_h[..., ii - self.task.nx - 1]], axis=-1)
+                ax.set_ylabel(f'h_{self.task.h_labels[ii - self.task.nx - 1]}')
+            
+
+            colors = [C(ii) for ii in range(bT_line.shape[1])]
+            line_col = LineCollection(bT_line, lw=1.0, zorder=5, colors=colors)
+            ax.add_collection(line_col)
+            ax.autoscale_view()
+           
+                
+        
+           
+        self.task.setup_traj2_plot(axes)
+        return fig
+

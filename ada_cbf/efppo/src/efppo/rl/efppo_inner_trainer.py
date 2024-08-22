@@ -1,7 +1,11 @@
 import pathlib
 import time
 
+import sys, os
+
 import jax.random as jr
+import jax.tree_util as jtu
+
 import matplotlib.pyplot as plt
 import numpy as np
 from attrs import define
@@ -20,6 +24,15 @@ from efppo.utils.path_utils import get_runs_dir, mkdir
 from efppo.utils.register_cmaps import register_cmaps
 from efppo.utils.rng import PRNGKey
 from efppo.utils.wandb_utils import reorder_wandb_name
+
+sys.path.append(
+    os.path.join(
+        os.path.dirname(
+            os.path.dirname(__file__)
+        ), 'scripts/'
+    )
+)
+from eval_f110_wp import main as eval_main
 
 
 @define
@@ -93,7 +106,7 @@ class EFPPOInnerTrainer:
         plt.close(fig)
 
     def train(
-        self, key: PRNGKey, alg_cfg: EFPPOInner.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: TrainerCfg, iteratively: bool = False
+        self, key: PRNGKey, alg_cfg: EFPPOInner.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: TrainerCfg, iteratively: bool = False, 
     ):
         key0, key1 = jr.split(key, 2)
         alg: EFPPOInner = EFPPOInner.create(key0, self.task, alg_cfg)
@@ -116,11 +129,14 @@ class EFPPOInnerTrainer:
             should_ckpt = idx % trainer_cfg.ckpt_every == 0
 
             t0 = time.time()
+
+            print(f"Iteration {idx} / {trainer_cfg.n_iters}: Collecting ... ")
             if iteratively:
                 collector, col_data = alg.collect_iteratively(collector)
             else:
                 collector, col_data = alg.collect(collector)
-            
+
+            print(f"Iteration {idx} / {trainer_cfg.n_iters}: Updating ... ")
             t1 = time.time()
             alg, update_info = alg.update(col_data)
             t2 = time.time()
@@ -137,8 +153,13 @@ class EFPPOInnerTrainer:
                 logger.info(f"[{idx:8}]   {loss_info}")
 
             eval_rollout_T = 128
-            if False and should_eval:
-                data = jax2np(alg.eval(eval_rollout_T))
+            if should_eval:
+                if iteratively:
+                    data = alg.eval_iteratively(eval_rollout_T)
+                    data = jtu.tree_map(np.array, data)
+
+                else:
+                    data = jax2np(alg.eval(eval_rollout_T))
                 logger.info(f"[{idx:8}]   {data.info}")
 
                 self.plot(idx, plot_dir, data)
@@ -146,9 +167,11 @@ class EFPPOInnerTrainer:
                 log_dict = {f"eval/{k}": v for k, v in data.info.items()}
                 wandb.log(log_dict, step=idx)
 
+                eval_main(alg = alg, idx = int(idx / trainer_cfg.eval_every))
+
             if should_ckpt:
                 ckpt_manager.save_ez(idx, {"alg": alg, "alg_cfg": alg_cfg, "collect_cfg": collect_cfg})
-                logger.info("Saved ckpt!")
+                logger.info(f"Saved ckpt at {ckpt_dir}/{idx}/default/ !")
 
         # Save at the end.
         ckpt_manager.save_ez(idx, {"alg": alg, "alg_cfg": alg_cfg, "collect_cfg": collect_cfg})
