@@ -173,3 +173,11 @@ def box_constr_log1p(
         hs = poly_clip_max(scale2 * hs, max_val=max_val)
 
     return hs
+
+
+
+def plain_cond(pred, true_fun, false_fun, operand):
+  if pred:
+    return true_fun (operand)
+  else:
+    return false_fun (operand)

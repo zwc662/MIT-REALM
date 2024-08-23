@@ -109,6 +109,15 @@
             ],
             "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
             "console": "integratedTerminal"
-        }
+        }, {
+            "name": "(Local) Pytest: eval_f110",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "cwd": "${workspaceFolder}/ada_cbf/efppo/tests",
+            "args": ["${workspaceFolder}/ada_cbf/efppo/tests/test_f110_eval.py", "-s"],
+            "python": "/opt/anaconda3/envs/envelope/bin/python",
+            "console": "integratedTerminal"
+        },
     ] 
 }

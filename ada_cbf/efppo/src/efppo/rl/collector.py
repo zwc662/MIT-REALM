@@ -167,7 +167,8 @@ def collect_single_env_mode(
 
     for t in range(rollout_T):
         collect_state, (envstate_new, obs_pol, z_new, l, h, control) = _body(collect_state, None)
-        print(f"Step: {task.cur_step} | State: {task.cur_state} | Control: {task.cur_action} | l: {l} | h: {h}")
+        #print(f"Step: {task.cur_step} | State: {task.cur_state} | Control: {task.cur_action} | l: {l} | h: {h}")
+     
         assert not np.any(np.isnan(envstate_new))
         assert not np.any(np.isnan(obs_pol))
         assert not np.any(np.isnan(control)) 
@@ -184,7 +185,7 @@ def collect_single_env_mode(
         if shouldreset:
             collect_state = collect_state._replace(steps = rollout_T - 1)
             T_envstate += [envstate_new] * (rollout_T - len(T_envstate))
-            T_obs += [obs_pol] 
+            T_obs += [obs_pol] * (rollout_T - len(T_envstate))
             T_z += [z_new] * (rollout_T - len(T_envstate))
             T_u += [control] * (rollout_T - len(T_envstate))
             T_l += [l] * (rollout_T - len(T_envstate))
@@ -197,9 +198,10 @@ def collect_single_env_mode(
     # Add the initial observations.
     Tp1_state = jnp.stack((x0, *T_envstate))
     T_state_fr, T_state_to = Tp1_state[:-1], Tp1_state[1:]
+    T_u = jnp.stack((*T_u, jnp.zeros(task.nu)))
     Tp1_obs = jnp.stack((*T_obs, obs_final)) 
     Tp1_z = jnp.concatenate((jnp.asarray([z0]), jnp.asarray(T_z))).reshape(-1)
-    T_l = jnp.concatenate((jnp.asarray([0]), jnp.asarray(T_l))).reshape(-1)
+    T_l = jnp.concatenate((-jnp.ones(1), jnp.asarray(T_l))).reshape(-1)
     Th_h = jnp.stack((-jnp.ones(len(task.h_labels)), *Th_h)).reshape(-1, len(task.h_labels))
     
                      

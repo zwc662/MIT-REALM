@@ -32,7 +32,7 @@ from efppo.task.dyn_types import Control, HFloat, LFloat, Obs, State
 from efppo.task.task import Task, TaskState
 from efppo.utils.angle_utils import rotx, roty, rotz
 from efppo.utils.jax_types import BBFloat, BoolScalar, FloatScalar
-from efppo.utils.jax_utils import box_constr_clipmax, box_constr_log1p, merge01, tree_add, tree_inner_product, tree_mac
+from efppo.utils.jax_utils import box_constr_clipmax, box_constr_log1p, merge01, tree_add, tree_inner_product, tree_mac, plain_cond
 from efppo.utils.plot_utils import plot_x_bounds, plot_y_bounds, plot_y_goal
 from efppo.utils.rng import PRNGKey
 from efppo.utils.cfg_utils import RecursiveNamespace
@@ -76,10 +76,22 @@ def nearest_point_on_trajectory(point, trajectory):
     return projections[min_dist_segment], dists[min_dist_segment], t[min_dist_segment], min_dist_segment
 
 
-# @njit(fastmath=False, cache=True)
-def all_points_on_trajectory_within_circle(point, radius, trajectory, t=0.0, wrap=False):
+#@njit(fastmath=False, cache=True)
+#@ft.partial(jax.jit, static_argnames = ['radius', 't', 'wrap', 'trajectory_length'])
+def all_points_on_trajectory_within_circle_confusing_version(point, radius, trajectory, t=0.0, wrap=False):
     """
     Finds all points on the trajectory that are within one radius away from the given point.
+
+    Between each consecutive (`start`, `end`) points, knowing that `start` is within radius
+        * Check if `end` is also inside radius by verifying whether there exists a `t \in [0, 1]` such that 
+                `(point, start, t * start + (1 - t) * end)`  forms a triangle
+        * If `(||point, start|| + ||start, t * start + (1 - t) * end||)^2 <= ||radius||^2`, 
+            then `||point, t * start + (1 - t) * end|| < ||radius||` due to triangle law:
+                `||point, t * start + (1 - t) * end|| < ||point, start|| + ||start, t * start + (1 - t) * end||`
+        * Solving `(||point, start|| + ||start, t * start + (1 - t) * end||)^2 <= ||radius||^2` by checking if
+            ((start - point) + (start - end) * t)**2 - radius**2 == 0 has real solution
+            ==> (start - end)**2 * t**2 + 2 * (start - point) * (start - end) * t + (start - point)**2 - radius**2 == 0
+                |------- a ----|         |----------------- b ---------------|     |---------------- c ----------|
     
     Arguments:
     - point: The point to check distances from.
@@ -93,54 +105,104 @@ def all_points_on_trajectory_within_circle(point, radius, trajectory, t=0.0, wra
     - indices: A list of indices in the trajectory corresponding to these points.
     - t_values: A list of t values corresponding to where the points are found on the segments.
     """
-    start_i = int(t)
+    start_i = jnp.asarray(t).astype(int)
     start_t = t % 1.0
-    #intersecting_points = []
-    indices = [start_i]
-    #t_values = []
-    trajectory = np.ascontiguousarray(trajectory)
-    
-    
-    for idx in range(start_i + 1, trajectory.shape[0] + (start_i if wrap else 0)):
-        i = idx
-        i_nxt = i + 1
-        if idx == trajectory.shape[0] - 1:
-            i_nxt = 0 
-        elif idx > trajectory.shape[0] - 1:
-            i %= trajectory.shape[0]
-            i_nxt = i + 1
+    end_i = start_i + 1
+    trajectory = jnp.asarray(trajectory)
+    tot_i = trajectory.shape[0] 
 
-        start = trajectory[i, :]
-        end = trajectory[i_nxt, :] + 1e-6
-        V = np.ascontiguousarray(end - start)
+    def continue_search(idx):
+        i = jnp.mod(idx, tot_i).astype(int)
+        i_nxt = jnp.mod(idx + 1, tot_i).astype(int)
+         
+         
+        start = trajectory[i]
+        end = trajectory[i_nxt] + 1e-6
 
-        a = np.dot(V, V)
-        b = 2.0 * np.dot(V, start - point)
-        c = np.dot(start, start) + np.dot(point, point) - 2.0 * np.dot(start, point) - radius * radius
+        V = jnp.asarray(end - start)
+        U = jnp.asarray(point - start)
+        a = jnp.dot(V, V)
+        b = 2.0 * jnp.dot(V, U)
+        c = jnp.dot(U, U) - radius * radius
+
+     
+        #c = np.dot(start, start) + np.dot(point, point) - 2.0 * np.dot(start, point) - radius * radius
+         
         discriminant = b * b - 4 * a * c
 
-        if discriminant < 0:
-            continue
+        def helper(discriminant):
+            discriminant = jnp.sqrt(discriminant) 
+            t1 = (-b - discriminant) / (2.0 * a)
+            t2 = (-b + discriminant) / (2.0 * a)
+ 
+            ret = jnp.all(
+                jnp.logical_or(
+                    jnp.logical_and(
+                        jnp.logical_and(t1 >= 0.0, t1 <= 1.0),
+                        jnp.logical_or(i != start_i, t1 >= start_t)
+                        ),
+                        jnp.logical_and(
+                            jnp.logical_and(t2 >= 0.0, t2 <= 1.0),
+                            jnp.logical_or(i != start_i, t2 >= start_t)
+                        )
+                )
+            )
+            return ret
         
-        discriminant = np.sqrt(discriminant)
-        t1 = (-b - discriminant) / (2.0 * a)
-        t2 = (-b + discriminant) / (2.0 * a)
+        ret = jnp.all(jnp.logical_or(discriminant < 0, helper (discriminant)))    
 
-        indices.append(idx % trajectory.shape[0])
-        
-        if t1 >= 0.0 and t1 <= 1.0 and t1 >= start_t:
-            #intersecting_points.append(start + t1 * V)
-            #indices.append(i)
-            #t_values.append(t1)
-            break
-        if t2 >= 0.0 and t2 <= 1.0 and t2 >= start_t:
-            #intersecting_points.append(start + t2 * V)
-            #indices.append(i)
-            #t_values.append(t2)
-            break
-     
+        return ret
+    
+    end_i = int(lax.while_loop(
+        continue_search, 
+        lambda i: jnp.mod(i + 1, tot_i).astype(int),
+        end_i
+        ))
+    
+    indices = jax.jit(
+        lambda last_t: lax.cond(jnp.all(last_t <= t), 
+                                jnp.concatenate(jnp.arange(t, trajectory.shape[0]), jnp.arange(last_t)),
+                                jnp.arange(t, last_t)
+        ), static_argnums=[0,]
+    )(end_i)
+         
+    return indices
 
-    return np.asarray(indices)
+def all_points_on_trajectory_within_circle(point, radius, trajectory, start_i=0.0, wrap=True):
+    """
+    Finds all points on the trajectory that are within one radius away from the given point.
+
+    Between each consecutive (`start`, `end`) points, knowing that `start` is within radius
+        * Check if `||point - end|| > radius`  
+    
+    Arguments:
+    - point: The point to check distances from.
+    - radius: The radius within which points on the trajectory are considered "within."
+    - trajectory: The Nx2 array of points defining the trajectory.
+    - t: The starting time parameter (0 <= t < 1).
+    - wrap: Whether to wrap around the trajectory if no intersection is found.
+    
+    Returns:
+    - intersecting_points: A list of all points within the radius.
+    - indices: A list of indices in the trajectory corresponding to these points.
+    - t_values: A list of t values corresponding to where the points are found on the segments.
+    """
+ 
+    inside = np.square(np.asarray(trajectory) - np.asarray(point)).sum(axis = -1) < radius * radius
+    all_ids = np.arange(len(trajectory))
+    
+    inside_ids = all_ids[inside]
+    suffix = inside_ids[inside_ids > start_i]
+
+    outside_ids = all_ids[np.logical_not(inside)]
+    prefix = np.arange(np.min(outside_ids))
+    prefix = prefix[prefix < start_i]
+
+    indices = np.concatenate((np.array([int(start_i)]), suffix, prefix))
+       
+    return indices
+    
+
 
 
 @njit(fastmath=False, cache=True)
@@ -241,11 +303,12 @@ def get_actuation(pose_theta, lookahead_point, position, lookahead_distance, whe
     steering_angle = np.arctan(wheelbase/radius)
     return speed, steering_angle
 
-#@njit(fastmath=False, cache=True)
+ 
 @ft.partial(jax.jit, static_argnames=['n'])
 def partition_line(points, n):
     # Calculate cumulative distances between consecutive points
-    distances = jnp.linalg.norm(points[1:] - points[:-1], ord=2, axis=1)
+    #print(f"Points shape: {points.shape}. Check previous condition: {jnp.all(points == points[0])}") 
+    distances = jnp.square(points[1:] - points[:-1]).sum(axis=-1)
     cumulative_distances = jnp.concatenate((jnp.zeros([1]), jnp.cumsum(distances)))
     total_length = cumulative_distances[-1]
 
@@ -257,7 +320,7 @@ def partition_line(points, n):
     #for partition_length in partition_lengths:
     # Find the boundary points at these partition lengths
     def add_boundary_point(partition_length):
-        segment_index = jnp.searchsorted(cumulative_distances, partition_length, side='right') - 1
+        segment_index = jnp.searchsorted(cumulative_distances, partition_length, side='right')
         segment_index = jnp.clip(segment_index, 0, distances.shape[0] - 1)
         
         # Calculate the interpolation ratio t
@@ -267,16 +330,16 @@ def partition_line(points, n):
         boundary_point = (1 - t) * points[segment_index] + t * points[segment_index + 1]
         return boundary_point
     
-    boundary_points = jax.vmap(add_boundary_point)(partition_lengths)
-    return boundary_points
+    boundary_points = jax.vmap(add_boundary_point)(partition_lengths[:-1])
+    return jnp.concatenate((boundary_points, jnp.asarray(points[-1]).reshape(1, -1)))
     
-@njit(fastmath=False, cache=True)
+#@njit(fastmath=False, cache=True)
 def get_actuation(pose_theta, lookahead_point, position, lookahead_distance, wheelbase):
     """
     Returns actuation
     """
     waypoint_y = np.dot(np.array([np.sin(-pose_theta), np.cos(-pose_theta)]), lookahead_point[0:2]-position)
-    speed = lookahead_point[2]
+    speed = 10 #lookahead_point[2]
     if np.abs(waypoint_y) < 1e-6:
         return speed, 0.
     radius = 1/(2.0*waypoint_y/lookahead_distance**2)
@@ -359,7 +422,7 @@ class Planner:
         nearest_point, nearest_dist, t, i = nearest_point_on_trajectory(position, wpts)
         if nearest_dist < lookahead_distance:
             i2s = all_points_on_trajectory_within_circle(position, lookahead_distance, wpts, i+t, wrap=True)
-            return np.sort(i2s)
+            return np.asarray(i2s) #np.sort(i2s)
         else:
             return np.asarray([i])
         '''
@@ -391,18 +454,14 @@ class Planner:
         waypoint_ids = self._get_current_waypoints(lookahead_distance, position, pose_theta)
         waypoints = self.waypoints[waypoint_ids]
         # If all points are the same, create a straight line from start to end
-    
-        lookahead_points = np.asarray(
-            lax.cond(
-                jnp.all(waypoints == waypoints[0]), 
-                lambda points: jnp.repeat(points[0:1], work.nlad, axis = 0), 
-                ft.partial(partition_line, n = work.nlad),
-                waypoints
-                )
-        )
-  
+        
+        if len(waypoint_ids) <= 2:
+            lookahead_points = jnp.linspace(waypoints[0], waypoints[-1], work.nlad)
+        else:
+            lookahead_points = partition_line(points = waypoints, n = work.nlad) 
+
         speed, steer = get_actuation(pose_theta, waypoints[-1], position, lookahead_distance, self.wheelbase)
-        speed = 1 #work.vgain * speed
+        speed = work.vgain * speed
 
  
         return lookahead_points, waypoint_ids, np.asarray([[steer, speed]])
@@ -468,6 +527,10 @@ class F1TenthWayPoint(Task):
     @property
     def nx(self):
         return 5 + 2 * self.conf.work.nlad
+    
+    @property
+    def nu(self):
+        return 2
         
     @property
     def lb(self):
@@ -713,6 +776,9 @@ class F1TenthWayPoint(Task):
         if np.all(self.cur_collision <= 0):
             lookahead_points, waypoint_ids, self.cur_pursuit_action = self.cur_planner.plan(nxt_state_dict, self.conf.work) 
             nxt_state = self.get_state(nxt_state_dict, lookahead_points)
+             
+            assert (nxt_state[self.get2d_idxs()] == (nxt_state_dict['poses_x'][0], nxt_state_dict['poses_y'][0])).all(), f"State dict: {(nxt_state_dict['poses_x'][0], nxt_state_dict['poses_y'][0])} vs nxt_state: {nxt_state[self.get2d_idxs()]}"
+            #print(f"Step: {self.cur_step} | Current pos: {self.cur_state[self.get2d_idxs()]} | Current action: {self.cur_action} | Target waypoints ids: {waypoint_ids} | Target waypoints: {self.cur_planner.waypoints[waypoint_ids]} | Lookahead points: {lookahead_points}")
         else:
             if self.render:
                 print(f'Collision @ {self.cur_step}. Frozen state: {self.cur_state}')

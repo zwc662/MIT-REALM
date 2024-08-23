@@ -1,4 +1,3 @@
-import pytest
 import os
 import sys
 
@@ -100,7 +99,9 @@ def main(
                 else:
                     state_0 = task.reset(mode=f"eval{'+render' if render else ''}") 
                 state_0 += 0 * bb_x0[i][j]
-                bb_rollouts[-1].append(collect_fn(state_0, bb_z0[i][j]))
+                rollout = collect_fn(state_0, bb_z0[i][j])
+                print(rollout.Tp1_state.shape, rollout.Tp1_obs.shape, rollout.Tp1_z.shape, rollout.T_control.shape, rollout.T_l.shape, rollout.Th_h.shape)
+                bb_rollouts[-1].append(rollout) 
             bb_rollouts[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_rollouts[-1])
             
         print("Done collecting rollouts.")
