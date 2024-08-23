@@ -515,8 +515,8 @@ class F1TenthWayPoint(Task):
 
         self.width = 0
 
-        self._lb = np.array([-1.5, 0. ])
-        self._ub = np.array([1.5, 3.])
+        self._lb = np.array([-3, 0. ])
+        self._ub = np.array([3, 5.])
         
         self.render = False
 
