@@ -1,4 +1,5 @@
 import itertools
+import functools as ft
 import os
 import sys
 import gym
@@ -8,6 +9,9 @@ import einops as ei
 import jax
 import jax.numpy as jnp
 import jax.random as jr
+from jax import lax
+ 
+
 import numpy as np
 from numba import njit
 
@@ -72,7 +76,7 @@ def nearest_point_on_trajectory(point, trajectory):
     return projections[min_dist_segment], dists[min_dist_segment], t[min_dist_segment], min_dist_segment
 
 
-@njit(fastmath=False, cache=True)
+# @njit(fastmath=False, cache=True)
 def all_points_on_trajectory_within_circle(point, radius, trajectory, t=0.0, wrap=False):
     """
     Finds all points on the trajectory that are within one radius away from the given point.
@@ -91,14 +95,23 @@ def all_points_on_trajectory_within_circle(point, radius, trajectory, t=0.0, wra
     """
     start_i = int(t)
     start_t = t % 1.0
-    intersecting_points = []
-    indices = []
-    t_values = []
+    #intersecting_points = []
+    indices = [start_i]
+    #t_values = []
     trajectory = np.ascontiguousarray(trajectory)
     
-    for i in range(start_i, trajectory.shape[0]-1):
+    
+    for idx in range(start_i + 1, trajectory.shape[0] + (start_i if wrap else 0)):
+        i = idx
+        i_nxt = i + 1
+        if idx == trajectory.shape[0] - 1:
+            i_nxt = 0 
+        elif idx > trajectory.shape[0] - 1:
+            i %= trajectory.shape[0]
+            i_nxt = i + 1
+
         start = trajectory[i, :]
-        end = trajectory[i + 1, :] + 1e-6
+        end = trajectory[i_nxt, :] + 1e-6
         V = np.ascontiguousarray(end - start)
 
         a = np.dot(V, V)
@@ -113,53 +126,22 @@ def all_points_on_trajectory_within_circle(point, radius, trajectory, t=0.0, wra
         t1 = (-b - discriminant) / (2.0 * a)
         t2 = (-b + discriminant) / (2.0 * a)
 
-        if i == start_i:
-            if t1 >= 0.0 and t1 <= 1.0 and t1 >= start_t:
-                intersecting_points.append(start + t1 * V)
-                indices.append(i)
-                t_values.append(t1)
-            if t2 >= 0.0 and t2 <= 1.0 and t2 >= start_t:
-                intersecting_points.append(start + t2 * V)
-                indices.append(i)
-                t_values.append(t2)
-        else:
-            if t1 >= 0.0 and t1 <= 1.0:
-                intersecting_points.append(start + t1 * V)
-                indices.append(i)
-                t_values.append(t1)
-            if t2 >= 0.0 and t2 <= 1.0:
-                intersecting_points.append(start + t2 * V)
-                indices.append(i)
-                t_values.append(t2)
+        indices.append(idx % trajectory.shape[0])
+        
+        if t1 >= 0.0 and t1 <= 1.0 and t1 >= start_t:
+            #intersecting_points.append(start + t1 * V)
+            #indices.append(i)
+            #t_values.append(t1)
+            break
+        if t2 >= 0.0 and t2 <= 1.0 and t2 >= start_t:
+            #intersecting_points.append(start + t2 * V)
+            #indices.append(i)
+            #t_values.append(t2)
+            break
+     
 
-    if wrap:
-        for i in range(-1, start_i):
-            start = trajectory[i % trajectory.shape[0], :]
-            end = trajectory[(i + 1) % trajectory.shape[0], :] + 1e-6
-            V = end - start
+    return np.asarray(indices)
 
-            a = np.dot(V, V)
-            b = 2.0 * np.dot(V, start - point)
-            c = np.dot(start, start) + np.dot(point, point) - 2.0 * np.dot(start, point) - radius * radius
-            discriminant = b * b - 4 * a * c
-
-            if discriminant < 0:
-                continue
-            
-            discriminant = np.sqrt(discriminant)
-            t1 = (-b - discriminant) / (2.0 * a)
-            t2 = (-b + discriminant) / (2.0 * a)
-
-            if t1 >= 0.0 and t1 <= 1.0:
-                intersecting_points.append(start + t1 * V)
-                indices.append(i)
-                t_values.append(t1)
-            if t2 >= 0.0 and t2 <= 1.0:
-                intersecting_points.append(start + t2 * V)
-                indices.append(i)
-                t_values.append(t2)
-
-    return intersecting_points, indices, t_values
 
 @njit(fastmath=False, cache=True)
 def first_point_on_trajectory_intersecting_circle(point, radius, trajectory, t=0.0, wrap=False):
@@ -260,38 +242,34 @@ def get_actuation(pose_theta, lookahead_point, position, lookahead_distance, whe
     return speed, steering_angle
 
 #@njit(fastmath=False, cache=True)
+@ft.partial(jax.jit, static_argnames=['n'])
 def partition_line(points, n):
-    # Ensure that the points array has the right shape
-    points = np.asarray(points)
-    
-    # If all points are the same, create a straight line from start to end
-    if np.all(points == points[0]):
-        return [points[0]] * n
-    
     # Calculate cumulative distances between consecutive points
-    distances = np.linalg.norm(np.diff(points, axis=0), axis=1)
-    cumulative_distances = np.concatenate(([0], np.cumsum(distances)))
+    distances = jnp.linalg.norm(points[1:] - points[:-1], ord=2, axis=1)
+    cumulative_distances = jnp.concatenate((jnp.zeros([1]), jnp.cumsum(distances)))
     total_length = cumulative_distances[-1]
 
     # Uniformly partition the total length into n-1 segments
-    partition_lengths = np.linspace(0, total_length, n)
-
+    partition_lengths = jnp.linspace(0, total_length, n)
+    
     # Find the boundary points at these partition lengths
-    boundary_points = []
-    for length in partition_lengths:
-        # Find which segment this length falls into
-        segment_index = np.searchsorted(cumulative_distances, length) - 1
-        segment_index = np.clip(segment_index, 0, len(distances) - 1)
+    
+    #for partition_length in partition_lengths:
+    # Find the boundary points at these partition lengths
+    def add_boundary_point(partition_length):
+        segment_index = jnp.searchsorted(cumulative_distances, partition_length, side='right') - 1
+        segment_index = jnp.clip(segment_index, 0, distances.shape[0] - 1)
         
         # Calculate the interpolation ratio t
-        t = (length - cumulative_distances[segment_index]) / distances[segment_index] if distances[segment_index] != 0 else 0
+        t = (partition_length - cumulative_distances[segment_index]) / distances[segment_index]
         
         # Interpolate the point on the segment
-        boundary_point = (1 - t) * points[segment_index] + t * points[segment_index + 1] if t != 0 else points[segment_index]
-        boundary_points.append(boundary_point)
-
+        boundary_point = (1 - t) * points[segment_index] + t * points[segment_index + 1]
+        return boundary_point
+    
+    boundary_points = jax.vmap(add_boundary_point)(partition_lengths)
     return boundary_points
-
+    
 @njit(fastmath=False, cache=True)
 def get_actuation(pose_theta, lookahead_point, position, lookahead_distance, wheelbase):
     """
@@ -380,7 +358,7 @@ class Planner:
         wpts = np.vstack((self.waypoints[:, self.conf.wpt_xind], self.waypoints[:, self.conf.wpt_yind])).T
         nearest_point, nearest_dist, t, i = nearest_point_on_trajectory(position, wpts)
         if nearest_dist < lookahead_distance:
-            lookahead_points, i2s, t2s = all_points_on_trajectory_within_circle(position, lookahead_distance, wpts, i+t, wrap=True)
+            i2s = all_points_on_trajectory_within_circle(position, lookahead_distance, wpts, i+t, wrap=True)
             return np.sort(i2s)
         else:
             return np.asarray([i])
@@ -412,9 +390,17 @@ class Planner:
         position = np.asarray([pose_x, pose_y])
         waypoint_ids = self._get_current_waypoints(lookahead_distance, position, pose_theta)
         waypoints = self.waypoints[waypoint_ids]
-        lookahead_points = partition_line(waypoints, work.nlad)
-
-
+        # If all points are the same, create a straight line from start to end
+    
+        lookahead_points = np.asarray(
+            lax.cond(
+                jnp.all(waypoints == waypoints[0]), 
+                lambda points: jnp.repeat(points[0:1], work.nlad, axis = 0), 
+                ft.partial(partition_line, n = work.nlad),
+                waypoints
+                )
+        )
+  
         speed, steer = get_actuation(pose_theta, waypoints[-1], position, lookahead_distance, self.wheelbase)
         speed = 1 #work.vgain * speed
 
