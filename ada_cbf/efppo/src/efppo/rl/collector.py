@@ -190,7 +190,7 @@ def collect_single_env_mode(
  
     collect_state = collect_state._replace(steps = rollout_T - 1)
     T_envstate += T_envstate[-1:] * (rollout_T - len(T_envstate))
-    T_obs += T_obs[-1] * (rollout_T - len(T_obs))
+    T_obs += T_obs[-1:] * (rollout_T - len(T_obs))
     T_z += T_z[-1:] * (rollout_T - len(T_z))
     T_u += T_u[-1:] * (rollout_T - len(T_u))
     T_l += T_l[-1:] * (rollout_T - len(T_l))
