@@ -23,7 +23,9 @@ def main(
  
 
 if __name__ == "__main__":
-    typer.run(main)
+    main()
+
+    #typer.run(main)
     exit(0)
     
     #with ipdb.launch_ipdb_on_exception():

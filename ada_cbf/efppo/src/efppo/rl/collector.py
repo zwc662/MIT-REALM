@@ -180,8 +180,8 @@ def collect_single_env_mode(
         T_l.append(l)
         Th_h.append(h)
 
-        if (task.cur_done > 0.).any() | task.should_reset(envstate_new):
-            break
+        #if (task.cur_done > 0.).any() | task.should_reset(envstate_new):
+        #    break
     
     T_envstate = [x0] + T_envstate
     T_z = [z0] + T_z 
@@ -217,8 +217,7 @@ def collect_single_env_mode(
                      
     return RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, None, T_l, Th_h)
 
-def collect_single_env(
-    env_idx: int,
+def collect_single_batch(
     task: Task,
     key0: PRNGKey,
     colstate0: CollectorState,
@@ -226,11 +225,7 @@ def collect_single_env(
     disc_gamma: float,
     z_min: float,
     z_max: float,
-    rollout_T: int,
-    max_T: int,
-    p_reset: float,
-    key_reset_bernoulli: PRNGKey,
-    key_reset: PRNGKey
+    rollout_T: int 
 ):
     def _body(state: CollectorState, key):
         obs_pol = task.get_obs(state.state)
@@ -245,13 +240,11 @@ def collect_single_env(
 
         new_state = CollectorState(state.steps + 1, envstate_new.reshape(-1), z_new)
         return new_state, (envstate_new, obs_pol, z_new, l, h, control, logprob)
-
-    # Randomly sample z0.
-    key_z0, key_step = jr.split(key0)
-    z0 = jr.uniform(key_z0, minval=z_min, maxval=z_max)
-    colstate0 = colstate0._replace(z=z0)
-
-    T_keys = jr.split(key_step, rollout_T)
+    
+    fst_step, x0, z0 = colstate0.steps, colstate0.state, colstate0.z
+    collect_state = CollectorState(fst_step, x0, z0)
+         
+    T_keys = jr.split(key0, rollout_T)
 
     # Initialize outputs for the loop
     T_envstate = []
@@ -278,30 +271,7 @@ def collect_single_env(
         T_logprob.append(logprob)
         T_l.append(l)
         Th_h.append(h)
-
-         
-      
-        shouldreset = jr.bernoulli(key_reset_bernoulli, p_reset)
-        shouldreset = jnp.logical_or(shouldreset, t >= max_T).item()
-        shouldreset = (task.cur_done > 0.).any() | shouldreset | task.should_reset(envstate_new)
-        if shouldreset:
-            random_map = jr.bernoulli(key_reset, p_reset)
-    
-            # Randomly sample z0.
-            key_z0, key_step = jr.split(key0)
-            z0 = jr.uniform(key_z0, minval=z_min, maxval=z_max)
-    
-            collect_state = collect_state._replace(
-                steps = 0,
-                state = task.reset(mode='train', random_map = random_map),
-                z=z0
-                )
-
-        if t % 1000 == 999:
-            #print(f"Step {t} / {rollout_T}")
-            pass
-        
-
+  
     # Convert lists to jnp arrays
     T_envstate = jnp.stack(T_envstate)
     T_obs = jnp.stack(T_obs)
@@ -386,10 +356,10 @@ class Collector(struct.PyTreeNode):
         new_self = self.replace(collect_idx=self.collect_idx + 1, collect_state=collect_state)
         return new_self, bT_outputs
 
-    def _collect_single_env(
-        self, env_idx: int, key0: PRNGKey, colstate0: CollectorState, get_pol, disc_gamma: float, z_min: float, z_max: float, **kwargs
+    def _collect_single_batch(
+        self, env_idx: int, key0: PRNGKey, colstate0: CollectorState, get_pol, disc_gamma: float, z_min: float, z_max: float
     ) -> tuple[CollectorState, RolloutOutput]: 
-        return collect_single_env(env_idx, self.task, key0, colstate0, get_pol, disc_gamma, z_min, z_max, self.cfg.rollout_T, **kwargs)
+        return collect_single_batch(self.task, key0, colstate0, get_pol, disc_gamma, z_min, z_max, self.cfg.rollout_T)
 
 
     def collect_batch_iteratively(
@@ -402,25 +372,48 @@ class Collector(struct.PyTreeNode):
         # Initialize lists to accumulate results
         bT_outputs = []
         # Use a for loop instead of jax.vmap
- 
+
+        max_T = self.cfg.max_T
+        p_reset = self.p_reset
+        key_reset = key_reset
+
+    
         for i in range(self.cfg.n_envs):
-            #print(f"Env {i} / {self.cfg.n_envs}")
-            state_0 = self.task.reset(mode='train', random_map = True)
             collect_state_i = jtu.tree_map(lambda x: x[i], self.collect_state)
-            #state_0[np.asarray(self.task.PLOT_2D_INDXS)] += collect_state_i.state[np.asarray(self.task.PLOT_2D_INDXS)]
-            collect_state_i = collect_state_i._replace(state = state_0)
-            collect_state_i, bT_output = self._collect_single_env(
+            
+            #print(f"Env {i} / {self.cfg.n_envs}")
+            shouldreset = i == 0 | jr.bernoulli(key_reset_bernoulli, p_reset)
+            shouldreset = jnp.logical_or(shouldreset, collect_state_i.steps >= max_T).item()
+            shouldreset = (self.task.cur_done > 0.).any() | shouldreset | (
+                i > 0 and self.task.should_reset(self.collect_state.state[i - 1])
+                )
+            
+            if shouldreset:
+                random_map = jr.bernoulli(key_reset, p_reset)
+                # Randomly sample z0.
+                key_z0, key_step = jr.split(key0)
+                z0 = jr.uniform(key_z0, minval=z_min, maxval=z_max)
+        
+                collect_state_i = collect_state_i._replace(
+                    steps = 0,
+                    state = self.task.reset(mode='train', random_map = random_map),
+                    z=z0
+                    )
+            else:
+                collect_state_i = collect_state_i._replace(
+                    steps = self.collect_state.steps[i - 1],
+                    state = self.collect_state.state[i - 1],
+                    z = self.collect_state.z[i-1]
+                )
+             
+            collect_state_i, bT_output = self._collect_single_batch(
                 i, 
-                b_keys[i], 
+                key_step, 
                 collect_state_i,
                 get_pol=get_pol, 
                 disc_gamma=disc_gamma, 
                 z_min=z_min, 
-                z_max=z_max,
-                max_T = self.cfg.max_T,
-                p_reset = self.p_reset,
-                key_reset_bernoulli = key_reset_bernoulli, 
-                key_reset = key_reset
+                z_max=z_max
                 )
        
             # Resample x0
@@ -429,6 +422,7 @@ class Collector(struct.PyTreeNode):
             self.collect_state.state.at[i].set(collect_state_i.state)
             self.collect_state.steps.at[i].set(collect_state_i.steps)
             self.collect_state.z.at[i].set(collect_state_i.z.item())
+            
 
 
         assert self.collect_state.steps.shape == (self.cfg.n_envs,)

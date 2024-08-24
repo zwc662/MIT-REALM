@@ -167,8 +167,7 @@ class EFPPOInnerTrainer:
                 log_dict = {f"eval/{k}": v for k, v in data.info.items()}
                 wandb.log(log_dict, step=idx)
 
-                #eval_main(alg = alg, idx = int(idx / trainer_cfg.eval_every))
-
+                eval_main(alg = alg)
             if should_ckpt:
                 ckpt_manager.save_ez(idx, {"alg": alg, "alg_cfg": alg_cfg, "collect_cfg": collect_cfg})
                 logger.info(f"Saved ckpt at {ckpt_dir}/{idx}/default/ !")
