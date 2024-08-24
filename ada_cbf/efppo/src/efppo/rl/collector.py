@@ -180,9 +180,13 @@ def collect_single_env_mode(
         T_l.append(l)
         Th_h.append(h)
 
-        #if (task.cur_done > 0.).any() | task.should_reset(envstate_new):
-        #    break
-    
+        if (task.cur_done > 0.).any() | task.should_reset(envstate_new):
+            collect_state = collect_state._replace(
+                steps = 0,
+                state = task.reset(init_pose = task.cur_lookahead_points[0]),
+                z=z0
+                )
+                
     T_envstate = [x0] + T_envstate
     T_z = [z0] + T_z 
     obs_final = task.get_obs(collect_state.state)

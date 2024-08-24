@@ -598,7 +598,7 @@ class F1TenthWayPoint(Task):
 
 
 
-    def reset(self, mode: str = 'train', random_map = False):
+    def reset(self, mode: str = 'train', random_map = False, init_pose = None):
         if 'render' in mode.lower():
             self.render = True
 
@@ -645,19 +645,21 @@ class F1TenthWayPoint(Task):
             integrator=Integrator.RK4
             )
         self.cur_env.timestep =  self.dt
-        init_pose_ind = np.random.choice(int(self.cur_planner.waypoints.shape[0]))
-        init_pose = self.cur_planner.waypoints[init_pose_ind][np.array(
-            [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
-            )]
-         
-        init_angle = np.random.normal(
-            loc = np.zeros([1]),
-            scale = 0.7 * np.pi / 2 * np.ones([1])
-        )
-        init_state = np.concatenate((init_pose, init_angle))
 
-        print(f"Reset from {init_state}")
-        state_dict, step_reward, done, info = self.cur_env.reset(init_state.reshape(1, -1))
+        if init_pose is None:
+            init_pose_ind = np.random.choice(int(self.cur_planner.waypoints.shape[0]))
+            init_pose = self.cur_planner.waypoints[init_pose_ind][np.array(
+                [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
+                )]
+            
+            init_angle = np.random.normal(
+                loc = np.zeros([1]),
+                scale = 0.7 * np.pi / 2 * np.ones([1])
+            )
+            init_pose = np.concatenate((init_pose, init_angle))
+ 
+        print(f"Reset from {init_pose}")
+        state_dict, step_reward, done, info = self.cur_env.reset(init_pose.reshape(1, -1))
         
         
         if self.render:  
@@ -744,10 +746,10 @@ class F1TenthWayPoint(Task):
     @override
     def step(self, state: State, control: Control) -> State:
         ## Ensure pausing the simulator when the agent is already out of bound (out of lane boundary or inf/nan in states)
-        if np.any(self.cur_done > 0.): 
-            print(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}')
+        if False and np.any(self.cur_done > 0.): 
+            print(f'Simulation fronzen @ {self.cur_step}: {self.cur_state_dict}')
             if self.render:
-                input(f'Simulation fronzen @ {self.cur_step}: ', f'{self.cur_state_dict}. Say something ??')
+                input(f'Simulation fronzen @ {self.cur_step}: {self.cur_state_dict}. Say something ??')
             return self.cur_state
         
         assert control.shape[-1] == 2 or control.shape == (2,), f"{control}"
@@ -773,17 +775,18 @@ class F1TenthWayPoint(Task):
         self.cur_collision = nxt_state_dict['collisions']
 
         nxt_state = np.empty(self.nx)
-        if np.all(self.cur_collision <= 0):
-            lookahead_points, waypoint_ids, self.cur_pursuit_action = self.cur_planner.plan(nxt_state_dict, self.conf.work) 
-            nxt_state = self.get_state(nxt_state_dict, lookahead_points)
-             
-            assert (nxt_state[self.get2d_idxs()] == (nxt_state_dict['poses_x'][0], nxt_state_dict['poses_y'][0])).all(), f"State dict: {(nxt_state_dict['poses_x'][0], nxt_state_dict['poses_y'][0])} vs nxt_state: {nxt_state[self.get2d_idxs()]}"
-            #print(f"Step: {self.cur_step} | Current pos: {self.cur_state[self.get2d_idxs()]} | Current action: {self.cur_action} | Target waypoints ids: {waypoint_ids} | Target waypoints: {self.cur_planner.waypoints[waypoint_ids]} | Lookahead points: {lookahead_points}")
-        else:
-            if self.render:
-                print(f'Collision @ {self.cur_step}. Frozen state: {self.cur_state}')
-                input(f'Collision @ {self.cur_step}. Frozen state: {self.cur_state}. Say something.')
-            pass
+        #if np.all(self.cur_collision <= 0):
+        lookahead_points, waypoint_ids, self.cur_pursuit_action = self.cur_planner.plan(nxt_state_dict, self.conf.work) 
+        nxt_state = self.get_state(nxt_state_dict, lookahead_points)
+            
+        assert (nxt_state[self.get2d_idxs()] == (nxt_state_dict['poses_x'][0], nxt_state_dict['poses_y'][0])).all(), f"State dict: {(nxt_state_dict['poses_x'][0], nxt_state_dict['poses_y'][0])} vs nxt_state: {nxt_state[self.get2d_idxs()]}"
+        #print(f"Step: {self.cur_step} | Current pos: {self.cur_state[self.get2d_idxs()]} | Current action: {self.cur_action} | Target waypoints ids: {waypoint_ids} | Target waypoints: {self.cur_planner.waypoints[waypoint_ids]} | Lookahead points: {lookahead_points}")
+        #else:
+        
+        if np.any(self.cur_collision > 0) and self.render:
+            print(f'Collision @ {self.cur_step}: state {self.cur_state}')
+            #input(f'Collision @ {self.cur_step}: state {self.cur_state}')
+            #pass
 
         
             
@@ -794,15 +797,12 @@ class F1TenthWayPoint(Task):
             if self.render:
                 print(f"State overflow: {nxt_state} @ {self.cur_step}. Frozen state: {self.cur_state}")
                 input(f"State overflow: {nxt_state} @ {self.cur_step}. Frozen state: {self.cur_state}. Say something.")
-            
             self.cur_overflow = np.array([1])
 
-        if np.any(self.cur_overflow > 0.) or np.any(self.cur_collision > 0.): 
+        if np.any(self.cur_overflow > 0.): 
             if self.render:
-                input(f'Out of bound @ {self.cur_step}: {nxt_state_dict}')
                 input(f'Simulation fronzen @ {self.cur_step}: {self.cur_state_dict}')
                 F110Env.renderer = None
-
             self.cur_done = np.asarray([1])
         else:
             self.pre_waypoint_ids = self.cur_waypoint_ids[:] if self.cur_waypoint_ids is not None else waypoint_ids[:]
