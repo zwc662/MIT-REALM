@@ -61,14 +61,13 @@ def main(
             scale=(np.pi * 0.5 * 0.7, 0.1)
             ) #[jnp.array([-2, -1])])
         # -----------------------------------------------------
-        if alg is not None or ckpt_path is not None:
-            if alg is None:
-                print(f'Load from {ckpt_path}')
-                ckpt_dict = load_ckpt_ez(ckpt_path, {"alg": alg})
-                alg = ckpt_dict["alg"]
+        if ckpt_path is not None: 
+            print(f'Load from {ckpt_path}')
+            ckpt_dict = load_ckpt_ez(ckpt_path, {"alg": alg})
+            alg = ckpt_dict["alg"]
 
-            rootfind = Rootfinder(alg.Vh.apply, alg.z_min, alg.z_max, h_tgt=-0.70)
-            rootfind_pol = RootfindPolicy(alg.policy.apply, rootfind)
+        rootfind = Rootfinder(alg.Vh.apply, alg.z_min, alg.z_max, h_tgt=-0.70)
+        rootfind_pol = RootfindPolicy(alg.policy.apply, rootfind)
         
         
             
