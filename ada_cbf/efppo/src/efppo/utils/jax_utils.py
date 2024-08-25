@@ -181,3 +181,15 @@ def plain_cond(pred, true_fun, false_fun, operand):
     return true_fun (operand)
   else:
     return false_fun (operand)
+  
+
+# Function to move tensors to CPU if they are on CUDA
+def move_tree_to_cpu(x):
+    return jax.tree_util.tree_map(
+        lambda x: jax.device_put(
+            x, device=jax.devices("cpu")[0]
+            ) if hasattr(
+                x, 'device'
+                ) and 'cuda' in str(x.addressable_data(0)) else x, x)
+
+    

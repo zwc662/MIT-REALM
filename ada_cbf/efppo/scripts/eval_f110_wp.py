@@ -44,7 +44,7 @@ def main(
         #plot_dir = get_run_dir_from_ckpt_path(ckpt_path)
         plot_dir = mkdir(plot_dir / str(ckpt_path).split('runs/')[-1].split('/ckpts')[0])
   
-    task = F1TenthWayPoint(mode = 'pursuit' if pursuit else '')
+    task = F1TenthWayPoint(control_mode = 'pursuit' if pursuit else '')
     
     # For prettier trajectories.
     # task.dt /= 2

@@ -76,8 +76,8 @@ class Plotter:
         T_t = np.arange(T)
         bT_t = ei.repeat(T_t, "T -> b T", b=b)
 
-        assert b == bT_l.shape[0] == bT_h.shape[0]
-        assert T == bT_l.shape[1] == bT_h.shape[1]
+        assert b == bT_l.shape[0] == bT_h.shape[0], f"{b=} {bT_l.shape=} {bT_h.shape=}"
+        assert T == bT_l.shape[1] == bT_h.shape[1], f"{b=} {bT_l.shape=} {bT_h.shape=}"
         
 
         fig, axes = plt.subplots(self.task.nx + 1 + len(self.task.h_labels), figsize=figsize, sharex=True, layout="constrained")

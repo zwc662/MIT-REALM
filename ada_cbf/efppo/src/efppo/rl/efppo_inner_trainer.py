@@ -19,11 +19,13 @@ from efppo.task.plotter import Plotter
 from efppo.task.task import Task
 from efppo.utils.cfg_utils import Cfg
 from efppo.utils.ckpt_utils import get_ckpt_manager_sync
-from efppo.utils.jax_utils import jax2np
+from efppo.utils.jax_utils import jax2np, move_tree_to_cpu
 from efppo.utils.path_utils import get_runs_dir, mkdir
 from efppo.utils.register_cmaps import register_cmaps
 from efppo.utils.rng import PRNGKey
 from efppo.utils.wandb_utils import reorder_wandb_name
+
+import pickle
 
 sys.path.append(
     os.path.join(
@@ -122,6 +124,9 @@ class EFPPOInnerTrainer:
         ckpt_dir = mkdir(run_dir / "ckpts")
         ckpt_manager = get_ckpt_manager_sync(ckpt_dir, max_to_keep=trainer_cfg.ckpt_max_keep)
 
+        cpu_ckpt_dir = mkdir(run_dir / "cpu_ckpts")
+        cpu_ckpt_manager = get_ckpt_manager_sync(cpu_ckpt_dir, max_to_keep=trainer_cfg.ckpt_max_keep)
+
         idx = 0
         for idx in range(trainer_cfg.n_iters):
             should_log = idx % trainer_cfg.log_every == 0
@@ -167,10 +172,14 @@ class EFPPOInnerTrainer:
                 log_dict = {f"eval/{k}": v for k, v in data.info.items()}
                 wandb.log(log_dict, step=idx)
 
-                eval_main(alg = alg)
+                #eval_main(alg = alg)
             if should_ckpt:
                 ckpt_manager.save_ez(idx, {"alg": alg, "alg_cfg": alg_cfg, "collect_cfg": collect_cfg})
+                #ckpt_manager.save_ez(idx, {"policy": alg.policy, "Vl": alg.Vl, "Vh": alg.Vh})
                 logger.info(f"Saved ckpt at {ckpt_dir}/{idx}/default/ !")
 
+                cpu_ckpt_manager.save_ez(idx, {"alg": move_tree_to_cpu(alg)})
+                 
         # Save at the end.
         ckpt_manager.save_ez(idx, {"alg": alg, "alg_cfg": alg_cfg, "collect_cfg": collect_cfg})
+        cpu_ckpt_manager.save_ez(idx, {"alg": move_tree_to_cpu(alg)})

@@ -26,9 +26,9 @@ def get():
     alg_cfg = EFPPOCfg(net_cfg, train_cfg, eval_cfg)
 
     n_envs = 1
-    rollout_T = 512
-    mean_age = 10240
-    max_T = 1024
+    rollout_T = 128
+    mean_age = 1024
+    max_T = 256
     collect_cfg = CollectorCfg(n_envs, rollout_T, mean_age, max_T)
 
     return alg_cfg, collect_cfg

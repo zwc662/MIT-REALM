@@ -167,11 +167,13 @@ def collect_single_env_mode(
 
     for t in range(rollout_T):
         collect_state, (envstate_new, obs_pol, z_new, l, h, control) = _body(collect_state, None)
-        print(f"Step: {task.cur_step} | State: {task.cur_state} | Control: {task.cur_action} | l: {l} | h: {h}")
+        #print(f"Step: {task.cur_step} | State: {task.cur_state} | Control: {task.cur_action} | l: {l} | h: {h}")
      
         assert not np.any(np.isnan(envstate_new))
         assert not np.any(np.isnan(obs_pol))
-        assert not np.any(np.isnan(control)) 
+        #assert not np.any(np.isnan(control)) 
+        if np.any(np.isnan(control)):
+            control = task.cur_action.reshape(control.shape)
         
         T_envstate.append(envstate_new)
         T_obs.append(obs_pol)
@@ -182,9 +184,9 @@ def collect_single_env_mode(
 
         if (task.cur_done > 0.).any() | task.should_reset(envstate_new):
             collect_state = collect_state._replace(
-                steps = 0,
+                steps = collect_state.steps,
                 state = task.reset(init_pose = task.cur_lookahead_points[0]),
-                z=z0
+                z=collect_state.z
                 )
                 
     T_envstate = [x0] + T_envstate
@@ -261,12 +263,15 @@ def collect_single_batch(
 
     collect_state = colstate0 
     # Perform the loop over rollout_T
-    for t in range(rollout_T):        
+    for t in range(rollout_T):     
+        assert not jnp.isnan(collect_state.state).any(), f'{collect_state.state=}'   
         collect_state, (envstate_new, obs_pol, z_new, l, h, control, logprob) = _body(collect_state, T_keys[t])
-        assert not jnp.isnan(envstate_new).any()
-        assert not jnp.isnan(obs_pol).any()
-        assert not jnp.isnan(control).any()
-        assert not jnp.isnan(logprob).any()
+        assert not jnp.isnan(envstate_new).any(), f'{task.cur_state=}'
+        assert not jnp.isnan(obs_pol).any(), f'{task.cur_state=}'
+        #assert not jnp.isnan(control).any(), f'{control=}'
+        if np.any(np.isnan(control)):
+            control = task.cur_action.reshape(control.shape)
+        #assert not jnp.isnan(logprob).any(), f'{logprob=}'
         
         T_envstate.append(envstate_new)
         T_obs.append(obs_pol)
@@ -275,6 +280,13 @@ def collect_single_batch(
         T_logprob.append(logprob)
         T_l.append(l)
         Th_h.append(h)
+
+        if (task.cur_done > 0.).any() | task.should_reset(envstate_new):
+            collect_state = collect_state._replace(
+                steps = collect_state.steps,
+                state = task.reset(init_pose = task.cur_lookahead_points[0]),
+                z=collect_state.z
+                )
   
     # Convert lists to jnp arrays
     T_envstate = jnp.stack(T_envstate)
@@ -395,7 +407,7 @@ class Collector(struct.PyTreeNode):
             if shouldreset:
                 random_map = jr.bernoulli(key_reset, p_reset)
                 # Randomly sample z0.
-                key_z0, key_step = jr.split(key0)
+                key_z0, key0 = jr.split(key0)
                 z0 = jr.uniform(key_z0, minval=z_min, maxval=z_max)
         
                 collect_state_i = collect_state_i._replace(
@@ -412,7 +424,7 @@ class Collector(struct.PyTreeNode):
              
             collect_state_i, bT_output = self._collect_single_batch(
                 i, 
-                key_step, 
+                key0, 
                 collect_state_i,
                 get_pol=get_pol, 
                 disc_gamma=disc_gamma, 

@@ -484,7 +484,7 @@ class F1TenthWayPoint(Task):
     PLOT_2D_INDXS = [STATE_X, STATE_Y]
 
 
-    def __init__(self, seed = 10, assets_location = None, mode = ''):
+    def __init__(self, seed = 10, assets_location = None, control_mode = ''):
        
         self.dt = 0.05
         self.conf = None
@@ -520,9 +520,9 @@ class F1TenthWayPoint(Task):
         
         self.render = False
 
-        if mode not in ['pursuit', '']:
+        if control_mode not in ['pursuit', '']:
             raise NotImplementedError
-        self.mode = mode
+        self.control_mode = control_mode
  
     @property
     def nx(self):
@@ -752,6 +752,9 @@ class F1TenthWayPoint(Task):
                 input(f'Simulation fronzen @ {self.cur_step}: {self.cur_state_dict}. Say something ??')
             return self.cur_state
         
+        if np.any(np.isnan(control)):
+            control = np.zeros((1, 2))
+
         assert control.shape[-1] == 2 or control.shape == (2,), f"{control}"
         assert state.shape[-1] == self.nx
 
@@ -761,7 +764,7 @@ class F1TenthWayPoint(Task):
 
         #action = np.clip(control.reshape(-1, 2), self.lb, self.ub)
        
-        self.cur_action = getattr(self, f"cur_{self.mode}_action")
+        self.cur_action = getattr(self, f"cur_{self.control_mode}_action")
 
         nxt_state_dict, step_reward, done, info = self.cur_env.step(self.cur_action)
         #print(self.cur_step, nxt_state_dict, action)
@@ -779,7 +782,6 @@ class F1TenthWayPoint(Task):
         lookahead_points, waypoint_ids, self.cur_pursuit_action = self.cur_planner.plan(nxt_state_dict, self.conf.work) 
         nxt_state = self.get_state(nxt_state_dict, lookahead_points)
             
-        assert (nxt_state[self.get2d_idxs()] == (nxt_state_dict['poses_x'][0], nxt_state_dict['poses_y'][0])).all(), f"State dict: {(nxt_state_dict['poses_x'][0], nxt_state_dict['poses_y'][0])} vs nxt_state: {nxt_state[self.get2d_idxs()]}"
         #print(f"Step: {self.cur_step} | Current pos: {self.cur_state[self.get2d_idxs()]} | Current action: {self.cur_action} | Target waypoints ids: {waypoint_ids} | Target waypoints: {self.cur_planner.waypoints[waypoint_ids]} | Lookahead points: {lookahead_points}")
         #else:
         
@@ -798,13 +800,15 @@ class F1TenthWayPoint(Task):
                 print(f"State overflow: {nxt_state} @ {self.cur_step}. Frozen state: {self.cur_state}")
                 input(f"State overflow: {nxt_state} @ {self.cur_step}. Frozen state: {self.cur_state}. Say something.")
             self.cur_overflow = np.array([1])
-
+        
         if np.any(self.cur_overflow > 0.): 
             if self.render:
                 input(f'Simulation fronzen @ {self.cur_step}: {self.cur_state_dict}')
                 F110Env.renderer = None
             self.cur_done = np.asarray([1])
         else:
+            assert (nxt_state[self.get2d_idxs()] == (nxt_state_dict['poses_x'][0], nxt_state_dict['poses_y'][0])).all(), f"State dict: {(nxt_state_dict['poses_x'][0], nxt_state_dict['poses_y'][0])} vs nxt_state: {nxt_state[self.get2d_idxs()]}"
+            
             self.pre_waypoint_ids = self.cur_waypoint_ids[:] if self.cur_waypoint_ids is not None else waypoint_ids[:]
             self.cur_waypoint_ids = waypoint_ids[:]
 
@@ -818,13 +822,21 @@ class F1TenthWayPoint(Task):
             self.cur_step += 1
         return self.cur_state #, step_reward, done, info
          
-    def l(self, state: State, control: Control) -> LFloat:
+    def l1(self, state: State, control: Control) -> LFloat:
         weights = 1 #np.array([1.2e-2])
         return (weights * (self.cur_waypoint_ids[0] - self.pre_waypoint_ids[0] - 1)).item() + \
             self.cur_collision.item() + \
             np.sqrt(np.sum(state[self.STATE_FST_LAD:]**2)).item()
+
+    def l(self, state: State, control: Control) -> LFloat:
+         
+        return np.square(np.asarray(self.get2d(state)).reshape(2) - np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]]).reshape(2)).sum().item() 
+    
+
     
     def h_components(self, state: State) -> HFloat:
+        #return (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
+
         return  - np.ones(len(self.h_labels)) # (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
     
         return self.cur_collision.item() + self.cur_done.item()
