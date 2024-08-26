@@ -171,8 +171,9 @@ def collect_single_env_mode(
      
         assert not np.any(np.isnan(envstate_new))
         assert not np.any(np.isnan(obs_pol))
-        #assert not np.any(np.isnan(control)) 
+    
         if np.any(np.isnan(control)):
+            print(f"[NaN control Warning] Step: {task.cur_step} | State: {task.cur_state} | Control: {task.cur_action} | l: {l} | h: {h}")
             control = task.cur_action.reshape(control.shape)
         
         T_envstate.append(envstate_new)
@@ -270,7 +271,9 @@ def collect_single_batch(
         assert not jnp.isnan(obs_pol).any(), f'{task.cur_state=}'
         #assert not jnp.isnan(control).any(), f'{control=}'
         if np.any(np.isnan(control)):
+            print(f"[NaN control Warning] Step: {task.cur_step} | State: {task.cur_state} | Control: {task.cur_action} | l: {l} | h: {h}")
             control = task.cur_action.reshape(control.shape)
+        
         #assert not jnp.isnan(logprob).any(), f'{logprob=}'
         
         T_envstate.append(envstate_new)
