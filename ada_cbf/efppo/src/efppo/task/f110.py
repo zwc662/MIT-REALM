@@ -515,8 +515,8 @@ class F1TenthWayPoint(Task):
 
         self.width = 0
 
-        self._lb = np.array([-3, 0. ])
-        self._ub = np.array([3, 5.])
+        self._lb = np.array([-np.pi, 0. ])
+        self._ub = np.array([np.pi, 10.])
         
         self.render = False
 
@@ -830,6 +830,7 @@ class F1TenthWayPoint(Task):
 
     def l(self, state: State, control: Control) -> LFloat:
         l = - np.square(state[..., [self.STATE_VEL_X, self.STATE_VEL_Y]]).sum()
+         
         if self.pre_waypoint_ids is not None:
             l += np.square(np.asarray(self.get2d(state)).reshape(2) - np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]]).reshape(2)).sum().item() 
         return l
