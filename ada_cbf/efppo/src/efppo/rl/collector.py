@@ -158,7 +158,7 @@ def collect_single_env_mode(
  
     collect_state = CollectorState(0, x0, z0)
     
-    T_envstate = [x0]
+    T_envstate = []
     T_obs = []
     T_z = []
     T_u = []

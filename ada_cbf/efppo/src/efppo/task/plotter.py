@@ -73,11 +73,11 @@ class Plotter:
         figsize = 1.5 * np.array([8, 2 * (self.task.nx + 2)])
 
         b, T, _ = bT_x.shape
-        T_t = np.arange(T)
+        T_t = np.arange(1, T)
         bT_t = ei.repeat(T_t, "T -> b T", b=b)
 
-        assert b == bT_l.shape[0] == bT_h.shape[0], f"{b=} {bT_l.shape=} {bT_h.shape=}"
-        assert T == bT_l.shape[1] == bT_h.shape[1], f"{b=} {bT_l.shape=} {bT_h.shape=}"
+        assert b == bT_l.shape[0] == bT_h.shape[0], f"{b=} {bT_x.shape=} {bT_l.shape=} {bT_h.shape=}"
+        assert T - 1 == bT_l.shape[1] == bT_h.shape[1], f"{b=} {T=} {bT_l.shape=} {bT_h.shape=}"
         
 
         fig, axes = plt.subplots(self.task.nx + 1 + len(self.task.h_labels), figsize=figsize, sharex=True, layout="constrained")
@@ -86,7 +86,7 @@ class Plotter:
         for ii, ax in enumerate(axes):
             bT_line = []
             if ii < self.task.nx:
-                bT_xi = bT_x[:, :, ii]
+                bT_xi = bT_x[:, 1:, ii]
                 bT_line = np.stack([bT_t, bT_xi], axis=-1)
                 ax.set_ylabel(self.task.x_labels[ii])
             elif ii - self.task.nx == 0:

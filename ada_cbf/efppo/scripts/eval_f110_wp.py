@@ -53,7 +53,7 @@ def main(
     if alg is None:
         alg: EFPPOInner = EFPPOInner.create(jr.PRNGKey(0), task, alg_cfg)
      
-    for vgain in ([1, 0.2, 0.5, 2] if ckpt_path is None else [1]):
+    for vgain in ([1, 0.2, 0.5, 2] if ckpt_path is None else [0]):
    
         steer_fn = lambda obs_pol: np.arctan(obs_pol[-1] / obs_pol[-2]) - obs_pol[task.OBS_YAW]
         rootfind_pol = lambda obs_pol, z: tfd.Normal(
