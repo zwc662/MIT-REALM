@@ -844,7 +844,7 @@ class F1TenthWayPoint(Task):
         l = 0
 
         # Cost for low steer + Cost for higher steer than 5
-        #l = - steer + np.exp(10 * (steer - 5)) - 1
+        l = - steer + np.exp(10 * (steer - 8)) - 1
         
         # Cost for diff from pursuit controller
         if self.cur_pursuit_action is not None:
