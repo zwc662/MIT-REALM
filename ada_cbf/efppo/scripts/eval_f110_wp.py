@@ -39,10 +39,10 @@ def main(
         **kwargs):
     set_logger_format()
 
-    plot_dir = mkdir(pathlib.Path(os.path.dirname(__file__)) / 'plots')
+    plot_dir = mkdir(pathlib.Path(os.path.join(os.path.dirname(__file__), 'plots')))
     if ckpt_path is not None:
         #plot_dir = get_run_dir_from_ckpt_path(ckpt_path)
-        plot_dir = mkdir(os.path.dirname(ckpt_path) / 'plots')
+        plot_dir = mkdir(pathlib.Path(os.path.join(os.path.dirname(ckpt_path), 'plots')))
   
     task = F1TenthWayPoint(control_mode = 'pursuit' if pursuit else '')
     

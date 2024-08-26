@@ -741,7 +741,13 @@ class F1TenthWayPoint(Task):
         lookahead_fts = (lookahead_points - pose).reshape(-1)
         other_fts = state[self.STATE_Y + 1:self.STATE_FST_LAD]
         return np.concatenate((other_fts, lookahead_fts))
-        
+    
+    def efppo_control_transform(self, control):
+        ## For EFPPO 
+        ### The control policy's output mean is constrained to be within (0, 3) using sigmoid scaling (check /efppo/src/efppo/networks/poly_net.py: 23)
+        ### Therefore, the input control needs to be linearly transformed to be within [self.lb, self.ub]
+        return np.asarray(control.reshape(2) * (self.ub - self.lb) / 3. + self.lb).reshape(-1, 2)
+
 
     @override
     def step(self, state: State, control: Control) -> State:
@@ -758,9 +764,8 @@ class F1TenthWayPoint(Task):
         assert control.shape[-1] == 2 or control.shape == (2,), f"{control}"
         assert state.shape[-1] == self.nx
 
-        ## The control policy's output mean is constrained to be within (0, 3) using sigmoid scaling (check /efppo/src/efppo/networks/poly_net.py: 23)
-        ## Therefore, the input control needs to be linearly transformed to be within [self.lb, self.ub]
-        self.cur__action = np.asarray(control.reshape(2) * (self.ub - self.lb) / 3. + self.lb).reshape(-1, 2)
+        
+        self.cur__action = self.efppo_control_transform(control)
 
         #action = np.clip(control.reshape(-1, 2), self.lb, self.ub)
        
@@ -833,17 +838,19 @@ class F1TenthWayPoint(Task):
             np.sqrt(np.sum(state[self.STATE_FST_LAD:]**2)).item()
 
     def l(self, state: State, control: Control) -> LFloat:
+        control = self.efppo_control_transform(control)
         str = control[..., 1:].sum()
         # Cost for low steer
         l = - str
         # Cost for higher steer than 5
         l += np.exp(10 * (str - 5)) - 1
+
          
         if self.pre_waypoint_ids is not None:
-            l += np.square(np.asarray(self.get2d(state)).reshape(2) - np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]]).reshape(2)).sum().item() 
+            previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
+            l += np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum().item() 
         return l
             
-
     
     def h_components(self, state: State) -> HFloat:
         #return (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
