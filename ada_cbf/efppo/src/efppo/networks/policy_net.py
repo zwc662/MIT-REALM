@@ -11,7 +11,7 @@ from efppo.utils.tfp import tfd
 class DiscretePolicyNet(nn.Module):
     base_cls: Type[nn.Module]
     n_actions: int
-    scale: float = 3.0
+    scale: float = 1.0
 
     @nn.compact
     def __call__(self, obs: Obs, *args, **kwargs) -> tfd.Distribution:
@@ -22,7 +22,7 @@ class DiscretePolicyNet(nn.Module):
         log_std = nn.Dense(2, kernel_init=nn.initializers.xavier_uniform())(x)
         std = jnp.exp(log_std)
         # Constrain the mean to be within (0, 3) using sigmoid scaling
-        mean = self.scale * nn.sigmoid(mean)
+        mean = self.scale * nn.tanh(mean) #nn.sigmoid(mean)
 
         # Construct the 2D Multivariate Normal distribution
         dist = tfd.MultivariateNormalDiag(loc=mean, scale_diag=std)

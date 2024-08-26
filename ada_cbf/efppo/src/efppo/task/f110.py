@@ -744,9 +744,13 @@ class F1TenthWayPoint(Task):
     
     def efppo_control_transform(self, control):
         ## For EFPPO 
-        ### The control policy's output mean is constrained to be within (0, 3) using sigmoid scaling (check /efppo/src/efppo/networks/poly_net.py: 23)
+        ### The control policy's output mean is constrained to be within (0, 3) using sigmoid scaling (check original /efppo/src/efppo/networks/poly_net.py: 23)
         ### Therefore, the input control needs to be linearly transformed to be within [self.lb, self.ub]
-        return np.asarray(control.reshape(2) * (self.ub - self.lb) / 3. + self.lb).reshape(-1, 2)
+        #return np.asarray(control.reshape(2) * (self.ub - self.lb) / 3. + self.lb).reshape(-1, 2)
+
+        ### The control policy's output mean is constrained to be within (-1, 1) using tanh (check current /efppo/src/efppo/networks/poly_net.py: 23)
+        ### Therefore, the input control needs to be linearly transformed to be within [self.lb, self.ub]
+        return np.asarray((control + 1).reshape(2) * (self.ub - self.lb) / 2. + self.lb).reshape(-1, 2)
 
 
     @override
