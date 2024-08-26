@@ -11,7 +11,7 @@ work:
   tlad: 4 #0.82461887897713965
   # Lookahead points
   nlad: 10
-  vgain: 4 # 0.90338203837889
+  vgain: 3.5 # 0.90338203837889
 
     
 

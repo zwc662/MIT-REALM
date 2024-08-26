@@ -333,7 +333,7 @@ def partition_line(points, n):
     boundary_points = jax.vmap(add_boundary_point)(partition_lengths[:-1])
     return jnp.concatenate((boundary_points, jnp.asarray(points[-1]).reshape(1, -1)))
     
-#@njit(fastmath=False, cache=True)
+@njit(fastmath=False, cache=True)
 def get_actuation(pose_theta, lookahead_point, position, lookahead_distance, wheelbase):
     """
     Returns actuation
@@ -515,7 +515,7 @@ class F1TenthWayPoint(Task):
 
         self.width = 0
 
-        self._lb = np.array([-np.pi, 0. ])
+        self._lb = np.array([-np.pi, -10. ])
         self._ub = np.array([np.pi, 10.])
         
         self.render = False
@@ -766,6 +766,10 @@ class F1TenthWayPoint(Task):
        
         self.cur_action = getattr(self, f"cur_{self.control_mode}_action")
 
+        if self.control_mode == 'pursuit':
+            print(self.cur_action)
+            input()
+
         nxt_state_dict, step_reward, done, info = self.cur_env.step(self.cur_action)
         #print(self.cur_step, nxt_state_dict, action)
              
@@ -829,12 +833,14 @@ class F1TenthWayPoint(Task):
             np.sqrt(np.sum(state[self.STATE_FST_LAD:]**2)).item()
 
     def l(self, state: State, control: Control) -> LFloat:
-        v_sqr = np.square(state[..., [self.STATE_VEL_X, self.STATE_VEL_Y]]).sum()
-        l = - v_sqr
-        l += np.exp(v_sqr - state.shape[0] * 5 * 5)
+        str = control[..., 1:].sum()
+        # Cost for low steer
+        l = - str
+        # Cost for higher steer than 5
+        l += np.exp(10 * (str - 5)) - 1
          
         if self.pre_waypoint_ids is not None:
-            l += np.square(np.asarray(self.get2d(state)).reshape(2) - np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[self.STATE_FST_LAD]]).reshape(2)).sum().item() 
+            l += np.square(np.asarray(self.get2d(state)).reshape(2) - np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]]).reshape(2)).sum().item() 
         return l
             
 
