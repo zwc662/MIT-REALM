@@ -2,12 +2,16 @@ import datetime
 import pathlib
 from typing import Any
 
+import numpy as np
+
+import jax
 import attrs
 import orbax
 import orbax.checkpoint
 from attrs import asdict
 from flax.training import orbax_utils
-from orbax.checkpoint import CheckpointManager
+from flax import struct
+from orbax.checkpoint import CheckpointManager 
 
 
 def save_ckpt_ez(save_path: pathlib.Path, item: Any):
@@ -18,8 +22,28 @@ def save_ckpt_ez(save_path: pathlib.Path, item: Any):
 
 def load_ckpt_ez(load_path: pathlib.Path, item: Any):
     ckpter = orbax.checkpoint.PyTreeCheckpointer()
-    return ckpter.restore(load_path, item=item)
+    
+    restored_item = {}
+    for k, v in item.items():
+        if isinstance(v, struct.PyTreeNode):
+            restored_item[k] = jax.tree_util.tree_map(lambda _: orbax.checkpoint.RestoreArgs(restore_type=np.ndarray), v)            
+    
+    return ckpter.restore(load_path, args = orbax.checkpoint.args.PyTreeRestore(item = restored_item))
 
+    restored_item = ckpter.metadata(load_path)
+    locally_sharded = lambda x: jax.device_put(x, jax.sharding.SingleDeviceSharding(jax.local_devices()[0]))
+    restored_item = jax.tree_util.tree_map(locally_sharded, item)
+    #restored_item = jax.tree_util.tree_map(
+    #   orbax.checkpoint.utils.to_shape_dtype_struct, restored_item
+    #)
+    restored_item = ckpter.restore(load_path, item=restored_item)
+    print(restored_item)
+    
+    
+    for k, v in restored_item.items():
+        if k not in item:
+            del restored_item[k]
+    return restored_item
 
 class WrappedCkptManager(CheckpointManager):
     def save_ez(self, step: int, items: Any):
