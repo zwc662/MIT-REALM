@@ -837,9 +837,9 @@ class F1TenthWayPoint(Task):
 
     
     def h_components(self, state: State) -> HFloat:
-        return (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
+        #return (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
 
-        #return  - np.ones(len(self.h_labels)) # (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
+        return  - np.ones(len(self.h_labels)) # (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
     
         return self.cur_collision.item() + self.cur_done.item()
         fts = self.get_obs(state)
