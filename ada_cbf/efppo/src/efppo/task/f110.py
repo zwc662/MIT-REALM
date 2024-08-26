@@ -829,10 +829,12 @@ class F1TenthWayPoint(Task):
             np.sqrt(np.sum(state[self.STATE_FST_LAD:]**2)).item()
 
     def l(self, state: State, control: Control) -> LFloat:
-        l = - np.square(state[..., [self.STATE_VEL_X, self.STATE_VEL_Y]]).sum()
+        v_sqr = np.square(state[..., [self.STATE_VEL_X, self.STATE_VEL_Y]]).sum()
+        l = - v_sqr
+        l += np.exp(v_sqr - state.shape[0] * 5 * 5)
          
         if self.pre_waypoint_ids is not None:
-            l += np.square(np.asarray(self.get2d(state)).reshape(2) - np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]]).reshape(2)).sum().item() 
+            l += np.square(np.asarray(self.get2d(state)).reshape(2) - np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[self.STATE_FST_LAD]]).reshape(2)).sum().item() 
         return l
             
 
