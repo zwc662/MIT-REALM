@@ -123,10 +123,7 @@ class EFPPOInnerTrainer:
         plot_dir = mkdir(run_dir / "plots")
         ckpt_dir = mkdir(run_dir / "ckpts")
         ckpt_manager = get_ckpt_manager_sync(ckpt_dir, max_to_keep=trainer_cfg.ckpt_max_keep)
-
-        cpu_ckpt_dir = mkdir(run_dir / "cpu_ckpts")
-        cpu_ckpt_manager = get_ckpt_manager_sync(cpu_ckpt_dir, max_to_keep=trainer_cfg.ckpt_max_keep)
-
+ 
         idx = 0
         for idx in range(trainer_cfg.n_iters):
             should_log = idx % trainer_cfg.log_every == 0
@@ -174,12 +171,17 @@ class EFPPOInnerTrainer:
 
                 #eval_main(alg = alg)
             if should_ckpt:
-                ckpt_manager.save_ez(idx, {"alg": alg, "alg_cfg": alg_cfg, "collect_cfg": collect_cfg})
+                ckpt_manager.save_ez(idx, {"alg": alg}) #, "alg_cfg": alg_cfg, "collect_cfg": collect_cfg})
                 #ckpt_manager.save_ez(idx, {"policy": alg.policy, "Vl": alg.Vl, "Vh": alg.Vh})
-                logger.info(f"Saved ckpt at {ckpt_dir}/{idx}/default/ !")
+                logger.info(f"Saved ckpt at {ckpt_dir}/{idx:08}/default/ !")
 
-                cpu_ckpt_manager.save_ez(idx, {"alg": move_tree_to_cpu(alg)})
-                 
+                with open(f'{ckpt_dir}/{idx:08}/cfg.pt', 'wb') as fp:
+                    pickle.dump({"alg_cfg": alg_cfg, "collect_cfg": collect_cfg}, fp)
+
+ 
         # Save at the end.
-        ckpt_manager.save_ez(idx, {"alg": alg, "alg_cfg": alg_cfg, "collect_cfg": collect_cfg})
-        cpu_ckpt_manager.save_ez(idx, {"alg": move_tree_to_cpu(alg)})
+        ckpt_manager.save_ez(idx, {"alg": alg})
+        logger.info(f"Saved ckpt at {ckpt_dir}/{idx:8}/default/ !")
+        with open(f'{ckpt_dir}/{idx:08}/cfg.pt', 'wb') as fp:
+            pickle.dump({"alg_cfg": alg_cfg, "collect_cfg": collect_cfg}, fp)
+        

@@ -829,15 +829,17 @@ class F1TenthWayPoint(Task):
             np.sqrt(np.sum(state[self.STATE_FST_LAD:]**2)).item()
 
     def l(self, state: State, control: Control) -> LFloat:
-         
-        return np.square(np.asarray(self.get2d(state)).reshape(2) - np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]]).reshape(2)).sum().item() 
-    
+        l = - np.square(state[..., [self.STATE_VEL_X, self.STATE_VEL_Y]]).sum()
+        if self.pre_waypoint_ids is not None:
+            l += np.square(np.asarray(self.get2d(state)).reshape(2) - np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]]).reshape(2)).sum().item() 
+        return l
+            
 
     
     def h_components(self, state: State) -> HFloat:
-        #return (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
+        return (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
 
-        return  - np.ones(len(self.h_labels)) # (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
+        #return  - np.ones(len(self.h_labels)) # (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
     
         return self.cur_collision.item() + self.cur_done.item()
         fts = self.get_obs(state)
