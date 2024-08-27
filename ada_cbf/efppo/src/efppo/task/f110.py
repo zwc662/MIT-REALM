@@ -549,11 +549,7 @@ class F1TenthWayPoint(Task):
     @property
     def ub(self):
         return self._ub
-    
-    @property
-    def candidate_cont_controls(self):
-        
-    
+     
     @property
     def x_labels(self) -> list[str]:
         base = [
