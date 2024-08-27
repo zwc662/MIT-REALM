@@ -101,7 +101,13 @@ def collect_single(
     def _body(state: CollectorState, key):
         obs_pol = task.get_obs(state.state)
         a_pol: tfd.Distribution = get_pol(obs_pol, state.z)
-        control, logprob = a_pol.experimental_sample_and_log_prob(seed=key)
+        #control, logprob = a_pol.experimental_sample_and_log_prob(seed=key)
+        s = tfd.Sample(a_pol, sample_shape=1)
+        control = s.sample([1])
+        logprob = s.log_prob(control)
+        control = control.shape(-1, task.nu)
+        logprob = logprob.shape(-1)
+        
         envstate_new = task.step(state.state, control)
         
         # Z dynamics.
@@ -141,6 +147,7 @@ def collect_single_env_mode(
     z_min: float,
     z_max: float,
     rollout_T: int,
+    verbose: bool = False
 ):
     def _body(state: CollectorState, _):
         obs_pol = task.get_obs(state.state)
@@ -167,13 +174,14 @@ def collect_single_env_mode(
 
     for t in range(rollout_T):
         collect_state, (envstate_new, obs_pol, z_new, l, h, control) = _body(collect_state, None)
-        #print(f"Step: {task.cur_step} | State: {task.cur_state} | Controller: {control} | Actuator: {task.cur_action} | l: {l} | h: {h}")
-     
+
         assert not np.any(np.isnan(envstate_new))
         assert not np.any(np.isnan(obs_pol))
     
-        if np.any(np.isnan(control)):
-            print(f"[NaN control Warning] Step: {task.cur_step} | State: {task.cur_state} | Control: {task.cur_action} | l: {l} | h: {h}")
+        if jnp.any(jnp.logical_or(jnp.isinf(control), jnp.isnan(control))):
+            print("[NaN control Warning]")
+        if verbose:
+            print(f"Step: {task.cur_step} | State: {task.cur_state} | Control: {control} | Actuator: {task.cur_action} | l: {l} | h: {h}")
             control = task.cur_action.reshape(control.shape)
         
         T_envstate.append(envstate_new)
