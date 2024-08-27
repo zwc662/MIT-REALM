@@ -124,7 +124,7 @@ class EFPPOInnerTrainer:
         ckpt_dir = mkdir(run_dir / "ckpts")
         ckpt_manager = get_ckpt_manager_sync(ckpt_dir, max_to_keep=trainer_cfg.ckpt_max_keep)
  
-        idx = 0
+        idx = 0 
         for idx in range(trainer_cfg.n_iters):
             should_log = idx % trainer_cfg.log_every == 0
             should_eval = idx % trainer_cfg.eval_every == 0
@@ -134,22 +134,24 @@ class EFPPOInnerTrainer:
 
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Collecting ... ")
             if iteratively:
-                collector, col_data = alg.collect_iteratively(collector)
+                collector: Collector = Collector.create(key1, self.task, collect_cfg)
+                _, col_data = alg.collect_iteratively(collector)
             else:
                 collector, col_data = alg.collect(collector)
 
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Updating ... ")
             t1 = time.time()
             alg, update_info = alg.update(col_data)
+      
             t2 = time.time()
 
-            if update_info["Grad/pol"] == 0:
+            if np.any(update_info["Grad/pol"] == 0):
                 logger.warning(f"Zero policy Grad indicates finding NaN in the grads. Policy loss: {update_info['loss_pol']}")
                 exit(0)
             for k in update_info:
                 if 'debug/pol/' in k:
                     logger.warning(f"{k}: {update_info[k]}")
-                    if 'hasnan' in k and update_info[k] == 1:
+                    if 'hasnan' in k and np.any(update_info[k] == 1):
                         exit(0)
             
             if should_log:
@@ -160,7 +162,7 @@ class EFPPOInnerTrainer:
                 log_dict["time/update"] = t2 - t1
                 wandb.log(log_dict, step=idx)
 
-                loss_info = {k[5:]: float(v) for k, v in update_info.items() if k.startswith("Loss/")}
+                loss_info = {k[5:]: np.asarray(v).astype(float) for k, v in update_info.items() if k.startswith("Loss/")}
                 logger.info(f"[{idx:8}]   {loss_info}")
 
             eval_rollout_T = 128

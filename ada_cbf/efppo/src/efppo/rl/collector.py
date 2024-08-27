@@ -101,13 +101,7 @@ def collect_single(
     def _body(state: CollectorState, key):
         obs_pol = task.get_obs(state.state)
         a_pol: tfd.Distribution = get_pol(obs_pol, state.z)
-        #control, logprob = a_pol.experimental_sample_and_log_prob(seed=key)
-        s = tfd.Sample(a_pol, sample_shape=1)
-        control = s.sample([1])
-        logprob = s.log_prob(control)
-        control = control.shape(-1, task.nu)
-        logprob = logprob.shape(-1)
-        
+        control, logprob = a_pol.experimental_sample_and_log_prob(seed=key)
         envstate_new = task.step(state.state, control)
         
         # Z dynamics.
@@ -182,7 +176,7 @@ def collect_single_env_mode(
             print("[NaN control Warning]")
         if verbose:
             print(f"Step: {task.cur_step} | State: {task.cur_state} | Control: {control} | Actuator: {task.cur_action} | l: {l} | h: {h}")
-            control = task.cur_action.reshape(control.shape)
+            #control = task.cur_action.reshape(control.shape)
         
         T_envstate.append(envstate_new)
         T_obs.append(obs_pol)
@@ -246,7 +240,15 @@ def collect_single_batch(
         obs_pol = task.get_obs(state.state)
         a_pol: tfd.Distribution = get_pol(obs_pol, state.z.squeeze())
         control, logprob = a_pol.experimental_sample_and_log_prob(seed=key)
-        envstate_new = jnp.asarray(task.step(state.state, np.asarray(control).reshape(2)))
+        '''
+        s = tfd.Sample(
+            tfd.MultivariateNormalDiag(loc=[0., 0.], scale_diag=[1, 1.]), sample_shape=1
+            )
+        base_control = s.sample([1], seed = key)
+        logprob = s.log_prob(base_control).reshape(logprob.shape)
+        control = (a_pol.scale @ base_control.reshape(-1, 1) + a_pol.loc.reshape(-1, 1)).reshape(control.shape)
+        '''
+        envstate_new = jnp.asarray(task.step(state.state, np.asarray(control).reshape(-1)))
         # Z dynamics.
         l = task.l(envstate_new, control)
         h = task.h_components(envstate_new)
@@ -278,9 +280,8 @@ def collect_single_batch(
         assert not jnp.isnan(envstate_new).any(), f'{task.cur_state=}'
         assert not jnp.isnan(obs_pol).any(), f'{task.cur_state=}'
         #assert not jnp.isnan(control).any(), f'{control=}'
-        if jnp.any(jnp.logical_or(jnp.isinf(control), jnp.isnan(control))) or jnp.any(jnp.logical_or(jnp.isnan(logprob), jnp.isinf(logprob))):
-            print(f"[NaN control Warning] Step: {task.cur_step} | State: {task.cur_state} | Control: {control} | Actuator: {task.cur_action} | logprob: {logprob} | l: {l} | h: {h}")
-            control = task.cur_action.reshape(control.shape)
+        assert not jnp.any(jnp.logical_or(jnp.isinf(control), jnp.isnan(control))) or jnp.any(jnp.logical_or(jnp.isnan(logprob), jnp.isinf(logprob))), f"[NaN control Warning] Step: {task.cur_step} | State: {task.cur_state} | Control: {control} | Actuator: {task.cur_action} | logprob: {logprob} | l: {l} | h: {h}"
+            #control = task.cur_action.reshape(control.shape[0], task.nu)
         
         #assert not jnp.isnan(logprob).any(), f'{logprob=}'
         
@@ -298,7 +299,7 @@ def collect_single_batch(
                 state = task.reset(init_pose = task.cur_lookahead_points[0]),
                 z=collect_state.z
                 )
-  
+    print(f"Single batch sampled control {len(T_u)=}, {len(T_logprob)=}, {np.mean(T_logprob)=}")
     # Convert lists to jnp arrays
     T_envstate = jnp.stack(T_envstate)
     T_obs = jnp.stack(T_obs)
@@ -307,7 +308,7 @@ def collect_single_batch(
     T_logprob = jnp.stack(T_logprob)
     T_l = jnp.stack(T_l)
     Th_h = jnp.stack(Th_h)
- 
+    
     obs_final = task.get_obs(collect_state.state)
 
     # Add the initial observations.
@@ -430,17 +431,16 @@ class Collector(struct.PyTreeNode):
                     state = self.collect_state.state[i - 1],
                     z = self.collect_state.z[i-1]
                 )
-             
             collect_state_i, bT_output = self._collect_single_batch(
                 i, 
                 key0, 
                 collect_state_i,
-                get_pol=get_pol, 
+                get_pol,
                 disc_gamma=disc_gamma, 
                 z_min=z_min, 
                 z_max=z_max
                 )
-       
+            print(f"Sampled control {np.mean(bT_output.T_logprob)=}")
             # Resample x0
             
             bT_outputs.append(bT_output)

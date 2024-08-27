@@ -38,6 +38,12 @@ from efppo.utils.rng import PRNGKey
 from efppo.utils.cfg_utils import RecursiveNamespace
 
 
+def discretize_u(controls: list[list[float]]):
+    """Discretize controls by doing a Cartesian product."""
+    controls = list(itertools.product(*controls))
+    return np.stack(controls, axis=0)
+
+
 """
 Planner Helpers
 """
@@ -743,14 +749,15 @@ class F1TenthWayPoint(Task):
         return np.concatenate((other_fts, lookahead_fts))
     
     def efppo_control_transform(self, control):
-        ## For EFPPO 
-        ### The control policy's output mean is constrained to be within (0, 3) using sigmoid scaling (check original /efppo/src/efppo/networks/poly_net.py: 23)
+        ## For Continuous Control
+        ### The control policy's output mean is constrained to be within (0, 3) using sigmoid scaling (check original /efppo/src/efppo/networks/poly_net.py)
         ### Therefore, the input control needs to be linearly transformed to be within [self.lb, self.ub]
-        return np.asarray(control.reshape(2) * (self.ub - self.lb) / 3. + self.lb).reshape(-1, 2)
+        ### return np.asarray(control.reshape(2) * (self.ub - self.lb) / 3. + self.lb).reshape(-1, 2)
 
-        ### The control policy's output mean is constrained to be within (-1, 1) using tanh (check current /efppo/src/efppo/networks/poly_net.py: 23)
+        ## For Discrete Control
+        ### The control policy's output mean is constrained to be either 0 or 1 using Categorical distribution (check current /efppo/src/efppo/networks/poly_net.py)
         ### Therefore, the input control needs to be linearly transformed to be within [self.lb, self.ub]
-        #return np.asarray((control + 1).reshape(2) * (self.ub - self.lb) / 2. + self.lb).reshape(-1, 2)
+        return self.discr_to_cts(control) #np.asarray((control).reshape(2) * (self.ub - self.lb) / 2. + self.lb).reshape(-1, 2)
 
 
     @override
@@ -762,10 +769,10 @@ class F1TenthWayPoint(Task):
                 input(f'Simulation fronzen @ {self.cur_step}: {self.cur_state_dict}. Say something ??')
             return self.cur_state
         
-        if np.any(np.isnan(control)):
-            control = np.zeros((1, 2))
+       
 
-        assert control.shape[-1] == 2 or control.shape == (2,), f"{control}"
+        #assert control.shape[-1] == 2 or control.shape == (2,), f"{control}"
+        #assert control.shape[-1] == 1
         assert state.shape[-1] == self.nx
 
         
@@ -851,16 +858,16 @@ class F1TenthWayPoint(Task):
         if self.cur_pursuit_action is not None:
             l = np.square(control.reshape(2) - self.cur_pursuit_action.reshape(2)).sum()
          
-        #if self.pre_waypoint_ids is not None:
-        #    previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
-        #    l += np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum().item() 
+        if self.pre_waypoint_ids is not None:
+            previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
+            l += np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum().item() 
         return l
             
     
     def h_components(self, state: State) -> HFloat:
-        #return (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
+        return (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
 
-        return  - np.ones(len(self.h_labels)) # (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
+        #return  - np.ones(len(self.h_labels)) # (np.stack((self.cur_collision, self.cur_overflow)) * 2 - 1.).reshape(len(self.h_labels))
     
         return self.cur_collision.item() + self.cur_done.item()
         fts = self.get_obs(state)
@@ -886,17 +893,20 @@ class F1TenthWayPoint(Task):
         state = self.reset(mode='test')
         return state.reshape(1, *state.shape)
     
+    def discr_to_cts(self, control_idx) -> Control:
+        """Convert discrete control to continuous."""
+        return np.array(self.discrete_actions)[control_idx].reshape(1, self.nu)
+
 
     @property
     def discrete_actions(self):
-        
-        controls = [
-            [self.lb[0], self.ub[0]],
-            [self.lb[1], self.ub[1]],
-        ]
-        
+        controls = list(zip(self.lb, self.ub)) 
+        controls = discretize_u(controls)
+        # Add in the zero control.
+        controls = np.concatenate([controls, np.zeros((1, 2))], axis=0)
+        assert controls.shape == (2**self.nu + 1, self.nu)
         return controls
-    
+ 
 
     @property
     def n_actions(self) -> int:

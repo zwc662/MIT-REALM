@@ -15,7 +15,7 @@ from loguru import logger
 from efppo.networks.ef_wrapper import EFWrapper, ZEncoder
 from efppo.networks.mlp import MLP
 from efppo.networks.network_utils import ActLiteral, HidSizes, get_act_from_str, get_default_tx
-from efppo.networks.policy_net import DiscretePolicyNet
+from efppo.networks.policy_net import DiscretePolicyNet, ContinuousPolicyNet
 from efppo.networks.train_state import TrainState
 from efppo.networks.value_net import ConstrValueNet, CostValueNet
 from efppo.rl.collector import Collector, RolloutOutput, collect_single_mode, collect_single_env_mode
@@ -193,9 +193,34 @@ class EFPPOInner(struct.PyTreeNode):
         bT_obs = data.Tp1_obs[:, :-1]
         bT_batch = self.Batch(bT_obs, bT_z, data.T_control, data.T_logprob, bT_Ql, bTh_Qh, bT_A)
         b_batch = jax.tree_map(merge01, bT_batch)
+
+        # 5: Verify if policy logprob matches
+        is_ratios_w_param = []
+        logprobs_w_param = []
+        is_ratios = []
+        logprobs = []
+        for (b_obs, b_z, b_control, b_logprob) in zip(b_batch.b_obs, b_batch.b_z, b_batch.b_control, b_batch.b_logprob):
+            dist_w_params = self.policy.apply_with(b_obs, b_z, params=self.policy.params)
+            logprob_w_param = dist_w_params.log_prob(b_control)
+            logprobs_w_param.append(logprob_w_param)
+            logratio_w_param =  logprob_w_param - b_logprob
+            is_ratio_w_param = jnp.exp(logratio_w_param)
+            is_ratios_w_param.append(is_ratio_w_param)
+
+            dist = self.policy.apply(b_obs, b_z)
+            logprob = dist.log_prob(b_control)
+            logprobs.append(logprob)
+            logratio =  logprob - b_logprob
+            is_ratio = jnp.exp(logratio)
+            is_ratios.append(is_ratio)
+                
+        print(f'Verifying dataset before updating: {np.mean(b_batch.b_logprob)=}') 
+        print(f'{np.mean(logprobs)=}, {np.mean(is_ratios)=}')
+        print(f'{np.mean(logprobs_w_param)=}, {np.mean(is_ratios_w_param)=}')
+
         return b_batch
 
-    @ft.partial(jax.jit, donate_argnums=0)
+    #@ft.partial(jax.jit, donate_argnums=0)
     def update(self, data: Collector.Rollout) -> tuple["EFPPOInner", dict]:
         # Compute GAE values.
         b_dset = self.make_dset(data)
@@ -216,9 +241,20 @@ class EFPPOInner(struct.PyTreeNode):
             alg_, pol_info = alg_.update_policy(b_batch)
             return alg_, val_info | pol_info
 
-        new_self, info = lax.scan(updates_body, self, mb_dset, length=n_batches)
+        info = {}
+        alg_ = self
+        for i in range(n_batches):
+            batch = jtu.tree_map(lambda x: x[i], mb_dset)
+            alg_, info_ = updates_body(alg_, batch)
+            for k in info_:
+                if k not in info:
+                    info[k] = [info_[k]]
+                else:
+                    info[k].append(info_[k])
+        new_self = alg_
+        #new_self, info = lax.scan(updates_body, self, mb_dset, length=n_batches)
         # Take the mean.
-        info = jax.tree_map(jnp.mean, info)
+        #info = jax.tree_map(jnp.mean, info)
 
         info["steps/policy"] = self.policy.step
         info["steps/Vl"] = self.Vl.step
@@ -280,20 +316,20 @@ class EFPPOInner(struct.PyTreeNode):
 
             pol_loss = loss_pg + ent_cf * loss_entropy
             info = {
-                 "loss_pol": pol_loss,
+                "loss_pol": pol_loss,
                 "entropy": mean_entropy,
                 "pol_clipfrac": pol_clipfrac,
             }
             info.update({
                 "debug/pol/hasnan_b_logprobs": jnp.any(jnp.logical_or(jnp.isnan(b_logprobs), jnp.isinf(b_logprobs))),
+                "debug/pol/hasnan_batch_b_logprob": jnp.any(jnp.logical_or(jnp.isnan(batch.b_logprob), jnp.isinf(batch.b_logprob))),
                 "debug/pol/hasnan_b_is_ratio": jnp.any(jnp.logical_or(jnp.isnan(b_is_ratio), jnp.isinf(b_is_ratio))),
                 "debug/pol/hasnan_adv": jnp.any(jnp.logical_or(jnp.isnan(b_adv), jnp.isinf(b_adv))),
-                "debug/pol/max_b_logprobs": b_logprobs.max(),
-                "debug/pol/min_b_logprobs": b_logprobs.min(),
-                "debug/pol/max_b_is_ratio": b_is_ratio.max(),
-                "debug/pol/min_b_is_ratio": b_is_ratio.min(),
-                "debug/pol/max_adv": b_adv.max(),
-                "debug/pol/min_adv": b_adv.min()
+                "debug/pol/mean_batch_b_logprob": batch.b_logprob.mean(), 
+                "debug/pol/mean_b_logprobs": b_logprobs.mean(), 
+                "debug/pol/max_b_is_ratio": b_is_ratio.max(), 
+                "debug/pol/min_b_is_ratio": b_is_ratio.min(), 
+                "debug/pol/mean_adv": b_adv.mean(), 
             })
                
             return pol_loss, info
@@ -302,21 +338,25 @@ class EFPPOInner(struct.PyTreeNode):
         ent_cf, clip_ratio = self.ent_cf, self.train_cfg.clip_ratio
         grads, pol_info = jax.grad(get_pol_loss, has_aux=True)(self.policy.params)
        
-        pol_info["debug/pol/hasnan_grads"] = jtu.tree_map(lambda x: jnp.any(jnp.logical_or(jnp.isnan(x), jnp.isinf(x))), grads)
-        pol_info["debug/pol/max_norm_grads"] = jtu.tree_map(lambda x: jnp.abs(x).max(), grads)
-        pol_info["debug/pol/min_norm_grads"] = jtu.tree_map(lambda x: jnp.abs(x).min(), grads)
+        #pol_info["debug/pol/hasnan_grads"] = jtu.tree_map(lambda x: jnp.any(jnp.logical_or(jnp.isnan(x), jnp.isinf(x))), grads)
+        #pol_info["debug/pol/max_norm_grads"] = jtu.tree_map(lambda x: jnp.abs(x).max(), grads)
+        #pol_info["debug/pol/min_norm_grads"] = jtu.tree_map(lambda x: jnp.abs(x).min(), grads)
         grads, pol_info["Grad/pol"] = compute_norm_and_clip(grads, self.train_cfg.clip_grad_pol)
         policy = self.policy.apply_gradients(grads=grads)
+        print(f"Updated to policy {self.policy.step}")
         return self.replace(policy=policy), pol_info
 
     @ft.partial(jax.jit, donate_argnums=1)
     def collect(self, collector: Collector) -> tuple[Collector, Collector.Rollout]:
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max 
-        return collector.collect_batch(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
+        return collector.collect_batch(
+            ft.partial(self.policy.apply_with, params=self.policy.params), self.disc_gamma, z_min, z_max)
 
     def collect_iteratively(self, collector: Collector) -> tuple[Collector, Collector.Rollout]:
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
-        return collector.collect_batch_iteratively(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
+        print(f"Collecting with policy {self.policy.step}")
+        return collector.collect_batch_iteratively(
+            ft.partial(self.policy.apply_with, params=self.policy.params), self.disc_gamma, z_min, z_max)
 
 
     def eval_iteratively(self, rollout_T: int) -> EvalData:
