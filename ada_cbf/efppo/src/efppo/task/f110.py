@@ -907,7 +907,7 @@ class F1TenthWayPoint(Task):
         return np.array(self.discrete_actions)[control_idx].reshape(1, self.nu)
     
     def cts_to_discr(self, control: Control) -> int:
-        flat_control = np.flatten(control)
+        flat_control = np.array(control).reshape(-1)
 
         min_diff = (0, np.abs(flat_control - self.discrete_actions[0]).sum())
 
