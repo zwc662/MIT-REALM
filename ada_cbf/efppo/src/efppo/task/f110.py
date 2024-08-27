@@ -863,7 +863,7 @@ class F1TenthWayPoint(Task):
         if self.cur_pursuit_action is not None:
             #l = np.square(control.reshape(2) - self.cur_pursuit_action.reshape(2)).sum()
             target = self.cts_to_discr(self.cur_pursuit_action) 
-            l += np.abs(target - control).item()
+            l += target - control
 
 
 
