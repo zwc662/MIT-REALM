@@ -143,6 +143,12 @@ class EFPPOInnerTrainer:
             alg, update_info = alg.update(col_data)
             t2 = time.time()
 
+            if update_info["Grad/pol"] == 0:
+                logger.warning(f"Zero policy Grad indicates finding NaN in the grads. Policy loss: {update_info['loss_pol']}")
+            for k in update_info:
+                if 'debug/pol/' in k:
+                    logger.warning(f"{k}: {update_info[k]}")
+            
             if should_log:
                 if should_eval:
                     logger.info("time  |  collect: {:.3f} update: {:.3f}".format(t1 - t0, t2 - t1))

@@ -280,16 +280,31 @@ class EFPPOInner(struct.PyTreeNode):
 
             pol_loss = loss_pg + ent_cf * loss_entropy
             info = {
-                "loss_pol": pol_loss,
+                 "loss_pol": pol_loss,
                 "entropy": mean_entropy,
                 "pol_clipfrac": pol_clipfrac,
             }
+            info.update({
+                "debug/pol/hasnan_b_logprobs": jnp.any(jnp.logical_or(jnp.isnan(b_logprobs), jnp.isinf(b_logprobs))),
+                "debug/pol/hasnan_b_is_ratio": jnp.any(jnp.logical_or(jnp.isnan(b_is_ratio), jnp.isinf(b_is_ratio))),
+                "debug/pol/hasnan_adv": jnp.any(jnp.logical_or(jnp.isnan(b_adv), jnp.isinf(b_adv))),
+                "debug/pol/max_b_logprobs": b_logprobs.max(),
+                "debug/pol/min_b_logprobs": b_logprobs.min(),
+                "debug/pol/max_b_is_ratio": b_is_ratio.max(),
+                "debug/pol/min_b_is_ratio": b_is_ratio.min(),
+                "debug/pol/max_adv": b_adv.max(),
+                "debug/pol/min_adv": b_adv.min()
+            })
+               
             return pol_loss, info
 
         clip_ratio = self.train_cfg.clip_ratio
         ent_cf, clip_ratio = self.ent_cf, self.train_cfg.clip_ratio
         grads, pol_info = jax.grad(get_pol_loss, has_aux=True)(self.policy.params)
-
+       
+        pol_info["debug/pol/hasnan_grads"] = jtu.tree_map(lambda x: jnp.any(jnp.logical_or(jnp.isnan(x), jnp.isinf(x))), grads)
+        pol_info["debug/pol/max_norm_grads"] = jtu.tree_map(lambda x: jnp.abs(x).max(), grads)
+        pol_info["debug/pol/min_norm_grads"] = jtu.tree_map(lambda x: jnp.abs(x).min(), grads)
         grads, pol_info["Grad/pol"] = compute_norm_and_clip(grads, self.train_cfg.clip_grad_pol)
         policy = self.policy.apply_gradients(grads=grads)
         return self.replace(policy=policy), pol_info
