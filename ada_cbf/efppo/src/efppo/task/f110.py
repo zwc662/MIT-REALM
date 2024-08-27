@@ -37,13 +37,7 @@ from efppo.utils.plot_utils import plot_x_bounds, plot_y_bounds, plot_y_goal
 from efppo.utils.rng import PRNGKey
 from efppo.utils.cfg_utils import RecursiveNamespace
 
-
-def discretize_u(controls: list[list[float]]):
-    """Discretize controls by doing a Cartesian product."""
-    controls = list(itertools.product(*controls))
-    return np.stack(controls, axis=0)
-
-
+ 
 """
 Planner Helpers
 """
@@ -529,7 +523,17 @@ class F1TenthWayPoint(Task):
         if control_mode not in ['pursuit', '']:
             raise NotImplementedError
         self.control_mode = control_mode
- 
+
+        
+        def get_discrete_actions():
+            controls = list(zip(self._lb, self._ub)) 
+            controls = np.stack(list(itertools.product(*controls)), axis=0)
+            controls = np.concatenate([controls, np.zeros((1, 2))], axis=0)
+            return controls
+        
+        self.discrete_actions = get_discrete_actions()
+        
+
     @property
     def nx(self):
         return 5 + 2 * self.conf.work.nlad
@@ -545,6 +549,10 @@ class F1TenthWayPoint(Task):
     @property
     def ub(self):
         return self._ub
+    
+    @property
+    def candidate_cont_controls(self):
+        
     
     @property
     def x_labels(self) -> list[str]:
@@ -848,16 +856,21 @@ class F1TenthWayPoint(Task):
             self.cur_collision.item() + \
             np.sqrt(np.sum(state[self.STATE_FST_LAD:]**2)).item()
 
+
     def l(self, state: State, control: Control) -> LFloat:
         control = self.efppo_control_transform(control)
         steer = control[..., 1:].sum()
         
         l = 0
   
-        # Cost for diff from pursuit controller
+        # Cost for cont diff from pursuit controller
         if self.cur_pursuit_action is not None:
-            l = np.square(control.reshape(2) - self.cur_pursuit_action.reshape(2)).sum()
-         
+            #l = np.square(control.reshape(2) - self.cur_pursuit_action.reshape(2)).sum()
+            target = self.cts_to_discr(self.cur_pursuit_action) 
+            l += np.abs(target - control).item()
+
+
+
         if self.pre_waypoint_ids is not None:
             previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
             l += np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum().item() 
@@ -896,16 +909,19 @@ class F1TenthWayPoint(Task):
     def discr_to_cts(self, control_idx) -> Control:
         """Convert discrete control to continuous."""
         return np.array(self.discrete_actions)[control_idx].reshape(1, self.nu)
+    
+    def cts_to_discr(self, control: Control) -> int:
+        flat_control = np.flatten(control)
 
+        min_diff = (0, np.abs(flat_control - self.discrete_actions[0]).sum())
 
-    @property
-    def discrete_actions(self):
-        controls = list(zip(self.lb, self.ub)) 
-        controls = discretize_u(controls)
-        # Add in the zero control.
-        controls = np.concatenate([controls, np.zeros((1, 2))], axis=0)
-        assert controls.shape == (2**self.nu + 1, self.nu)
-        return controls
+        for i in range(1, self.n_actions):
+            diff = np.abs(flat_control - self.discrete_actions).sum()
+            if min_diff[1] > diff:
+                min_diff = (i, diff)
+
+        return min_diff[0]
+      
  
 
     @property
