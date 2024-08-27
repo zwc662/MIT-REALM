@@ -854,18 +854,15 @@ class F1TenthWayPoint(Task):
 
 
     def l(self, state: State, control: Control) -> LFloat:
-        control = self.efppo_control_transform(control)
-        steer = control[..., 1:].sum()
-        
         l = 0
-  
         # Cost for cont diff from pursuit controller
         if self.cur_pursuit_action is not None:
-            #l = np.square(control.reshape(2) - self.cur_pursuit_action.reshape(2)).sum()
+            #
             target = self.cts_to_discr(self.cur_pursuit_action) 
             l += target - control
 
-
+            control = self.efppo_control_transform(control) 
+            l += np.square(control.reshape(2) - self.cur_pursuit_action.reshape(2)).sum()
 
         if self.pre_waypoint_ids is not None:
             previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
