@@ -145,9 +145,12 @@ class EFPPOInnerTrainer:
 
             if update_info["Grad/pol"] == 0:
                 logger.warning(f"Zero policy Grad indicates finding NaN in the grads. Policy loss: {update_info['loss_pol']}")
+                exit(0)
             for k in update_info:
                 if 'debug/pol/' in k:
                     logger.warning(f"{k}: {update_info[k]}")
+                    if 'hasnan' in k and update_info[k] == 1:
+                        exit(0)
             
             if should_log:
                 if should_eval:

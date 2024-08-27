@@ -270,8 +270,8 @@ def collect_single_batch(
         assert not jnp.isnan(envstate_new).any(), f'{task.cur_state=}'
         assert not jnp.isnan(obs_pol).any(), f'{task.cur_state=}'
         #assert not jnp.isnan(control).any(), f'{control=}'
-        if np.any(np.isnan(control)):
-            print(f"[NaN control Warning] Step: {task.cur_step} | State: {task.cur_state} | Control: {task.cur_action} | l: {l} | h: {h}")
+        if jnp.any(jnp.logical_or(jnp.isinf(control), jnp.isnan(control))) or jnp.any(jnp.logical_or(jnp.isnan(logprob), jnp.isinf(logprob))):
+            print(f"[NaN control Warning] Step: {task.cur_step} | State: {task.cur_state} | Control: {control} | Actuator: {task.cur_action} | logprob: {logprob} | l: {l} | h: {h}")
             control = task.cur_action.reshape(control.shape)
         
         #assert not jnp.isnan(logprob).any(), f'{logprob=}'
@@ -286,7 +286,7 @@ def collect_single_batch(
 
         if (task.cur_done > 0.).any() | task.should_reset(envstate_new):
             collect_state = collect_state._replace(
-                steps = collect_state.steps,
+                steps = 0,
                 state = task.reset(init_pose = task.cur_lookahead_points[0]),
                 z=collect_state.z
                 )
@@ -299,9 +299,7 @@ def collect_single_batch(
     T_logprob = jnp.stack(T_logprob)
     T_l = jnp.stack(T_l)
     Th_h = jnp.stack(Th_h)
-
-    collect_state = collect_state._replace(steps=collect_state.steps + rollout_T)
-
+ 
     obs_final = task.get_obs(collect_state.state)
 
     # Add the initial observations.
