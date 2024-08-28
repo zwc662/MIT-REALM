@@ -515,8 +515,8 @@ class F1TenthWayPoint(Task):
 
         self.width = 0
 
-        self._lb = np.array([-np.pi, -10. ])
-        self._ub = np.array([np.pi, 10.])
+        self._lb = np.array([-np.pi/2., -5. ])
+        self._ub = np.array([np.pi/2., 5.])
         
         self.render = False
 
@@ -526,10 +526,13 @@ class F1TenthWayPoint(Task):
 
         
         def get_discrete_actions():
+            return [[steer, 5.] for steer in np.linspace(self._lb[0], self._ub[0], 10)]
+            '''
             controls = list(zip(self._lb, self._ub)) 
             controls = np.stack(list(itertools.product(*controls)), axis=0)
             controls = np.concatenate([np.zeros((1, 2)), controls], axis=0)
             return controls
+            '''
         
         self.discrete_actions = get_discrete_actions()
         
