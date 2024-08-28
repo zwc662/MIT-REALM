@@ -908,17 +908,17 @@ class F1TenthWayPoint(Task):
 
         if np.all(flat_control == 0):
             return 0
+        proj_control = []
+        for i in range(self.nu):
+            if np.abs(flat_control[i] - self.lb[i]) >= np.abs(flat_control[i] - self.ub[i]):
+                proj_control.append(self.ub[i])
+            else:
+                proj_control.append(self.lb[i])
+        for i in range(len(self.n_actions)):
+            if np.all(np.asarray(self.discrete_actions[i]).reshape(-1) == np.asarray(proj_control).reshape(-1)):
+                return i
+        assert np.any(np.asarray(self.discrete_actions).reshape(-1, self.nu) == np.asarray(proj_control).reshape(-1)), f'{control} projected as {proj_control} not found in {self.discrete_actions}'
 
-        min_diff = (1, np.abs(flat_control - self.discrete_actions[1]).sum())
-
-        for i in range(1, self.n_actions):
-            diff = np.abs(flat_control - self.discrete_actions).sum()
-            if min_diff[1] > diff:
-                min_diff = (i, diff)
-
-        return min_diff[0]
-      
- 
 
     @property
     def n_actions(self) -> int:
