@@ -44,7 +44,7 @@ def test_eval():
     )
     from eval_f110_wp import main as eval_main
 
-    eval_main(None) #pathlib.Path(os.path.dirname(__file__)))
+    eval_main(None, render = True) #pathlib.Path(os.path.dirname(__file__)))
 
 if __name__ == "__main__":
     pytest.main()

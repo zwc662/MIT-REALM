@@ -25,6 +25,8 @@ from typing import List, Dict, Any
 
 from f110_gym.envs.f110_env import F110Env
 from f110_gym.envs.base_classes import Integrator 
+from f110_gym.envs.collision_models import get_vertices
+from f110_gym.envs.rendering import CAR_LENGTH, CAR_WIDTH
 
 from matplotlib import pyplot as plt
 
@@ -54,6 +56,10 @@ def nearest_point_on_trajectory(point, trajectory):
     point: size 2 numpy array
     trajectory: Nx2 matrix of (x,y) trajectory waypoints
         - these must be unique. If they are not unique, a divide by 0 error will destroy the world
+
+
+    >>>>>>>> If allow wrapping the track, when the vehicle approaches the end point, a lower indexed waypoint in front of the vehicle must be treated as the lookahead point
+    
     """
     diffs = trajectory[1:,:] - trajectory[:-1,:]
     l2s   = np.sqrt(diffs[:,0]**2 + diffs[:,1]**2)
@@ -388,7 +394,7 @@ class Planner:
         #points = self.waypoints
 
         waypoints = np.vstack((self.waypoints[:, self.conf.wpt_xind], self.waypoints[:, self.conf.wpt_yind])).T
-        scaled_points = 50. * waypoints
+        scaled_points = 50 * waypoints
 
         for i in range(waypoints.shape[0]):
             if len(self.drawn_waypoints) < waypoints.shape[0]:
@@ -398,6 +404,7 @@ class Planner:
             else:
                 self.drawn_waypoints[i].vertices = [scaled_points[i, 0], scaled_points[i, 1], 0.]
     
+     
     def render_border(self, GL_POINTS, e):
         border= np.vstack((self.border[:, self.conf.bpt_xind], self.border[:, self.conf.bpt_yind])).T
         
@@ -515,8 +522,8 @@ class F1TenthWayPoint(Task):
 
         self.width = 0
 
-        self._lb = np.array([-np.pi/2., -5. ])
-        self._ub = np.array([np.pi/2., 5.])
+        self._lb = np.array([-np.pi/2., 3])
+        self._ub = np.array([np.pi/2., 3])
         
         self.render = False
 
@@ -526,7 +533,7 @@ class F1TenthWayPoint(Task):
 
         
         def get_discrete_actions():
-            return [[steer, 5.] for steer in np.linspace(self._lb[0], self._ub[0], 10)]
+            return [[steer, self._ub[1]] for steer in np.linspace(self._lb[0], self._ub[0], 20)]
             '''
             controls = list(zip(self._lb, self._ub)) 
             controls = np.stack(list(itertools.product(*controls)), axis=0)
@@ -629,7 +636,7 @@ class F1TenthWayPoint(Task):
         self.pre_waypoints_ids = None
 
  
-        if random_map or self.cur_planner is None or self.cur_env is None:
+        if (random_map or self.cur_planner is None or self.cur_env is None):
             self.cur_map_name = random.choice(
                 self.train_map_names if 'train' in mode.lower() else self.test_map_names
                 )
@@ -658,29 +665,30 @@ class F1TenthWayPoint(Task):
             integrator=Integrator.RK4
             )
         self.cur_env.timestep =  self.dt
+        self.cur_env.renderer = None
 
         if init_pose is None:
-            init_pose_ind = np.random.choice(int(self.cur_planner.waypoints.shape[0]))
+            init_pose_ind = self.cur_planner.waypoints.shape[0] -5 #np.random.choice(int(self.cur_planner.waypoints.shape[0]))
             init_pose = self.cur_planner.waypoints[init_pose_ind][np.array(
                 [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
                 )]
             
             init_angle = np.random.normal(
                 loc = np.zeros([1]),
-                scale = 0.7 * np.pi / 2 * np.ones([1])
+                scale = 0.1 * np.pi
             )
+            nxt_pose = self.cur_planner.waypoints[(init_pose_ind + 1) % len(self.cur_planner.waypoints)][np.array(
+                [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
+                )]
+            pose_diff = (nxt_pose-init_pose)[np.array(
+                [self.cur_planner.conf.wpt_yind, self.cur_planner.conf.wpt_xind]
+                )]
+            init_angle += np.arctan2(*pose_diff).reshape(1)
             init_pose = np.concatenate((init_pose, init_angle))
  
         print(f"Reset from {init_pose}")
         state_dict, step_reward, done, info = self.cur_env.reset(init_pose.reshape(1, -1))
         
-        
-        if self.render:  
-            input("render and reset. Say something ????")  
-            self.init_render()
-            self.cur_env.render(mode='human')
-        
-            
         self.cur_collision = state_dict['collisions']
         self.cur_state_dict = {k: v for k, v in state_dict.items()}
         lookahead_points, waypoint_ids, self.cur_pursuit_action = self.cur_planner.plan(state_dict, self.conf.work) 
@@ -694,16 +702,61 @@ class F1TenthWayPoint(Task):
 
         self.cur_state = self.get_state(state_dict, lookahead_points)
         self.cur_step = 0
+ 
+        if self.render:  
+            input("render and reset. Say something ????")  
+            self.init_render_callbacks()
+            self.cur_env.render(mode='human')
+             
+             
         return self.cur_state#, 0, done, info
+ 
 
-    def init_render(self):
-        from pyglet.gl import GL_POINTS
+    
+    def get_lookahead_vertices(self):
+        scaled_points = self.cur_lookahead_points
+        diffs = scaled_points[1:] - scaled_points[:-1]
+        #print(diffs.shape)
+        angles = np.arctan2(diffs[:, self.cur_planner.conf.wpt_yind], diffs[:, self.cur_planner.conf.wpt_xind]).flatten().tolist()
+        angles.append(angles[-1])
+        angles = np.asarray(angles).reshape(-1, 1)
+        scaled_points = np.concatenate((scaled_points, angles), axis = -1)
+        return scaled_points
+        
+    def render_lookahead_points(self, GL_QUADS, e): 
+        unscaled_points = self.get_lookahead_vertices()
+        
+        if not hasattr(e, "lookahead_points"):
+            e.lookahead_points = []
+            for i in range(unscaled_points.shape[0]):
+                vertices_np = 50 * get_vertices(np.array(unscaled_points[i]), CAR_LENGTH / 2.0, CAR_WIDTH  / 2.0)
+                vertices = list(vertices_np.flatten())
+                e.lookahead_points.append(
+                    e.batch.add(
+                        4, 
+                        GL_QUADS, 
+                        None, 
+                        ('v2f', vertices), 
+                        ('c3B', (np.asarray([172, 97, 185, 172, 97, 185, 172, 97, 185, 172, 97, 185]) - (i + 1) * unscaled_points.shape[0]).tolist())
+                    )
+                )
+        else: 
+            for i in range(unscaled_points.shape[0]):
+                vertices_np = 50 * get_vertices(np.array(unscaled_points[i]), CAR_LENGTH / 2.0, CAR_WIDTH  / 2.0)
+                vertices = list(vertices_np.flatten())
+                e.lookahead_points[i].vertices = vertices 
+        
+ 
+
+    def init_render_callbacks(self):
+        from pyglet.gl import GL_POINTS, GL_QUADS
+        ### For all waypoints along the centerline
         def render_callback(env_renderer):
             # custom extra drawing function
 
             e = env_renderer
 
-            # update camera to follow car
+            # update camera to follow car5
             x = e.cars[0].vertices[::2]
             y = e.cars[0].vertices[1::2]
             top, bottom, left, right = max(y), min(y), min(x), max(x)
@@ -715,28 +768,12 @@ class F1TenthWayPoint(Task):
             e.bottom = bottom - 800
 
             self.cur_planner.render_waypoints(GL_POINTS, e)
+            self.render_lookahead_points(GL_QUADS, e)
+
         self.cur_env.render_callbacks.append(render_callback)
-    
-    def render_points(self, pts):
-        from pyglet.gl import GL_POINTS
-        def render_callback(env_renderer):
-            # custom extra drawing function
-
-            e = env_renderer
-
-            pts = pts[:, 0:2].T
-            scaled_points = 50. * pts
-            drawn_waypoints = []
-
-            for i in range(pts.shape[0]):
-                if len(drawn_waypoints) < pts.shape[0]:
-                    b = e.batch.add(1, GL_POINTS, None, ('v3f/stream', [scaled_points[i, 0], scaled_points[i, 1], 0.]),
-                                    ('c3B/stream', [183, 193, 222]))
-                    drawn_waypoints.append(b)
-                else:
-                    drawn_waypoints[i].vertices = [scaled_points[i, 0], scaled_points[i, 1], 0.]
-             
-        self.cur_env.render_callbacks.append(render_callback)
+        return render_callback
+      
+     
 
     def check_lad(self, lookahead_points):
         for lookahead_point in lookahead_points:
@@ -789,9 +826,13 @@ class F1TenthWayPoint(Task):
        
         self.cur_action = getattr(self, f"cur_{self.control_mode}_action")
 
+        #print(f'Before projection {self.cur_action=}')
+        self.cur_action = self.discr_to_cts(self.cts_to_discr(self.cur_action))
+        #print(f'After projection {self.cur_action=}')
+
         if self.control_mode == 'pursuit':
-            print(self.cur_action)
-            input()
+            print(f'{self.cur_pursuit_action=}')
+            input('Enter to proceed')
 
         nxt_state_dict, step_reward, done, info = self.cur_env.step(self.cur_action)
         #print(self.cur_step, nxt_state_dict, action)
@@ -799,7 +840,9 @@ class F1TenthWayPoint(Task):
         if self.render:
             #print(f"control: {control}")
             #print(f"state: {nxt_state_dict}")
+            #self.init_render_callbacks()
             self.cur_env.render(mode='human')
+          
         
         
         self.cur_collision = nxt_state_dict['collisions']
@@ -908,20 +951,14 @@ class F1TenthWayPoint(Task):
     
     def cts_to_discr(self, control: Control) -> int:
         flat_control = np.array(control).reshape(-1)
-
-        if np.all(flat_control == 0):
-            return 0
-        proj_control = []
-        for i in range(self.nu):
-            if np.abs(flat_control[i] - self.lb[i]) >= np.abs(flat_control[i] - self.ub[i]):
-                proj_control.append(self.ub[i])
-            else:
-                proj_control.append(self.lb[i])
-        for i in range(self.n_actions):
-            if np.all(np.asarray(self.discrete_actions[i]).reshape(-1) == np.asarray(proj_control).reshape(-1)):
-                return i
-        assert np.any(np.asarray(self.discrete_actions).reshape(-1, self.nu) == np.asarray(proj_control).reshape(-1)), f'{control} projected as {proj_control} not found in {self.discrete_actions}'
-
+ 
+        min_diff = (0, np.abs(flat_control).sum())
+        for i in range(1, self.n_actions):
+            diff = np.abs(np.asarray(self.discrete_actions[i]).reshape(-1) - flat_control).sum()
+            if diff <= min_diff[1]:
+                min_diff = (i, diff)
+        #assert np.any(np.asarray(self.discrete_actions).reshape(-1, self.nu) == np.asarray(proj_control).reshape(-1)), f'{control} projected as {proj_control} not found in {self.discrete_actions}'
+        return min_diff[0]
 
     @property
     def n_actions(self) -> int:
