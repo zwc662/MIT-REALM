@@ -194,6 +194,7 @@ class EFPPOInner(struct.PyTreeNode):
         bT_batch = self.Batch(bT_obs, bT_z, data.T_control, data.T_logprob, bT_Ql, bTh_Qh, bT_A)
         b_batch = jax.tree_map(merge01, bT_batch)
 
+        '''
         # 5: Verify if policy logprob matches
         is_ratios_w_param = []
         logprobs_w_param = []
@@ -217,7 +218,7 @@ class EFPPOInner(struct.PyTreeNode):
         print(f'Verifying dataset before updating: {np.mean(b_batch.b_logprob)=}') 
         print(f'{np.mean(logprobs)=}, {np.mean(is_ratios)=}')
         print(f'{np.mean(logprobs_w_param)=}, {np.mean(is_ratios_w_param)=}')
-
+        '''
         return b_batch
 
     #@ft.partial(jax.jit, donate_argnums=0)
@@ -241,6 +242,7 @@ class EFPPOInner(struct.PyTreeNode):
             alg_, pol_info = alg_.update_policy(b_batch)
             return alg_, val_info | pol_info
 
+        '''
         info = {}
         alg_ = self
         for i in range(n_batches):
@@ -252,9 +254,10 @@ class EFPPOInner(struct.PyTreeNode):
                 else:
                     info[k].append(info_[k])
         new_self = alg_
-        #new_self, info = lax.scan(updates_body, self, mb_dset, length=n_batches)
+        '''
+        new_self, info = lax.scan(updates_body, self, mb_dset, length=n_batches)
         # Take the mean.
-        #info = jax.tree_map(jnp.mean, info)
+        info = jax.tree_map(jnp.mean, info)
 
         info["steps/policy"] = self.policy.step
         info["steps/Vl"] = self.Vl.step
@@ -320,6 +323,7 @@ class EFPPOInner(struct.PyTreeNode):
                 "entropy": mean_entropy,
                 "pol_clipfrac": pol_clipfrac,
             }
+            '''
             info.update({
                 "debug/pol/hasnan_b_logprobs": jnp.any(jnp.logical_or(jnp.isnan(b_logprobs), jnp.isinf(b_logprobs))),
                 "debug/pol/hasnan_batch_b_logprob": jnp.any(jnp.logical_or(jnp.isnan(batch.b_logprob), jnp.isinf(batch.b_logprob))),
@@ -331,7 +335,7 @@ class EFPPOInner(struct.PyTreeNode):
                 "debug/pol/min_b_is_ratio": b_is_ratio.min(), 
                 "debug/pol/mean_adv": b_adv.mean(), 
             })
-               
+            '''
             return pol_loss, info
 
         clip_ratio = self.train_cfg.clip_ratio

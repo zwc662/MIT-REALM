@@ -859,10 +859,10 @@ class F1TenthWayPoint(Task):
         if self.cur_pursuit_action is not None:
             #
             target = self.cts_to_discr(self.cur_pursuit_action) 
-            l += target - control
+            l += np.abs(target - control)
 
-            control = self.efppo_control_transform(control) 
-            l += np.square(control.reshape(2) - self.cur_pursuit_action.reshape(2)).sum()
+            #control = self.efppo_control_transform(control) 
+            #l += np.square(control.reshape(2) - self.cur_pursuit_action.reshape(2)).sum()
 
         if self.pre_waypoint_ids is not None:
             previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
@@ -914,7 +914,7 @@ class F1TenthWayPoint(Task):
                 proj_control.append(self.ub[i])
             else:
                 proj_control.append(self.lb[i])
-        for i in range(len(self.n_actions)):
+        for i in range(self.n_actions):
             if np.all(np.asarray(self.discrete_actions[i]).reshape(-1) == np.asarray(proj_control).reshape(-1)):
                 return i
         assert np.any(np.asarray(self.discrete_actions).reshape(-1, self.nu) == np.asarray(proj_control).reshape(-1)), f'{control} projected as {proj_control} not found in {self.discrete_actions}'
