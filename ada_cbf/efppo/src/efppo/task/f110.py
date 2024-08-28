@@ -528,7 +528,7 @@ class F1TenthWayPoint(Task):
         def get_discrete_actions():
             controls = list(zip(self._lb, self._ub)) 
             controls = np.stack(list(itertools.product(*controls)), axis=0)
-            controls = np.concatenate([controls, np.zeros((1, 2))], axis=0)
+            controls = np.concatenate([np.zeros((1, 2)), controls], axis=0)
             return controls
         
         self.discrete_actions = get_discrete_actions()
@@ -906,7 +906,10 @@ class F1TenthWayPoint(Task):
     def cts_to_discr(self, control: Control) -> int:
         flat_control = np.array(control).reshape(-1)
 
-        min_diff = (0, np.abs(flat_control - self.discrete_actions[0]).sum())
+        if np.all(flat_control == 0):
+            return 0
+
+        min_diff = (1, np.abs(flat_control - self.discrete_actions[1]).sum())
 
         for i in range(1, self.n_actions):
             diff = np.abs(flat_control - self.discrete_actions).sum()
