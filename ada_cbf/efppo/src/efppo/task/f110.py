@@ -7,6 +7,7 @@ import yaml
 
 import einops as ei
 import jax
+import jax.lax as lax
 import jax.numpy as jnp
 import jax.random as jr
 from jax import lax
@@ -43,7 +44,8 @@ from efppo.utils.cfg_utils import RecursiveNamespace
 """
 Planner Helpers
 """
-@njit(fastmath=False, cache=True)
+#@njit(fastmath=False, cache=True)
+@jax.jit
 def nearest_point_on_trajectory(point, trajectory):
     """
     Return the nearest point along the given piecewise linear trajectory.
@@ -59,26 +61,22 @@ def nearest_point_on_trajectory(point, trajectory):
 
 
     >>>>>>>> If allow wrapping the track, when the vehicle approaches the end point, a lower indexed waypoint in front of the vehicle must be treated as the lookahead point
-    
+
     """
     diffs = trajectory[1:,:] - trajectory[:-1,:]
-    l2s   = np.sqrt(diffs[:,0]**2 + diffs[:,1]**2)
+    diffs = jnp.concatenate((diffs, (trajectory[0] - trajectory[-1]).reshape(1, -1)), axis = 0)
+    l2s   = jnp.sqrt(jnp.square(diffs).sum(axis = -1))
     # this is equivalent to the elementwise dot product
     # dots = np.sum((point - trajectory[:-1,:]) * diffs[:,:], axis=1)
-    dots = np.empty((trajectory.shape[0]-1, ))
-    for i in range(dots.shape[0]):
-        dots[i] = np.dot((point - trajectory[i, :]), diffs[i, :])
+    dots = jax.vmap(lambda wp, diff: jnp.dot((point - wp), diff))(trajectory, diffs)
     t = dots / l2s
-    t[t<0.0] = 0.0
-    t[t>1.0] = 1.0
+    t = jnp.where(t<0.0, 0, t)
+    t = jnp.where(t>1.0,1.0, t) #.at[t>1.0].set(1.0)
     # t = np.clip(dots / l2s, 0.0, 1.0)
-    projections = trajectory[:-1,:] + (t*diffs.T).T
+    projections = trajectory + (t*diffs.T).T
     # dists = np.linalg.norm(point - projections, axis=1)
-    dists = np.empty((projections.shape[0],))
-    for i in range(dists.shape[0]):
-        temp = point - projections[i]
-        dists[i] = np.sqrt(np.sum(temp*temp))
-    min_dist_segment = np.argmin(dists)
+    dists = jax.vmap(lambda proj_p: jnp.sqrt(np.sum(jnp.square(point - proj_p))))(projections)
+    min_dist_segment = jnp.argmin(dists)
     return projections[min_dist_segment], dists[min_dist_segment], t[min_dist_segment], min_dist_segment
 
 
@@ -173,40 +171,69 @@ def all_points_on_trajectory_within_circle_confusing_version(point, radius, traj
     )(end_i)
          
     return indices
-
-def all_points_on_trajectory_within_circle(point, radius, trajectory, start_i=0.0, wrap=True):
+ 
+def all_points_on_trajectory_within_circle(point, radius, trajectory, start_i):
     """
     Finds all points on the trajectory that are within one radius away from the given point.
 
-    Between each consecutive (`start`, `end`) points, knowing that `start` is within radius
-        * Check if `||point - end|| > radius`  
-    
     Arguments:
     - point: The point to check distances from.
     - radius: The radius within which points on the trajectory are considered "within."
     - trajectory: The Nx2 array of points defining the trajectory.
-    - t: The starting time parameter (0 <= t < 1).
-    - wrap: Whether to wrap around the trajectory if no intersection is found.
+    - start_i: The starting index on the trajectory.
     
     Returns:
-    - intersecting_points: A list of all points within the radius.
-    - indices: A list of indices in the trajectory corresponding to these points.
-    - t_values: A list of t values corresponding to where the points are found on the segments.
+    - indices: A list of indices in the trajectory corresponding to the points within the radius.
     """
- 
-    inside = np.square(np.asarray(trajectory) - np.asarray(point)).sum(axis = -1) < radius * radius
-    all_ids = np.arange(len(trajectory))
+    start_i = int(start_i % len(trajectory))
     
-    inside_ids = all_ids[inside]
-    suffix = inside_ids[inside_ids > start_i]
+    # Compute squared distances to avoid square root calculation
+    distances_squared = jnp.sum((trajectory - point) ** 2, axis=-1)
+    radius_squared = radius ** 2
 
-    outside_ids = all_ids[np.logical_not(inside)]
-    prefix = np.arange(np.min(outside_ids))
-    prefix = prefix[prefix < start_i]
+     
+    # Initialize empty arrays to accumulate indices
+    suffix_end = lax.cond(
+        pred = jnp.logical_and(start_i + 1 < len(trajectory), distances_squared[start_i + 1] < radius_squared),
+        true_fun = lambda: jnp.array(start_i + 1),
+        false_fun = lambda: jnp.array(start_i, dtype=jnp.int32)
+    )
+    suffix_end = lax.while_loop(
+        cond_fun = lambda suffix_end: jnp.logical_and(
+            jnp.logical_and(suffix_end > start_i, suffix_end + 1 < len(trajectory)), 
+            jnp.all(distances_squared[suffix_end + 1] < radius_squared)
+        ), 
+        body_fun = lambda suffix_end: suffix_end + 1, 
+        init_val = suffix_end
+        )
 
-    indices = np.concatenate((np.array([int(start_i)]), suffix, prefix))
-       
-    return indices
+
+    # Create prefix only if suffix ends at the last waypoints
+    prefix_end = lax.cond(
+        pred = jnp.logical_and(
+            suffix_end == len(trajectory) - 1, 
+            jnp.logical_and(start_i > 0, distances_squared[0] < radius_squared)
+            ),
+        true_fun = lambda: jnp.array(0),
+        false_fun = lambda: jnp.array(-1, dtype=jnp.int32)
+    )
+    prefix_end = lax.while_loop(
+        cond_fun = lambda prefix_end: jnp.logical_and(
+            jnp.logical_and(prefix_end >= 0, prefix_end + 1 < start_i), 
+            jnp.all(distances_squared[prefix_end + 1] < radius_squared)
+        ), 
+        body_fun = lambda prefix_end: prefix_end + 1, 
+        init_val = prefix_end
+        )
+    
+    # Combine start_i, prefix, and prefix to form final indices list
+    combined_indices = np.concatenate((
+        np.array([int(start_i)]), 
+        np.arange(start_i + 1, np.asarray(suffix_end + 1).item()), 
+        np.arange(np.asarray(prefix_end + 1).item())
+    ))
+    
+    return combined_indices
     
 
 
@@ -314,30 +341,28 @@ def get_actuation(pose_theta, lookahead_point, position, lookahead_distance, whe
 def partition_line(points, n):
     # Calculate cumulative distances between consecutive points
     #print(f"Points shape: {points.shape}. Check previous condition: {jnp.all(points == points[0])}") 
-    distances = jnp.square(points[1:] - points[:-1]).sum(axis=-1)
-    cumulative_distances = jnp.concatenate((jnp.zeros([1]), jnp.cumsum(distances)))
-    total_length = cumulative_distances[-1]
+    points = jnp.asarray(points)
+    square_distances = jnp.square(points[1:] - points[:-1]).sum(axis=-1)
+    cumulative_square_distances = jnp.concatenate((jnp.zeros([1]), jnp.cumsum(square_distances)))
+    total_square_length = cumulative_square_distances[-1]
 
     # Uniformly partition the total length into n-1 segments
-    partition_lengths = jnp.linspace(0, total_length, n)
+    partition_square_lengths = jnp.linspace(0, total_square_length, n)
     
     # Find the boundary points at these partition lengths
     
     #for partition_length in partition_lengths:
     # Find the boundary points at these partition lengths
-    def add_boundary_point(partition_length):
-        segment_index = jnp.searchsorted(cumulative_distances, partition_length, side='right')
-        segment_index = jnp.clip(segment_index, 0, distances.shape[0] - 1)
-        
-        # Calculate the interpolation ratio t
-        t = (partition_length - cumulative_distances[segment_index]) / distances[segment_index]
-        
-        # Interpolate the point on the segment
-        boundary_point = (1 - t) * points[segment_index] + t * points[segment_index + 1]
-        return boundary_point
+    segment_indices = jnp.searchsorted(cumulative_square_distances, partition_square_lengths[1:-1], side='right')
+    #assert jnp.all(segment_indices > 0)             
+    # Calculate the interpolation ratio t
+    # segment_index must be greater than zero because cumulative_suqare_distances[0] = 0
+    ts = (cumulative_square_distances[segment_indices] - partition_square_lengths[1:-1]) / (cumulative_square_distances[segment_indices] - cumulative_square_distances[segment_indices-1])
+    #assert jnp.all(ts > 0)  
+    # Interpolate the point on the segment
+    boundary_points = points[segment_indices - 1] * ts[:, jnp.newaxis] + points[segment_indices] * (1 - ts)[:, jnp.newaxis]
     
-    boundary_points = jax.vmap(add_boundary_point)(partition_lengths[:-1])
-    return jnp.concatenate((boundary_points, jnp.asarray(points[-1]).reshape(1, -1)))
+    return jnp.concatenate((jnp.asarray(points[0].reshape(1, -1)), boundary_points, jnp.asarray(points[-1]).reshape(1, -1)))
     
 @njit(fastmath=False, cache=True)
 def get_actuation(pose_theta, lookahead_point, position, lookahead_distance, wheelbase):
@@ -428,7 +453,8 @@ class Planner:
         wpts = np.vstack((self.waypoints[:, self.conf.wpt_xind], self.waypoints[:, self.conf.wpt_yind])).T
         nearest_point, nearest_dist, t, i = nearest_point_on_trajectory(position, wpts)
         if nearest_dist < lookahead_distance:
-            i2s = all_points_on_trajectory_within_circle(position, lookahead_distance, wpts, i+t, wrap=True)
+            start_i = np.asarray(i+t).astype(np.int32).item() % len(wpts)
+            i2s = all_points_on_trajectory_within_circle(position, lookahead_distance, wpts, start_i)
             return np.asarray(i2s) #np.sort(i2s)
         else:
             return np.asarray([i])
@@ -668,14 +694,14 @@ class F1TenthWayPoint(Task):
         self.cur_env.renderer = None
 
         if init_pose is None:
-            init_pose_ind = self.cur_planner.waypoints.shape[0] -5 #np.random.choice(int(self.cur_planner.waypoints.shape[0]))
+            init_pose_ind = np.random.choice(int(self.cur_planner.waypoints.shape[0]))
             init_pose = self.cur_planner.waypoints[init_pose_ind][np.array(
                 [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
                 )]
             
             init_angle = np.random.normal(
                 loc = np.zeros([1]),
-                scale = 0.1 * np.pi
+                scale = 0.01 * np.pi
             )
             nxt_pose = self.cur_planner.waypoints[(init_pose_ind + 1) % len(self.cur_planner.waypoints)][np.array(
                 [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
