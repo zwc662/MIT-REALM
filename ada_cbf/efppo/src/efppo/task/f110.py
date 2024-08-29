@@ -27,7 +27,6 @@ from typing import List, Dict, Any
 from f110_gym.envs.f110_env import F110Env
 from f110_gym.envs.base_classes import Integrator 
 from f110_gym.envs.collision_models import get_vertices
-from f110_gym.envs.rendering import CAR_LENGTH, CAR_WIDTH
 
 from matplotlib import pyplot as plt
 
@@ -749,7 +748,7 @@ class F1TenthWayPoint(Task):
         scaled_points = np.concatenate((scaled_points, angles), axis = -1)
         return scaled_points
         
-    def render_lookahead_points(self, GL_QUADS, e): 
+    def render_lookahead_points(self, GL_QUADS, e, CAR_LENGTH, CAR_WIDTH): 
         unscaled_points = self.get_lookahead_vertices()
         
         if not hasattr(e, "lookahead_points"):
@@ -775,6 +774,7 @@ class F1TenthWayPoint(Task):
  
 
     def init_render_callbacks(self):
+        from f110_gym.envs.rendering import CAR_LENGTH, CAR_WIDTH
         from pyglet.gl import GL_POINTS, GL_QUADS
         ### For all waypoints along the centerline
         def render_callback(env_renderer):
@@ -794,7 +794,7 @@ class F1TenthWayPoint(Task):
             e.bottom = bottom - 800
 
             self.cur_planner.render_waypoints(GL_POINTS, e)
-            self.render_lookahead_points(GL_QUADS, e)
+            self.render_lookahead_points(GL_QUADS, e, CAR_LENGTH, CAR_WIDTH)
 
         self.cur_env.render_callbacks.append(render_callback)
         return render_callback
