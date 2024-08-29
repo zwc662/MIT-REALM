@@ -489,7 +489,7 @@ class Planner:
         wpts = np.vstack((self.waypoints[:, self.conf.wpt_xind], self.waypoints[:, self.conf.wpt_yind])).T
         nearest_point, nearest_dist, t, i = nearest_point_on_trajectory(position, wpts)
         if nearest_dist < lookahead_distance:
-            start_i = np.asarray(i+t).astype(np.int32).item() % len(wpts)
+            start_i = np.ceil(i+t).astype(np.int32).item()  % len(wpts)
             i2s = all_points_on_trajectory_within_circle(position, lookahead_distance, wpts, start_i)
             return np.asarray(i2s) #np.sort(i2s)
         else:
@@ -973,7 +973,7 @@ class F1TenthWayPoint(Task):
             #control = self.efppo_control_transform(control) 
             #l += np.square(control.reshape(2) - self.cur_pursuit_action.reshape(2)).sum()
 
-        if self.pre_waypoint_ids is not None:
+        if False and self.pre_waypoint_ids is not None:
             previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
             l += np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum().item() 
         return l
