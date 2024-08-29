@@ -22,7 +22,7 @@ import warnings
 
 from typing_extensions import override
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 
 from f110_gym.envs.f110_env import F110Env
 from f110_gym.envs.base_classes import Integrator 
@@ -38,7 +38,8 @@ from efppo.utils.jax_utils import box_constr_clipmax, box_constr_log1p, merge01,
 from efppo.utils.plot_utils import plot_x_bounds, plot_y_bounds, plot_y_goal
 from efppo.utils.rng import PRNGKey
 from efppo.utils.cfg_utils import RecursiveNamespace
-
+from efppo.utils.rng import PRNGKey
+from efppo.utils.tfp import tfd
  
 """
 Planner Helpers
@@ -962,7 +963,7 @@ class F1TenthWayPoint(Task):
             np.sqrt(np.sum(state[self.STATE_FST_LAD:]**2)).item()
 
 
-    def l(self, state: State, control: Control) -> LFloat:
+    def l(self, state: State, control: Union[Control, tfd.Distribution]) -> LFloat:
         l = 0
         # Cost for cont diff from pursuit controller
         if False and self.cur_pursuit_action is not None:

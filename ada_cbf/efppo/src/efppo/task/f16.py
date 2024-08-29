@@ -17,6 +17,7 @@ from efppo.utils.jax_types import BBFloat, BoolScalar, FloatScalar
 from efppo.utils.jax_utils import box_constr_clipmax, box_constr_log1p, merge01, tree_add, tree_inner_product, tree_mac
 from efppo.utils.plot_utils import plot_x_bounds, plot_y_bounds, plot_y_goal
 from efppo.utils.rng import PRNGKey
+from efppo.utils.tfp import tfd
 
 
 def ode4(xdot, dt: float, state):
@@ -301,7 +302,8 @@ class F16GCASFloorCeil(Task):
         cost = jnp.tanh(dist)
         return jnp.array([cost])
 
-    def l(self, state: State, control: Control) -> LFloat:
+    def l(self, state: State, control: tfd.Distribution) -> LFloat:
+        control = control.mode()
         weights = jnp.array([1.2e-2])
         l_components = self.l_components(state, control)
         return jnp.sum(l_components * weights)

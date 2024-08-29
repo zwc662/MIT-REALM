@@ -14,7 +14,7 @@ from matplotlib.colors import CenteredNorm
 
 import wandb
 from efppo.rl.collector import Collector, CollectorCfg
-from efppo.rl.efppo_inner import EFPPOInner
+from efppo.rl.rl import RL
 from efppo.task.plotter import Plotter
 from efppo.task.task import Task
 from efppo.utils.cfg_utils import Cfg
@@ -34,7 +34,7 @@ sys.path.append(
         ), 'scripts/'
     )
 )
-from eval_f110_wp import main as eval_main
+#from eval_f110_wp import main as eval_main
 
 
 @define
@@ -47,13 +47,13 @@ class TrainerCfg(Cfg):
     ckpt_max_keep: int = 100
 
 
-class EFPPOInnerTrainer:
+class RLTrainer:
     def __init__(self, task: Task):
         self.task = task
         self.plotter = Plotter(task)
         register_cmaps()
 
-    def plot(self, idx: int, plot_dir: pathlib.Path, data: EFPPOInner.EvalData):
+    def plot(self, idx: int, plot_dir: pathlib.Path, data: RL.EvalData):
         fig_opt = dict(layout="constrained", dpi=200)
 
         bb_X, bb_Y, _ = self.task.grid_contour()
@@ -108,10 +108,10 @@ class EFPPOInnerTrainer:
         plt.close(fig)
 
     def train(
-        self, key: PRNGKey, alg_cfg: EFPPOInner.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: TrainerCfg, iteratively: bool = False, 
+        self, key: PRNGKey, alg_cfg: RL.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: TrainerCfg, iteratively: bool = False, 
     ):
         key0, key1 = jr.split(key, 2)
-        alg: EFPPOInner = EFPPOInner.create(key0, self.task, alg_cfg)
+        alg: RL = RL.create(key0, self.task, alg_cfg)
         collector: Collector = Collector.create(key1, self.task, collect_cfg)
 
         task_name = self.task.name

@@ -65,7 +65,7 @@ def collect_single_mode(
         envstate_new = task.step(state.state, control)
 
         # Z dynamics.
-        l = task.l(envstate_new, control)
+        l = task.l(envstate_new, a_pol)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
         if hasattr(task, 'l1_control_info'):
@@ -105,7 +105,7 @@ def collect_single(
         envstate_new = task.step(state.state, control)
         
         # Z dynamics.
-        l = task.l(envstate_new, control)
+        l = task.l(envstate_new, a_pol)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
 
@@ -150,7 +150,7 @@ def collect_single_env_mode(
         envstate_new = task.step(state.state, control)
 
         # Z dynamics.
-        l = task.l(envstate_new, control)
+        l = task.l(envstate_new, a_pol)
         h = task.h_components(envstate_new)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
@@ -250,7 +250,7 @@ def collect_single_batch(
         '''
         envstate_new = jnp.asarray(task.step(state.state, np.asarray(control).reshape(-1)))
         # Z dynamics.
-        l = task.l(envstate_new, control)
+        l = task.l(envstate_new, a_pol)
         h = task.h_components(envstate_new)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
