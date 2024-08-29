@@ -13,17 +13,17 @@ from loguru import logger
 from matplotlib.colors import CenteredNorm
 
 import wandb
-from efppo.rl.collector import Collector, CollectorCfg
-from efppo.rl.rl import RL
-from efppo.task.plotter import Plotter
-from efppo.task.task import Task
-from efppo.utils.cfg_utils import Cfg
-from efppo.utils.ckpt_utils import get_ckpt_manager_sync
-from efppo.utils.jax_utils import jax2np, move_tree_to_cpu
-from efppo.utils.path_utils import get_runs_dir, mkdir
-from efppo.utils.register_cmaps import register_cmaps
-from efppo.utils.rng import PRNGKey
-from efppo.utils.wandb_utils import reorder_wandb_name
+from rl.rl.collector import Collector, CollectorCfg
+from rl.rl.rl import RL
+from rl.task.plotter import Plotter
+from rl.task.task import Task
+from rl.utils.cfg_utils import Cfg
+from rl.utils.ckpt_utils import get_ckpt_manager_sync
+from rl.utils.jax_utils import jax2np, move_tree_to_cpu
+from rl.utils.path_utils import get_runs_dir, mkdir
+from rl.utils.register_cmaps import register_cmaps
+from rl.utils.rng import PRNGKey
+from rl.utils.wandb_utils import reorder_wandb_name
 
 import pickle
 
@@ -116,7 +116,7 @@ class RLTrainer:
 
         task_name = self.task.name
         wandb_config = {"alg": alg_cfg.asdict(), "collect": collect_cfg.asdict(), "trainer": trainer_cfg.asdict()}
-        wandb.init(project=f"efppo_{task_name}_inner", config=wandb_config)
+        wandb.init(project=f"rl_{task_name}_inner", config=wandb_config)
         wandb_run_name = reorder_wandb_name(wandb_name=wandb_name)
 
         run_dir = mkdir(get_runs_dir() / f"{task_name}_inner" / wandb_run_name)
@@ -137,7 +137,7 @@ class RLTrainer:
                 collector, col_data = alg.collect_iteratively(collector)
             else:
                 collector, col_data = alg.collect(collector)
-
+                
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Updating ... ")
             t1 = time.time()
             alg, update_info = alg.update(col_data)

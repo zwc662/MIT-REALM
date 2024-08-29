@@ -31,7 +31,7 @@ from efppo.utils.schedules import Schedule, as_schedule
 from efppo.utils.tfp import tfd 
 
 @define
-class RLCfg(Cfg):
+class BaselineCfg(Cfg):
     @define
     class TrainCfg(Cfg):
         
@@ -69,7 +69,7 @@ class RLCfg(Cfg):
     eval: EvalCfg
 
 
-class RLInner(struct.PyTreeNode):
+class BaselineInner(struct.PyTreeNode):
     update_idx: int
     key: PRNGKey
     policy: TrainState[tfd.Distribution]
@@ -78,12 +78,12 @@ class RLInner(struct.PyTreeNode):
     disc_gamma: FloatScalar
 
     task: Task = struct.field(pytree_node=False)
-    cfg: RLCfg = struct.field(pytree_node=False)
+    cfg: BaselineCfg = struct.field(pytree_node=False)
 
     ent_cf_sched: optax.Schedule = struct.field(pytree_node=False)
     disc_gamma_sched: optax.Schedule = struct.field(pytree_node=False)
 
-    Cfg = RLCfg
+    Cfg = BaselineCfg
 
     class Batch(NamedTuple):
         b_obs: BObs
@@ -111,7 +111,7 @@ class RLInner(struct.PyTreeNode):
         info: dict[str, float]
 
     @classmethod
-    def create(cls, key: jr.PRNGKey, task: Task, cfg: RLCfg):
+    def create(cls, key: jr.PRNGKey, task: Task, cfg: BaselineCfg):
         key, key_pol, key_Vl, key_Vh = jr.split(key, 4)
         obs, z = np.zeros(task.nobs), np.array(0.0)
         act = get_act_from_str(cfg.net.act)
@@ -144,10 +144,10 @@ class RLInner(struct.PyTreeNode):
         disc_gamma_sched = as_schedule(cfg.net.disc_gamma).make()
         disc_gamma = disc_gamma_sched(0)
 
-        return RLInner(0, key, pol, Vl, Vh, disc_gamma, task, cfg, ent_cf, disc_gamma_sched)
+        return BaselineInner(0, key, pol, Vl, Vh, disc_gamma, task, cfg, ent_cf, disc_gamma_sched)
 
     @property
-    def train_cfg(self) -> RLCfg.TrainCfg:
+    def train_cfg(self) -> BaselineCfg.TrainCfg:
         return self.cfg.train
 
     @property
@@ -189,7 +189,7 @@ class RLInner(struct.PyTreeNode):
         return b_batch
 
     @ft.partial(jax.jit, donate_argnums=0)
-    def update(self, data: Collector.Rollout) -> tuple["RLInner", dict]:
+    def update(self, data: Collector.Rollout) -> tuple["BaselineInner", dict]:
         # Compute GAE values.
         b_dset = self.make_dset(data)
 
@@ -204,7 +204,7 @@ class RLInner(struct.PyTreeNode):
         mb_dset = tree_split_dims(b_dset, (n_batches, batch_size))
 
         # 3: Perform value function and policy updates.
-        def updates_body(alg_: RLInner, b_batch: RLInner.Batch):
+        def updates_body(alg_: BaselineInner, b_batch: BaselineInner.Batch):
             alg_, val_info = alg_.update_value(b_batch)
             alg_, pol_info = alg_.update_policy(b_batch)
             return alg_, val_info | pol_info
@@ -218,7 +218,7 @@ class RLInner(struct.PyTreeNode):
         info["anneal/ent_cf"] = self.ent_cf
         return new_self.replace(key=key_self, update_idx=self.update_idx + 1), info
 
-    def update_value(self, batch: Batch) -> tuple["RLInner", dict]:
+    def update_value(self, batch: Batch) -> tuple["BaselineInner", dict]:
         def get_Vl_loss(params):
             b_Vl = jax.vmap(ft.partial(self.Vl.apply_with, params=params))(batch.b_obs, batch.b_z)
             assert b_Vl.shape == (batch.batch_size,)
@@ -250,7 +250,7 @@ class RLInner(struct.PyTreeNode):
         Vh = self.Vh.apply_gradients(grads=grads_Vh)
         return self.replace(Vl=Vl, Vh=Vh), Vl_info | Vh_info
 
-    def update_policy(self, batch: Batch) -> tuple["RLInner", dict]:
+    def update_policy(self, batch: Batch) -> tuple["BaselineInner", dict]:
         def get_pol_loss(pol_params):
             pol_apply = ft.partial(self.policy.apply_with, params=pol_params)
 

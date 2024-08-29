@@ -1,5 +1,5 @@
 import functools as ft
-from typing import Any, NamedTuple, Tuple
+from typing import Any, NamedTuple, Tuple, Option
 
 import numpy as np
 
@@ -11,7 +11,7 @@ import jax.tree_util as jtu
 from attrs import define
 from flax import struct
 
-from efppo.task.dyn_types import TControl, THFloat, TObs
+from efppo.task.dyn_types import TControl, THFloat, TObs, TDone
 from efppo.task.task import Task, TaskState
 from efppo.utils.cfg_utils import Cfg
 from efppo.utils.jax_types import FloatScalar, IntScalar, TFloat
@@ -46,6 +46,7 @@ class RolloutOutput(NamedTuple):
     T_logprob: TFloat
     T_l: TFloat
     Th_h: THFloat
+    T_done: Option[TDone] = None
 
 
 def collect_single_mode(
@@ -149,13 +150,14 @@ def collect_single_env_mode(
         control = a_pol.mode()
         envstate_new = task.step(state.state, control)
 
+
         # Z dynamics.
         l = task.l(envstate_new, a_pol)
         h = task.h_components(envstate_new)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
         new_state = CollectorState(state.steps + 1, envstate_new.reshape(-1), z_new)
-        return new_state, (envstate_new, obs_pol, z_new, l, h, control)
+        return new_state, (envstate_new, obs_pol, z_new, l, h, control, done)
  
     collect_state = CollectorState(0, x0, z0)
     
@@ -165,9 +167,10 @@ def collect_single_env_mode(
     T_u = []
     T_l = []
     Th_h = [] 
+    T_done = []
 
     for t in range(rollout_T):
-        collect_state, (envstate_new, obs_pol, z_new, l, h, control) = _body(collect_state, None)
+        collect_state, (envstate_new, obs_pol, z_new, l, h, control, done) = _body(collect_state, None)
 
         assert not np.any(np.isnan(envstate_new))
         assert not np.any(np.isnan(obs_pol))
@@ -184,26 +187,27 @@ def collect_single_env_mode(
         T_u.append(control) 
         T_l.append(l)
         Th_h.append(h)
+        
 
         if (task.cur_done > 0.).any() | task.should_reset(envstate_new):
+            # Add done to the data collection used as mask
+            T_done.append(1.0)
             collect_state = collect_state._replace(
                 steps = collect_state.steps,
                 state = task.reset(init_pose = task.cur_lookahead_points[0]),
                 z=collect_state.z
                 )
-                
+        else:
+            T_done.append(0.0)
+
+    T_done = [0] + T_done
     T_envstate = [x0] + T_envstate
     T_z = [z0] + T_z 
     obs_final = task.get_obs(collect_state.state)
     T_obs += [obs_final]
+    
  
     collect_state = collect_state._replace(steps = rollout_T - 1)
-    T_envstate += T_envstate[-1:] * (rollout_T - len(T_envstate))
-    T_obs += T_obs[-1:] * (rollout_T - len(T_obs))
-    T_z += T_z[-1:] * (rollout_T - len(T_z))
-    T_u += T_u[-1:] * (rollout_T - len(T_u))
-    T_l += T_l[-1:] * (rollout_T - len(T_l))
-    Th_h += Th_h[-1:] * (rollout_T - len(Th_h))
      
 
     Tp1_state = jnp.stack(T_envstate)
@@ -212,6 +216,7 @@ def collect_single_env_mode(
     Tp1_z = jnp.stack(T_z)
     T_l = jnp.stack(T_l)
     Th_h = jnp.stack(Th_h)
+    T_done = jnp.stack(T_done)
 
     '''
     # Add the initial observations.
@@ -224,7 +229,7 @@ def collect_single_env_mode(
     Th_h = jnp.stack((-jnp.ones(len(task.h_labels)), *Th_h)).reshape(-1, len(task.h_labels))
     '''
                      
-    return RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, None, T_l, Th_h)
+    return RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, None, T_l, Th_h, T_done)
 
 def collect_single_batch(
     task: Task,
@@ -271,6 +276,7 @@ def collect_single_batch(
     T_logprob = []
     T_l = []
     Th_h = []
+    T_done = []
 
     collect_state = colstate0 
     # Perform the loop over rollout_T
@@ -308,6 +314,7 @@ def collect_single_batch(
     T_logprob = jnp.stack(T_logprob)
     T_l = jnp.stack(T_l)
     Th_h = jnp.stack(Th_h)
+    T_done = jnp.stack()
     
     obs_final = task.get_obs(collect_state.state)
 
@@ -319,7 +326,7 @@ def collect_single_batch(
     #T_l = jnp.concatenate((jnp.asarray([0]), jnp.asarray(T_l))).reshape(-1)
     #Th_h = jnp.stack((jnp.asarray([-1]), *Th_h)).reshape(-1, len(task.h_labels))
     
-    return collect_state, RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, T_logprob, T_l, Th_h)
+    return collect_state, RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, T_logprob, T_l, Th_h, T_done)
 
 class Collector(struct.PyTreeNode):
     collect_idx: int
@@ -327,16 +334,14 @@ class Collector(struct.PyTreeNode):
     collect_state: CollectorState
     task: Task = struct.field(pytree_node=False)
     cfg: CollectorCfg = struct.field(pytree_node=False)
-
-    Rollout = RolloutOutput
-
+ 
     @classmethod
     def create(cls, key: PRNGKey, task: Task, cfg: CollectorCfg):
         key, key_init = jr.split(key)
         b_state = jnp.asarray(task.sample_x0_train(key_init, cfg.n_envs))
         b_steps = jnp.zeros(cfg.n_envs, dtype=jnp.int32)
         b_z0 = jnp.zeros(cfg.n_envs)
-        collector_state = CollectorState(b_steps, b_state, b_z0)
+        collector_state = CollectorState(b_steps, b_state, b_z0) 
         return Collector(0, key, collector_state, task, cfg)
 
     def _collect_single(
@@ -457,4 +462,5 @@ class Collector(struct.PyTreeNode):
         bT_outputs = jtu.tree_map(lambda *x: jnp.stack(x), *bT_outputs) 
         new_self = self.replace(collect_idx=self.collect_idx + 1, collect_state=self.collect_state) 
         return new_self, bT_outputs
+ 
  
