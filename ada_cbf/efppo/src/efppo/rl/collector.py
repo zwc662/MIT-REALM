@@ -1,5 +1,5 @@
 import functools as ft
-from typing import Any, NamedTuple, Tuple, Option
+from typing import Any, NamedTuple, Tuple, Optional
 
 import numpy as np
 
@@ -46,7 +46,7 @@ class RolloutOutput(NamedTuple):
     T_logprob: TFloat
     T_l: TFloat
     Th_h: THFloat
-    T_done: Option[TDone] = None
+    T_done: Optional[TDone] = None
 
 
 def collect_single_mode(
@@ -149,7 +149,7 @@ def collect_single_env_mode(
         a_pol: tfd.Distribution = get_pol(obs_pol, state.z)
         control = a_pol.mode()
         envstate_new = task.step(state.state, control)
-
+         
 
         # Z dynamics.
         l = task.l(envstate_new, a_pol)
@@ -157,7 +157,7 @@ def collect_single_env_mode(
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
         new_state = CollectorState(state.steps + 1, envstate_new.reshape(-1), z_new)
-        return new_state, (envstate_new, obs_pol, z_new, l, h, control, done)
+        return new_state, (envstate_new, obs_pol, z_new, l, h, control)
  
     collect_state = CollectorState(0, x0, z0)
     
@@ -170,7 +170,7 @@ def collect_single_env_mode(
     T_done = []
 
     for t in range(rollout_T):
-        collect_state, (envstate_new, obs_pol, z_new, l, h, control, done) = _body(collect_state, None)
+        collect_state, (envstate_new, obs_pol, z_new, l, h, control) = _body(collect_state, None)
 
         assert not np.any(np.isnan(envstate_new))
         assert not np.any(np.isnan(obs_pol))
@@ -334,6 +334,7 @@ class Collector(struct.PyTreeNode):
     collect_state: CollectorState
     task: Task = struct.field(pytree_node=False)
     cfg: CollectorCfg = struct.field(pytree_node=False)
+    Rollout = RolloutOutput
  
     @classmethod
     def create(cls, key: PRNGKey, task: Task, cfg: CollectorCfg):
