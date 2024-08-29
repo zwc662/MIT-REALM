@@ -488,7 +488,8 @@ class Planner:
         gets the current waypoint to follow
         """
         wpts = np.vstack((self.waypoints[:, self.conf.wpt_xind], self.waypoints[:, self.conf.wpt_yind])).T
-        nearest_point, nearest_dist, t, i = nearest_point_on_trajectory(position, wpts)
+        #nearest_point, nearest_dist, t, i = nearest_point_on_trajectory(position, wpts)
+        nearest_point, nearest_dist, t, i = _jit_nearest_point_on_trajectory_(position, wpts)
         if nearest_dist < lookahead_distance:
             start_i = np.ceil(i+t).astype(np.int32).item()  % len(wpts)
             i2s = all_points_on_trajectory_within_circle(position, lookahead_distance, wpts, start_i)
@@ -580,11 +581,11 @@ class F1TenthWayPoint(Task):
         self.cur_done = np.asarray([-1])
         self.cur_step = 0
 
+        self.cur_totl = 0
+
         self.cur_waypoint_ids = None
         self.pre_waypoints_ids = None
-
-        self.width = 0
-
+ 
         self._lb = np.array([-np.pi/2., 3])
         self._ub = np.array([np.pi/2., 3])
         
@@ -695,6 +696,9 @@ class F1TenthWayPoint(Task):
 
         self.cur_step = 0
 
+        self.cur_totl = 0
+
+         
         self.cur_waypoint_ids = None
         self.pre_waypoints_ids = None
 
@@ -919,10 +923,11 @@ class F1TenthWayPoint(Task):
         #print(f"Step: {self.cur_step} | Current pos: {self.cur_state[self.get2d_idxs()]} | Current action: {self.cur_action} | Target waypoints ids: {waypoint_ids} | Target waypoints: {self.cur_planner.waypoints[waypoint_ids]} | Lookahead points: {lookahead_points}")
         #else:
         
-        if np.any(self.cur_collision > 0) and self.render:
-            print(f'Collision @ {self.cur_step}: state {self.cur_state}')
-            #input(f'Collision @ {self.cur_step}: state {self.cur_state}')
-            #pass
+        if np.any(self.cur_collision > 0):
+            if self.render:
+                print(f'Collision @ {self.cur_step}: state {self.cur_state}')
+                #input(f'Collision @ {self.cur_step}: state {self.cur_state}')
+                #pass
 
         
             
@@ -977,6 +982,13 @@ class F1TenthWayPoint(Task):
         if self.pre_waypoint_ids is not None:
             previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
             l += np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum().item() 
+        
+        if self.cur_collision:
+            l += self.cur_totl
+            self.cur_totl = 0
+        else:
+            self.cur_totl += np.abs(l)
+
         return l
             
     
@@ -1003,7 +1015,7 @@ class F1TenthWayPoint(Task):
 
     def should_reset(self, state: State) -> BoolScalar:
         # Reset the state if it is frozen.
-        return np.any(self.cur_done > 0)
+        return np.any(np.logical_or(self.cur_done > 0, self.cur_collision > 0))
     
     def get_x0_eval(self) -> TaskState:
         state = self.reset(mode='test')
