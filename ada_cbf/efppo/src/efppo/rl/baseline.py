@@ -162,7 +162,7 @@ class BaselineInner(struct.PyTreeNode):
     def ent_cf(self):
         return self.ent_cf_sched(self.update_idx)
 
-    def make_dset(self, data: Collector.Rollout) -> Batch:
+    def make_dset(self, data: RolloutOutput) -> Batch:
         batch_size, T = data.T_control.shape[:2]
 
         # 1: Compute Vl and h_Vh from data.
@@ -189,7 +189,7 @@ class BaselineInner(struct.PyTreeNode):
         return b_batch
 
     @ft.partial(jax.jit, donate_argnums=0)
-    def update(self, data: Collector.Rollout) -> tuple["BaselineInner", dict]:
+    def update(self, data: RolloutOutput) -> tuple["BaselineInner", dict]:
         # Compute GAE values.
         b_dset = self.make_dset(data)
 
@@ -288,11 +288,11 @@ class BaselineInner(struct.PyTreeNode):
         return self.replace(policy=policy), pol_info
 
     @ft.partial(jax.jit, donate_argnums=1)
-    def collect(self, collector: Collector) -> tuple[Collector, Collector.Rollout]:
+    def collect(self, collector: Collector) -> tuple[Collector, RolloutOutput]:
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max 
         return collector.collect_batch(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
 
-    def collect_iteratively(self, collector: Collector) -> tuple[Collector, Collector.Rollout]:
+    def collect_iteratively(self, collector: Collector) -> tuple[Collector, RolloutOutput]:
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
         return collector.collect_batch_iteratively(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
 
