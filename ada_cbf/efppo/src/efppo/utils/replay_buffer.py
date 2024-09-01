@@ -14,10 +14,8 @@ from flax import struct
 from efppo.task.task import TaskState
 from efppo.task.dyn_types import TControl, THFloat, TObs, TDone
 from efppo.utils.jax_types import IntScalar, TFloat
-from efppo.utils.rng import PRNGKey
-from efppo.rl.collector import RolloutOutput
-
-from dataclasses import dataclass
+from efppo.utils.rng import PRNGKey 
+ 
 
 
 Batch = collections.namedtuple(
