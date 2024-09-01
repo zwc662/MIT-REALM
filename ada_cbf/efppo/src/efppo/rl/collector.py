@@ -10,14 +10,26 @@ import jax.random as jr
 import jax.tree_util as jtu
 from attrs import define
 from flax import struct
-
-from efppo.task.dyn_types import TControl, THFloat, TObs, TDone
+ 
 from efppo.task.task import Task, TaskState
-from efppo.utils.cfg_utils import Cfg
+from efppo.task.dyn_types import TControl, THFloat, TObs, TDone
 from efppo.utils.jax_types import FloatScalar, IntScalar, TFloat
+from efppo.utils.cfg_utils import Cfg 
 from efppo.utils.jax_utils import concat_at_front, concat_at_end
 from efppo.utils.rng import PRNGKey
-from efppo.utils.tfp import tfd
+from efppo.utils.tfp import tfd 
+
+
+ 
+class RolloutOutput(NamedTuple):
+    Tp1_state: TaskState
+    Tp1_obs: TObs
+    Tp1_z: TFloat
+    T_control: TControl
+    T_logprob: TFloat
+    T_l: TFloat
+    Th_h: THFloat
+    T_done: TDone
 
 
 @define
@@ -37,16 +49,6 @@ class CollectorState(NamedTuple):
     state: TaskState
     z: FloatScalar
 
-
-class RolloutOutput(NamedTuple):
-    Tp1_state: TaskState
-    Tp1_obs: TObs
-    Tp1_z: TFloat
-    T_control: TControl
-    T_logprob: TFloat
-    T_l: TFloat
-    Th_h: THFloat
-    T_done: Optional[TDone] = None
 
 
 def collect_single_mode(
@@ -84,10 +86,11 @@ def collect_single_mode(
     T_state_fr, T_state_to = Tp1_state[:-1], Tp1_state[1:]
     Tp1_obs = jtu.tree_map(concat_at_end, T_obs, obs_final)
     Tp1_z = concat_at_front(z0, T_z)
+    T_done = Tp1_z * 0.
     T_l = jax.vmap(task.l)(T_state_to, T_u)
     Th_h = jax.vmap(task.h_components)(T_state_to)
 
-    return RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, None, T_l, Th_h)
+    return RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, None, T_l, Th_h, T_done)
 
 def collect_single(
     task: Task,
@@ -130,8 +133,9 @@ def collect_single(
     Tp1_z = concat_at_front(z0, T_z)
     T_l = jax.vmap(task.l)(T_state_to, T_u)
     Th_h = jax.vmap(task.h_components)(T_state_to)
+    T_done = Tp1_z * 0.
 
-    return collect_state, RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, T_logprob, T_l, Th_h)
+    return collect_state, RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, T_logprob, T_l, Th_h, T_done)
 
 def collect_single_env_mode(
     task: Task,
@@ -181,7 +185,7 @@ def collect_single_env_mode(
             print(f"Step: {task.cur_step} | State: {task.cur_state} | Control: {control} | Actuator: {task.cur_action} | l: {l} | h: {h}")
             #control = task.cur_action.reshape(control.shape)
         
-        T_envstate.append(envstate_new)
+        
         T_obs.append(obs_pol)
         T_z.append(z_new)
         T_u.append(control) 
@@ -191,13 +195,15 @@ def collect_single_env_mode(
 
         if (task.cur_done > 0.).any() | task.should_reset(envstate_new):
             # Add done to the data collection used as mask
-            T_done.append(1.0)
             collect_state = collect_state._replace(
                 steps = collect_state.steps,
                 state = task.reset(init_pose = task.cur_lookahead_points[0]),
                 z=collect_state.z
                 )
+            T_envstate.append(collect_state.state)
+            T_done.append(1.0)
         else:
+            T_envstate.append(envstate_new)
             T_done.append(0.0)
 
     T_done = [0] + T_done
@@ -291,7 +297,7 @@ def collect_single_batch(
         
         #assert not jnp.isnan(logprob).any(), f'{logprob=}'
         
-        T_envstate.append(envstate_new)
+        
         T_obs.append(obs_pol)
         T_z.append(z_new)
         T_u.append(control)
@@ -305,6 +311,11 @@ def collect_single_batch(
                 state = task.reset(init_pose = task.cur_lookahead_points[0]),
                 z=collect_state.z
                 )
+            T_done.append(1.0)
+            T_envstate.append(collect_state.state)
+        else:
+            T_envstate.append(envstate_new)
+            T_done.append(0.0)
     print(f"Single batch sampled control {len(T_u)=}, {len(T_logprob)=}, {np.mean(T_logprob)=}")
     # Convert lists to jnp arrays
     T_envstate = jnp.stack(T_envstate)
@@ -314,7 +325,7 @@ def collect_single_batch(
     T_logprob = jnp.stack(T_logprob)
     T_l = jnp.stack(T_l)
     Th_h = jnp.stack(Th_h)
-    T_done = jnp.stack()
+    T_done = jnp.stack(T_done)
     
     obs_final = task.get_obs(collect_state.state)
 
@@ -334,7 +345,7 @@ class Collector(struct.PyTreeNode):
     collect_state: CollectorState
     task: Task = struct.field(pytree_node=False)
     cfg: CollectorCfg = struct.field(pytree_node=False)
-    Rollout = RolloutOutput
+    
  
     @classmethod
     def create(cls, key: PRNGKey, task: Task, cfg: CollectorCfg):
@@ -372,17 +383,20 @@ class Collector(struct.PyTreeNode):
         b_shouldreset = b_shouldreset | jax.vmap(self.task.should_reset)(collect_state.state)
         b_state_reset = self.task.sample_x0_train(key_reset, self.cfg.n_envs)
 
-        def reset_fn(should_reset, state_reset_new, state_reset_old, steps_old):
+        def reset_fn(should_reset, state_reset_new, state_reset_old, steps_old, dones_old):
             def reset_fn_(arr_new, arr_old):
                 return jnp.where(should_reset, arr_new, arr_old)
 
             state_new = jtu.tree_map(reset_fn_, state_reset_new, state_reset_old)
             steps_new = jnp.where(should_reset, 0, steps_old)
+            dones_new = jnp.where(should_reset, 1., dones_old)
+            
             return steps_new, state_new
 
-        b_steps_new, b_state_new = jax.vmap(reset_fn)(
-            b_shouldreset, b_state_reset, collect_state.state, collect_state.steps
+        b_steps_new, b_state_new, b_done = jax.vmap(reset_fn)(
+            b_shouldreset, b_state_reset, collect_state.state, collect_state.steps, bT_outputs.dones
         )
+        bT_outputs.T_done = bT_outputs.T_done.at[-1].set(b_done)
         collect_state = CollectorState(b_steps_new, b_state_new, collect_state.z)
 
         new_self = self.replace(collect_idx=self.collect_idx + 1, collect_state=collect_state)

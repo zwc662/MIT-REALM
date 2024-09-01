@@ -13,17 +13,17 @@ from loguru import logger
 from matplotlib.colors import CenteredNorm
 
 import wandb
-from rl.rl.collector import Collector, CollectorCfg
-from rl.rl.rl import RL
-from rl.task.plotter import Plotter
-from rl.task.task import Task
-from rl.utils.cfg_utils import Cfg
-from rl.utils.ckpt_utils import get_ckpt_manager_sync
-from rl.utils.jax_utils import jax2np, move_tree_to_cpu
-from rl.utils.path_utils import get_runs_dir, mkdir
-from rl.utils.register_cmaps import register_cmaps
-from rl.utils.rng import PRNGKey
-from rl.utils.wandb_utils import reorder_wandb_name
+from efppo.rl.collector import Collector, CollectorCfg
+from efppo.rl.baseline import BaselineInner
+from efppo.task.plotter import Plotter
+from efppo.task.task import Task
+from efppo.utils.cfg_utils import Cfg
+from efppo.utils.ckpt_utils import get_ckpt_manager_sync
+from efppo.utils.jax_utils import jax2np, move_tree_to_cpu
+from efppo.utils.path_utils import get_runs_dir, mkdir
+from efppo.utils.register_cmaps import register_cmaps
+from efppo.utils.rng import PRNGKey
+from efppo.utils.wandb_utils import reorder_wandb_name
 
 import pickle
 
