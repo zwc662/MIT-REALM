@@ -19,7 +19,7 @@ def get(alg: str = 'efppo'):
     entropy_cf = LinDecay(1e-2, 5e2, warmup_steps=200_000, trans_steps=1_000_000)
     disc_gamma = 0.98
 
-    n_critics = 10
+    
     n_batches = 8
 
     bc_ratio = 0.
@@ -30,14 +30,15 @@ def get(alg: str = 'efppo'):
     )
     
     train_cfg = EFPPOCfg.TrainCfg(zmin, zmax, 0.95, 50.0, n_batches, 0.1, 1.0, 1.0)
-    if 'sac' in alg:
-        train_cfg = BaselineCfg.TrainCfg(zmin, zmax, n_batches, bc_ratio, 1.0, 1.0)
-    elif 'redq' in alg:
-        net_cfg = net_cfg = BaselineCfg.NetCfg(pol_lr, val_lr, entropy_cf, disc_gamma, "tanh", pol_hids, val_hids, nz_enc, z_mean, z_scale, n_critics)
-    
     eval_cfg = EFPPOCfg.EvalCfg()
     alg_cfg = EFPPOCfg(net_cfg, train_cfg, eval_cfg)
 
+    
+    if 'sac' in alg:
+        n_critics = int(alg.split('_')[-1])
+        train_cfg = BaselineCfg.TrainCfg(zmin, zmax, n_batches, bc_ratio, 1.0, 1.0)
+        net_cfg = BaselineCfg.NetCfg(pol_lr, val_lr, entropy_cf, disc_gamma, "tanh", pol_hids, val_hids, nz_enc, z_mean, z_scale, n_critics)
+        alg_cfg = BaselineCfg(net_cfg, train_cfg, eval_cfg)
     
     n_envs = 1
     rollout_T = 128

@@ -52,15 +52,16 @@ def main(
     #collect_cfg.max_T = 2048
 
     
-    alg_cfg, collect_cfg = f110_config.get()
-    if isinstance(alg, str):
-        if 'sac' in args.alg:
-            print("run baselinesac")
-            alg: BaselineSAC = BaselineSAC.create(jr.PRNGKey(0), task, alg_cfg)
-            alg_cfg, collect_cfg = f110_config.get('sac')
-        elif 'efppo' in args.alg:
-            print("run efppo")
-            alg: EFPPOInner = EFPPOInner.create(jr.PRNGKey(0), task, alg_cfg)
+    
+    if isinstance(alg, BaselineSAC) or 'sac' in alg:
+        print("run baselinesac")
+        alg_cfg, collect_cfg = f110_config.get(args.alg)
+        alg: BaselineSAC = BaselineSAC.create(jr.PRNGKey(0), task, alg_cfg)
+    elif isinstance(alg, EFPPOInner) or 'efppo' in alg:
+        print("run efppo")
+        alg_cfg, collect_cfg = f110_config.get()
+        alg: EFPPOInner = EFPPOInner.create(jr.PRNGKey(0), task, alg_cfg)
+
      
      
     for vgain in ([1, 0.2, 0.5, 2] if ckpt_path is None else [0]):
