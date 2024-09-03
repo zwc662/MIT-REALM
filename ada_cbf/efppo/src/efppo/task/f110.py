@@ -22,7 +22,7 @@ import warnings
 
 from typing_extensions import override
 
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any, Union, Optional
 
 from f110_gym.envs.f110_env import F110Env
 from f110_gym.envs.base_classes import Integrator 
@@ -666,6 +666,34 @@ class F1TenthWayPoint(Task):
             self.train_map_names = map_keys[:int(np.ceil(len(map_keys) / 2))]
             self.test_map_names = map_keys[min(len(map_keys) - 1, len(self.train_map_names)):]
 
+    def pose_from_random_waypoint(self):
+        init_pose_ind = np.random.choice(int(self.cur_planner.waypoints.shape[0]))
+        return self.pose_from_waypoint(init_pose_ind)
+    
+    def pose_from_nearest_waypoint(self):
+        init_pose_ind = 0
+        return self.pose_from_waypoint(init_pose_ind)
+
+    def pose_from_waypoint(self, init_pose_ind: int):
+        init_pose = self.cur_planner.waypoints[init_pose_ind][np.array(
+            [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
+            )]
+        
+        init_angle = np.random.normal(
+            loc = np.zeros([1]),
+            scale = 0.01 * np.pi
+        )
+        nxt_pose = self.cur_planner.waypoints[(init_pose_ind + 1) % len(self.cur_planner.waypoints)][np.array(
+            [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
+            )]
+        pose_diff = (nxt_pose-init_pose)[np.array(
+            [self.cur_planner.conf.wpt_yind, self.cur_planner.conf.wpt_xind]
+            )]
+        init_angle += np.arctan2(*pose_diff).reshape(1)
+        init_pose = np.concatenate((init_pose, init_angle))
+        return init_pose
+
+
     def get_state(self, state_dict: Dict[str, Any], lookahead_points: List[np.ndarray]):
         pose_x = state_dict['poses_x']
         pose_y = state_dict['poses_y']
@@ -683,10 +711,9 @@ class F1TenthWayPoint(Task):
             velocity_x, 
             velocity_y, 
             *lookahead_points), axis = -1)
-
-
-
-    def reset(self, mode: str = 'train', random_map = False, init_pose = None):
+ 
+   
+    def pre_reset(self, mode: str = 'train', random_map = False):
         if 'render' in mode.lower():
             self.render = True
 
@@ -737,29 +764,26 @@ class F1TenthWayPoint(Task):
             )
         self.cur_env.timestep =  self.dt
         self.cur_env.renderer = None
-
-        if init_pose is None:
-            init_pose_ind = np.random.choice(int(self.cur_planner.waypoints.shape[0]))
-            init_pose = self.cur_planner.waypoints[init_pose_ind][np.array(
-                [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
-                )]
-            
-            init_angle = np.random.normal(
-                loc = np.zeros([1]),
-                scale = 0.01 * np.pi
-            )
-            nxt_pose = self.cur_planner.waypoints[(init_pose_ind + 1) % len(self.cur_planner.waypoints)][np.array(
-                [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
-                )]
-            pose_diff = (nxt_pose-init_pose)[np.array(
-                [self.cur_planner.conf.wpt_yind, self.cur_planner.conf.wpt_xind]
-                )]
-            init_angle += np.arctan2(*pose_diff).reshape(1)
-            init_pose = np.concatenate((init_pose, init_angle))
  
+        return  
+
+    def reset(self, mode: str = 'train', random_map = False, init_pose = None):
+        self.pre_reset(mode, random_map)
+        
+        if init_pose is None:
+            if 'soft' in mode.lower():
+                init_pose = self.pose_from_nearest_waypoint()
+            else:
+                init_pose = self.pose_from_random_waypoint()
+             
         print(f"Reset from {init_pose}")
         state_dict, step_reward, done, info = self.cur_env.reset(init_pose.reshape(1, -1))
         
+        cur_state = self.post_reset(state_dict)
+
+        return cur_state
+
+    def post_reset(self, state_dict: Dict[str, Any]):
         self.cur_collision = state_dict['collisions']
         self.cur_state_dict = {k: v for k, v in state_dict.items()}
         lookahead_points, waypoint_ids, self.cur_pursuit_action = self.cur_planner.plan(state_dict, self.conf.work) 

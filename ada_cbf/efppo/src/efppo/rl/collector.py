@@ -203,7 +203,7 @@ def collect_single_env_mode(
             # Add done to the data collection used as mask
             collect_state = collect_state._replace(
                 steps = collect_state.steps,
-                state = task.reset(init_pose = task.cur_lookahead_points[0]),
+                state = task.reset(mode='soft'),
                 z=collect_state.z
                 )
             T_envstate.append(collect_state.state)
@@ -320,7 +320,7 @@ def collect_single_batch(
         if (task.cur_done > 0.).any() | task.should_reset(envstate_new):
             collect_state = collect_state._replace(
                 steps = 0,
-                state = task.reset(init_pose = task.cur_lookahead_points[0]),
+                state = task.reset(mode = 'train', random_map = True),
                 z=collect_state.z
                 )
             T_done.append(1.0)
