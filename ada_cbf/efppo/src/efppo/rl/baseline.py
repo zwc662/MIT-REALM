@@ -68,6 +68,9 @@ class BaselineCfg(Cfg):
         z_scale: float
 
         act_final: bool = True
+
+
+        n_critics: int = 2
        
 
     net: NetCfg
@@ -142,14 +145,14 @@ class BaselineSAC(struct.PyTreeNode):
 
         # Define critic network.
         critic_base_cls = ft.partial(MLP, cfg.net.val_hids, act)
-        critic_cls = ft.partial(DoubleDiscreteCriticNet, critic_base_cls, task.n_actions)
+        critic_cls = ft.partial(DoubleDiscreteCriticNet, critic_base_cls, task.n_actions, cfg.net.n_critics)
         critic_def = EFWrapper(critic_cls, z_base_cls)
         critic_tx = get_default_tx(as_schedule(cfg.net.val_lr).make())
         critic = TrainState.create_from_def(key_critic, critic_def, (obs, z), critic_tx)
 
         # Define target_critic network.
         target_critic_base_cls = ft.partial(MLP, cfg.net.val_hids, act)
-        target_critic_cls = ft.partial(DoubleDiscreteCriticNet, target_critic_base_cls, task.n_actions)
+        target_critic_cls = ft.partial(DoubleDiscreteCriticNet, target_critic_base_cls, task.n_actions, cfg.net.n_critics)
         target_critic_def = EFWrapper(target_critic_cls, z_base_cls)
         target_critic_tx = get_default_tx(as_schedule(cfg.net.val_lr).make())
         target_critic = TrainState.create_from_def(key_critic, target_critic_def, (obs, z), target_critic_tx)
@@ -251,31 +254,24 @@ class BaselineSAC(struct.PyTreeNode):
     def update_critic(self, batch: Batch) -> tuple["BaselineSAC", dict]:
         b_nxt_control, b_nxt_logprob =jax.vmap(lambda obs, z: self.policy.apply(obs, z).experimental_sample_and_log_prob(seed=self.key))(batch.b_nxt_obs, batch.b_nxt_z)
 
-        b_nxt_critic_1_2_all= jax.vmap(self.critic.apply)(batch.b_nxt_obs, batch.b_nxt_z)
-        b_nxt_critic_1_2 = jax.vmap(lambda nxt_critic_1_2, nxt_control: nxt_critic_1_2[:, nxt_control], in_axes = 0)(b_nxt_critic_1_2_all, b_nxt_control) 
-        b_nxt_critic1 = b_nxt_critic_1_2[:, 0].flatten()
-        b_nxt_critic2 = b_nxt_critic_1_2[:, 1].flatten()
-        b_nxt_critic = jnp.minimum(b_nxt_critic1, b_nxt_critic2)
+        b_nxt_critic_all= jax.vmap(self.critic.apply)(batch.b_nxt_obs, batch.b_nxt_z)
+        b_nxt_critics = jax.vmap(lambda nxt_critic, nxt_control: nxt_critic[:, nxt_control], in_axes = 0)(b_nxt_critic_all, b_nxt_control).reshape(-1, self.cfg.net.n_critics)
+        b_nxt_critic = jnp.min(b_nxt_critics, axis = 1)
 
         # reward = - l
         b_target_critic = (- batch.b_l) + self.disc_gamma * b_nxt_critic
         b_target_critic -= self.disc_gamma * b_nxt_logprob 
         
         def get_critic_loss(params):
-            b_critic_1_2_all = jax.vmap(ft.partial(self.critic.apply_with, params=params))(batch.b_obs, batch.b_z)
-            b_critic_1_2 = jax.vmap(lambda critic_1_2, control: critic_1_2[:, control], in_axes = 0)(b_critic_1_2_all, batch.b_control) 
-            b_critic1 = b_critic_1_2[:, 0].flatten()
-            b_critic2 = b_critic_1_2[:, 1].flatten()
-            assert b_critic1.shape == b_critic2.shape == b_target_critic.shape
+            b_critic_all = jax.vmap(ft.partial(self.critic.apply_with, params=params))(batch.b_obs, batch.b_z)
+            b_critics = jax.vmap(lambda critic_1_2, control: critic_1_2[:, control], in_axes = 0)(b_critic_all, batch.b_control).reshape(-1, self.cfg.net.n_critics) 
+            
+            assert b_target_critic.shape[0] == b_critics.shape[0] 
  
-            loss_critic = jnp.mean((b_critic1 - b_target_critic) ** 2 + (b_critic2 - b_target_critic) ** 2)
+            loss_critic = jnp.mean((b_critics - b_target_critic[:, jnp.newaxis]) ** 2, axis = 0)
 
-
-            info = {
-                "Loss/critic": loss_critic,
-                "mean_critic1": b_critic1.mean(),
-                "mean_critic2": b_critic2.mean(),
-            }
+            info = {"Loss/critic{i}": loss_critic[i] for i in range(self.cfg.net.n_critics)} + {f"mean_critic_{i}": b_critics[:, i].mean() for i in range(self.cfg.net.n_critics)}
+       
             return loss_critic, info
 
         grads_critic, critic_info = jax.grad(get_critic_loss, has_aux=True)(self.critic.params)
@@ -302,12 +298,10 @@ class BaselineSAC(struct.PyTreeNode):
                 return entropy, sampled_control, sampled_logprob, expert_logprob
             
             b_entropy, b_sampled_control, b_sampled_logprob, b_expert_logprob = jax.vmap(get_logprob_entropy)(batch.b_obs, batch.b_z, batch.b_expert_control)
-            b_critic_1_2_all = jax.vmap(self.critic.apply)(batch.b_obs, batch.b_z)
-            b_critic_1_2 = jax.vmap(lambda critic_1_2, control: critic_1_2[:, control], in_axes = 0)(b_critic_1_2_all, b_sampled_control)
-        
-            b_critic1, b_critic2 = b_critic_1_2[:, 0].flatten(), b_critic_1_2[:, 1].flatten()
-             
-            b_critic = jnp.minimum(b_critic1, b_critic2)
+            b_critic_all = jax.vmap(self.critic.apply)(batch.b_obs, batch.b_z)
+            b_critics = jax.vmap(lambda critic, control: critic[:, control], in_axes = 0)(b_critic_all, b_sampled_control).reshape(-1, self.cfg.net.n_critics)
+           
+            b_critic = jnp.min(b_critics, axis = 1)
 
             sac_loss = jnp.mean(b_sampled_logprob * self.temp - b_critic) 
 
@@ -467,14 +461,14 @@ class BaselineSAC(struct.PyTreeNode):
                 bb_pol[-1].append(pol)
                 bb_prob[-1].append(prob)
                 
-                critics = self.critic.apply(bb_obs[i][j], bb_z[i][j])
-                critic1, critic2 = critics[0].flatten()[pol], critics[1].flatten()[pol]
-                critic = jnp.minimum(critic1, critic2)
+                critic_all = self.critic.apply(bb_obs[i][j], bb_z[i][j])
+                critics = jax.vmap(lambda critic: critic.flatten()[pol], in_axes = 0)(critic_all).reshape(-1, self.cfg.net.n_critics)
+                critic = jnp.min(critics, axis = 1)
                 bb_critic[-1].append(critic)
 
-                target_critics = self.target_critic.apply(bb_obs[i][j], bb_z[i][j])
-                target_critic1, target_critic2 = target_critics[0].flatten()[pol], target_critics[1].flatten()[pol]
-                target_critic = jnp.minimum(target_critic1, target_critic2)
+                target_critic_all = self.target_critic.apply(bb_obs[i][j], bb_z[i][j])
+                target_critics =jax.vmap(lambda target_critic: target_critic.flatten()[pol], in_axes = 0)(target_critic_all).reshape(-1, self.cfg.net.n_critics)
+                target_critic = jnp.min(target_critics, axis = 1)
                 bb_target_critic[-1].append(target_critic)
 
             for bb in [bb_pol, bb_prob, bb_critic, bb_target_critic]:
@@ -522,3 +516,5 @@ class BaselineSAC(struct.PyTreeNode):
 
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean, "l_final": l_final}
         return self.EvalData(z, bb_pol, bb_prob, bb_critic, bb_target_critic, b_rollout.Tp1_state, info)
+
+ 

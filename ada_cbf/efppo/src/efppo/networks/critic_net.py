@@ -23,6 +23,7 @@ class DiscreteCriticNet(nn.Module):
 class DoubleDiscreteCriticNet(nn.Module):
     net_cls: Type[nn.Module]
     n_actions: int
+    n_critics: int = 2
 
     @nn.compact
     def __call__(self, state: Float[Arr, "* nx"], *args, **kwargs) -> Float[Arr, "*"]:
@@ -33,6 +34,6 @@ class DoubleDiscreteCriticNet(nn.Module):
             split_rngs = {'params': True},
             in_axes = None,
             out_axes = 0,
-            axis_size = 2)
+            axis_size = self.n_critics)
         return double_net(self.net_cls, self.n_actions)(state, *args, **kwargs)
        

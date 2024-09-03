@@ -770,7 +770,7 @@ class F1TenthWayPoint(Task):
     def reset(self, mode: str = 'train', random_map = False, init_pose = None):
         self.pre_reset(mode, random_map)
         
-        if init_pose is None:
+        if not random_map and init_pose is None:
             if 'soft' in mode.lower():
                 init_pose = self.pose_from_nearest_waypoint()
             else:
