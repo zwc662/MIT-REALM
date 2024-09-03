@@ -35,7 +35,7 @@ def get(alg: str = 'efppo'):
 
     
     if 'sac' in alg:
-        n_critics = int(alg.split('_')[-1])
+        n_critics = 2
         train_cfg = BaselineCfg.TrainCfg(zmin, zmax, n_batches, bc_ratio, 1.0, 1.0)
         net_cfg = BaselineCfg.NetCfg(pol_lr, val_lr, entropy_cf, disc_gamma, "tanh", pol_hids, val_hids, nz_enc, z_mean, z_scale, n_critics)
         alg_cfg = BaselineCfg(net_cfg, train_cfg, eval_cfg)

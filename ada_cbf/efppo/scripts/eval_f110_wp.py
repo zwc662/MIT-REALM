@@ -12,6 +12,7 @@ import jax.random as jr
 import jax.numpy as jnp
 import jax.lax as lax
 import jax.tree_util as jtu
+import pickle
 
 from efppo.utils.tfp import tfd
  
@@ -28,36 +29,39 @@ from efppo.utils.jax_utils import jax2np, jax_vmap, merge01
 from efppo.utils.logging import set_logger_format
 from efppo.utils.path_utils import mkdir
 from efppo.utils.tfp import tfd
+from efppo.utils.cfg_utils import Recursive_Update
 
 
 
 
 def main(
-        alg: Optional[Union[str, BaselineSAC, EFPPOInner]] = None, 
+        alg: Optional[Union[BaselineSAC, EFPPOInner]] = None, 
         ckpt_path: Optional[pathlib.Path] = None,
         render: bool = False,
         pursuit: bool = False,
         **kwargs):
     set_logger_format()
 
-    plot_dir = mkdir(pathlib.Path(os.path.join(os.path.dirname(__file__), 'plots')))
-    if ckpt_path is not None:
-        #plot_dir = get_run_dir_from_ckpt_path(ckpt_path)
-        plot_dir = mkdir(pathlib.Path(os.path.join(os.path.dirname(ckpt_path), 'plots')))
-  
     task = F1TenthWayPoint(control_mode = 'pursuit' if pursuit else '')
     
-    # For prettier trajectories.
-    # task.dt /= 2
-    #collect_cfg.max_T = 2048
+    plot_dir = mkdir(pathlib.Path(os.path.join(os.path.dirname(__file__), 'plots')))
+    if ckpt_path is not None:
+        
+        plot_dir = mkdir(pathlib.Path(os.path.join(os.path.dirname(ckpt_path), 'plots')))
+        with open(os.path.join(os.path.dirname(ckpt_path), 'cfg.pt'), 'rb') as fp:
+            cfg = pickle.load(fp)
+            alg_cfg = cfg["alg_cfg"]
+            collect_cfg = cfg['collect_cfg']
 
-    
-     
-    if alg is not None and (isinstance(alg, BaselineSAC) or 'sac' in alg):
-        print("run baselinesac")
-        alg_cfg, collect_cfg = f110_config.get(args.alg)
-        alg: BaselineSAC = BaselineSAC.create(jr.PRNGKey(0), task, alg_cfg)
-    elif alg is None or isinstance(alg, EFPPOInner) or 'efppo' in alg:
+            baseline_cfg, baseline_collect_cfg = f110_config.get('sac_ensemble')
+            
+            alg_cfg = Recursive_Update(baseline_cfg, alg_cfg)
+            collect_cfg = Recursive_Update(baseline_collect_cfg, collect_cfg)
+            
+            
+            alg: BaselineSAC = BaselineSAC.create(jr.PRNGKey(0), task, alg_cfg) 
+
+    if alg is None:
         print("run efppo")
         alg_cfg, collect_cfg = f110_config.get()
         alg: EFPPOInner = EFPPOInner.create(jr.PRNGKey(0), task, alg_cfg)
