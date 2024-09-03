@@ -168,7 +168,7 @@ def main(
 
         b_h = merge01(np.max(bb_rollout.Th_h, axis=(2, 3)))
 
-        b_issafe = (b_h <= 0).astype(float).reshape(-1).astype('float64')
+        b_issafe = (b_h <= -1e-3).astype(float).reshape(-1).astype('float64')
         if b_issafe.sum() >= 1.:
             p = b_issafe / b_issafe.sum() 
             safe_idxs = rng.choice(bTp1_state.shape[0], size=min(b_issafe.sum().astype(int).item(), 5), replace=False, p = p)
@@ -184,7 +184,7 @@ def main(
             plt.close(fig)
 
 
-        b_isunsafe = (b_h > 0).astype(float).reshape(-1).astype('float64')
+        b_isunsafe = (b_h > 1e-3).astype(float).reshape(-1).astype('float64')
         if b_isunsafe.sum() >= 1.:
             p = b_isunsafe / b_isunsafe.sum() 
             print(p)
