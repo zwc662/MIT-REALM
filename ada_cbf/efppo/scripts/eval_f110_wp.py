@@ -1,7 +1,7 @@
 import os
 import sys
 
-from typing import Optional, Annotated
+from typing import Optional, Annotated, Union
  
 import argparse
 import functools as ft
@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import efppo.run_config.f110 as f110_config
 from efppo.rl.collector import RolloutOutput, collect_single_env_mode
 from efppo.rl.efppo_inner import EFPPOInner
+from efppo.rl.baseline import BaselineSAC
 from efppo.rl.rootfind_policy import Rootfinder, RootfindPolicy
 from efppo.task.f110 import F1TenthWayPoint
 from efppo.task.plotter import Plotter
@@ -32,7 +33,7 @@ from efppo.utils.tfp import tfd
 
 
 def main(
-        alg: Optional[EFPPOInner] = None, 
+        alg: Optional[Union[str, BaselineSAC, EFPPOInner]] = None, 
         ckpt_path: Optional[pathlib.Path] = None,
         render: bool = False,
         pursuit: bool = False,
@@ -48,10 +49,19 @@ def main(
     
     # For prettier trajectories.
     # task.dt /= 2
-    alg_cfg, collect_cfg = f110_config.get()
     #collect_cfg.max_T = 2048
-    if alg is None:
-        alg: EFPPOInner = EFPPOInner.create(jr.PRNGKey(0), task, alg_cfg)
+
+    
+    alg_cfg, collect_cfg = f110_config.get()
+    if isinstance(alg, str):
+        if 'sac' in args.alg:
+            print("run baselinesac")
+            alg: BaselineSAC = BaselineSAC.create(jr.PRNGKey(0), task, alg_cfg)
+            alg_cfg, collect_cfg = f110_config.get('sac')
+        elif 'efppo' in args.alg:
+            print("run efppo")
+            alg: EFPPOInner = EFPPOInner.create(jr.PRNGKey(0), task, alg_cfg)
+     
      
     for vgain in ([1, 0.2, 0.5, 2] if ckpt_path is None else [0]):
    
@@ -65,9 +75,12 @@ def main(
             print(f'Load from {ckpt_path}')
             ckpt_dict = load_ckpt_ez(ckpt_path, {"alg": alg})
             alg = ckpt_dict["alg"]
-
-        rootfind = Rootfinder(alg.Vh.apply, alg.z_min, alg.z_max, h_tgt=-0.70)
-        rootfind_pol = RootfindPolicy(alg.policy.apply, rootfind)
+        
+        if isinstance(alg, BaselineSAC):
+            rootfind_pol = alg.policy.apply
+        elif isinstance(alg, EFPPOInner):
+            rootfind = Rootfinder(alg.Vh.apply, alg.z_min, alg.z_max, h_tgt=-0.70)
+            rootfind_pol = RootfindPolicy(alg.policy.apply, rootfind)
         
         
             
@@ -183,6 +196,7 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument('--alg', type=str, required=False, default = None, help='select efppo or baseline')
     parser.add_argument('--ckpt', type=str, required=False, default = None, help='Path to the ckpt folder')
     parser.add_argument('--work', type=int, required=False, default = 0, help='Path to the map without extensions')
     parser.add_argument('--params', type=int, required=False, default = 0, help='Path to the map without extensions')
@@ -190,6 +204,7 @@ if __name__ == "__main__":
     parser.add_argument('--render', action='store_true', help='render track')
     args = parser.parse_args()
 
-    main(ckpt_path = args.ckpt, render = args.render, pursuit = args.pursuit)
+    
+    main(alg = args.alg, ckpt_path = args.ckpt, render = args.render, pursuit = args.pursuit)
     #with ipdb.launch_ipdb_on_exception():
     #    typer.run(main)
