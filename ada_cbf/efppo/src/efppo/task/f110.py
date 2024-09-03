@@ -571,14 +571,14 @@ class F1TenthWayPoint(Task):
         self.cur_mode = 'train'
         self.cur_planner = None
         self.cur_env = None
-
+        self.pre_state = None
         self.cur_state = None
         self.cur_action = None
         self.cur_pursuit_action = None
         self.cur_state_dict = {}
         self.cur_collision = np.asarray([0])
         self.cur_overflow = np.asarray([0])
-        self.cur_done = np.asarray([-1])
+        self.cur_done = np.asarray([1.])
         self.cur_step = 0
 
         self.cur_totl = 0
@@ -611,6 +611,10 @@ class F1TenthWayPoint(Task):
     @property
     def nx(self):
         return 5 + 2 * self.conf.work.nlad
+
+    @property
+    def nobs(self):
+        return 3 + 2 * self.conf.work.nlad
     
     @property
     def nu(self):
@@ -957,6 +961,7 @@ class F1TenthWayPoint(Task):
                 self.cur_lookahead_points = lookahead_points[:]
             
             self.cur_state_dict = {k: v for k, v in nxt_state_dict.items()}
+            self.pre_state = self.cur_state
             self.cur_state = nxt_state
             self.cur_step += 1
         return self.cur_state #, step_reward, done, info
@@ -969,21 +974,23 @@ class F1TenthWayPoint(Task):
 
 
     def l(self, state: State, control: Union[Control, tfd.Distribution]) -> LFloat:
-        l = 0
-        # Cost for cont diff from pursuit controller
+        ## High velocity => low cost
+        l = - np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum()
+
+        ## Greater dist to previous lookahead dist => high cost
+        if False and self.pre_waypoint_ids is not None:
+            previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
+            l += np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum()
+            if self.pre_state is not None:
+                l -= np.square(np.asarray(self.get2d(self.pre_state)).reshape(2) - previous_lookahead_point.reshape(2)).sum()
+ 
+        ## High diff from pursuit controller => high cost
         if False and self.cur_pursuit_action is not None:
-            #
             target = self.cts_to_discr(self.cur_pursuit_action) 
             l += np.abs(target - control)
-
-            #control = self.efppo_control_transform(control) 
-            #l += np.square(control.reshape(2) - self.cur_pursuit_action.reshape(2)).sum()
-
-        if self.pre_waypoint_ids is not None:
-            previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
-            l += np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum().item() 
-        
-        if self.cur_collision:
+       
+        ## Collision 
+        if False and self.cur_collision:
             l += self.cur_totl
             self.cur_totl = 0
         else:
@@ -1015,8 +1022,12 @@ class F1TenthWayPoint(Task):
 
     def should_reset(self, state: State) -> BoolScalar:
         # Reset the state if it is frozen.
-        return np.any(np.logical_or(self.cur_done > 0, self.cur_collision > 0))
-    
+        # return np.any(np.logical_or(self.cur_done > 0, self.cur_collision > 0))
+
+
+        # Reset the state only if it is overflowing
+        return np.any(self.cur_done > 0)
+
     def get_x0_eval(self) -> TaskState:
         state = self.reset(mode='test')
         return state.reshape(1, *state.shape)

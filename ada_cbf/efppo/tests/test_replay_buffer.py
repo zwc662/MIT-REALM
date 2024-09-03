@@ -13,8 +13,13 @@ from efppo.rl.collector import CollectorCfg, Collector
 from efppo.utils.tfp import tfd
 from test_f110_collector import task, collect_cfg, collector, get_pol
 
-from efppo.utils.replay_buffer import Experiences, ReplayBuffer
+from efppo.utils.replay_buffer import Experience, ReplayBuffer
 
+@pytest.fixture
+def get_pol(task):
+    def help(obs_pol, state_z):
+        return tfd.Categorical(logits=jnp.zeros(task.nu))
+    return help
 
 
 def test_replaybuffer(collector, get_pol):

@@ -18,10 +18,10 @@ from test_f110 import task
 @pytest.fixture
 def collect_cfg():
     return CollectorCfg(
-        n_envs = 1, 
-        rollout_T = 4, 
+        n_envs = 5, 
+        rollout_T = 20, 
         mean_age = 10000, 
-        max_T = 10000
+        max_T = 10
         )
 
 @pytest.fixture
@@ -33,8 +33,8 @@ def collector(task, collect_cfg):
 def get_pol():
     def help(obs_pol, state_z):
         return tfd.Bernoulli(logits=obs_pol[jnp.array([-2, -1])])
- 
     return help
+
 
 def test_collector(collector, get_pol):
     return collector.collect_batch_iteratively(get_pol, 0.99, 0, 10)

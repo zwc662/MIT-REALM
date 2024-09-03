@@ -16,8 +16,8 @@ from efppo.networks.ef_wrapper import EFWrapper, ZEncoder
 from efppo.networks.mlp import MLP
 from efppo.networks.network_utils import ActLiteral, HidSizes, get_act_from_str, get_default_tx
 from efppo.networks.policy_net import DiscretePolicyNet
-from efppo.networks.train_state import TrainState
-from efppo.networks.value_net import ConstrValueNet, CostValueNet
+from efppo.networks.train_state import TrainState 
+from efppo.networks.critic_net import DoubleDiscreteCriticNet
 from efppo.rl.collector import Collector, RolloutOutput, collect_single_mode, collect_single_env_mode
 from efppo.rl.gae_utils import compute_efocp_gae, compute_efocp_V
 from efppo.task.dyn_types import BControl, BHFloat, BObs, HFloat, LFloat, ZBBControl, ZBBFloat, ZBTState, ZFloat
@@ -29,6 +29,7 @@ from efppo.utils.jax_utils import jax_vmap, merge01, tree_split_dims, tree_stack
 from efppo.utils.rng import PRNGKey
 from efppo.utils.schedules import Schedule, as_schedule
 from efppo.utils.tfp import tfd 
+from efppo.utils.replay_buffer import Experience, ReplayBuffer
 
 @define
 class BaselineCfg(Cfg):
@@ -69,12 +70,13 @@ class BaselineCfg(Cfg):
     eval: EvalCfg
 
 
-class BaselineInner(struct.PyTreeNode):
+class BaselineSAC(struct.PyTreeNode):
     update_idx: int
-    key: PRNGKey
+    key: PRNGKey 
+    temp: FloatScalar
     policy: TrainState[tfd.Distribution]
-    Vl: TrainState[LFloat]
-    Vh: TrainState[HFloat]
+    critic: TrainState[LFloat]
+    target_critic: TrainState[HFloat]
     disc_gamma: FloatScalar
 
     task: Task = struct.field(pytree_node=False)
@@ -86,25 +88,30 @@ class BaselineInner(struct.PyTreeNode):
     Cfg = BaselineCfg
 
     class Batch(NamedTuple):
-        b_obs: BObs
+        b_obs: BObs 
+        b_nxt_obs: BObs
         b_z: BFloat
+        b_nxt_z: BFloat
         b_control: BControl
         b_logprob: BFloat
-        b_Ql: BFloat
-        bh_Qh: BHFloat
-        b_A: BFloat
-
+        b_l: BFloat 
+        
         @property
         def batch_size(self) -> int:
-            assert self.b_logprob.ndim == 1
-            return len(self.b_logprob)
+            assert self.b_logprob.ndim == 2
+            return self.b_logprob.shape[1]
+        
+        @property
+        def num_batches(self) -> int:
+            assert self.b_logprob.ndim == 2
+            return self.b_logprob.shape[0]
 
     class EvalData(NamedTuple):
         z_zs: ZFloat
         zbb_pol: ZBBControl
         zbb_prob: ZBBFloat
-        zbb_Vl: ZBBFloat
-        zbb_Vh: ZBBFloat
+        zbb_critic: ZBBFloat
+        zbb_target_critic: ZBBFloat
 
         zbT_x: ZBTState
 
@@ -112,13 +119,14 @@ class BaselineInner(struct.PyTreeNode):
 
     @classmethod
     def create(cls, key: jr.PRNGKey, task: Task, cfg: BaselineCfg):
-        key, key_pol, key_Vl, key_Vh = jr.split(key, 4)
-        obs, z = np.zeros(task.nobs), np.array(0.0)
+        key, key_pol, key_critic, key_replay_buffer = jr.split(key, 4)
+
+        obs, z, control = np.zeros(task.nobs), np.array(0.0), np.array(0.0)
         act = get_act_from_str(cfg.net.act)
 
         # Encoder for z. Params not shared.
         z_base_cls = ft.partial(ZEncoder, nz=cfg.net.nz_enc, z_mean=cfg.net.z_mean, z_scale=cfg.net.z_scale)
-
+        
         # Define policy network.
         pol_base_cls = ft.partial(MLP, cfg.net.pol_hids, act, act_final=cfg.net.act_final, scale_final=1e-2)
         pol_cls = ft.partial(DiscretePolicyNet, pol_base_cls, task.n_actions)
@@ -126,25 +134,25 @@ class BaselineInner(struct.PyTreeNode):
         pol_tx = get_default_tx(as_schedule(cfg.net.pol_lr).make())
         pol = TrainState.create_from_def(key_pol, pol_def, (obs, z), pol_tx)
 
-        # Define Vl network.
-        Vl_base_cls = ft.partial(MLP, cfg.net.val_hids, act)
-        Vl_cls = ft.partial(CostValueNet, Vl_base_cls)
-        Vl_def = EFWrapper(Vl_cls, z_base_cls)
-        Vl_tx = get_default_tx(as_schedule(cfg.net.val_lr).make())
-        Vl = TrainState.create_from_def(key_pol, Vl_def, (obs, z), Vl_tx)
+        # Define critic network.
+        critic_base_cls = ft.partial(MLP, cfg.net.val_hids, act)
+        critic_cls = ft.partial(DoubleDiscreteCriticNet, critic_base_cls, task.n_actions)
+        critic_def = EFWrapper(critic_cls, z_base_cls)
+        critic_tx = get_default_tx(as_schedule(cfg.net.val_lr).make())
+        critic = TrainState.create_from_def(key_critic, critic_def, (obs, z), critic_tx)
 
-        # Define Vh network.
-        Vh_base_cls = ft.partial(MLP, cfg.net.val_hids, act)
-        Vh_cls = ft.partial(ConstrValueNet, Vh_base_cls, task.nh)
-        Vh_def = EFWrapper(Vh_cls, z_base_cls)
-        Vh_tx = get_default_tx(as_schedule(cfg.net.val_lr).make())
-        Vh = TrainState.create_from_def(key_pol, Vh_def, (obs, z), Vh_tx)
+        # Define target_critic network.
+        target_critic_base_cls = ft.partial(MLP, cfg.net.val_hids, act)
+        target_critic_cls = ft.partial(DoubleDiscreteCriticNet, target_critic_base_cls, task.n_actions)
+        target_critic_def = EFWrapper(target_critic_cls, z_base_cls)
+        target_critic_tx = get_default_tx(as_schedule(cfg.net.val_lr).make())
+        target_critic = TrainState.create_from_def(key_critic, target_critic_def, (obs, z), target_critic_tx)
 
         ent_cf = as_schedule(cfg.net.entropy_cf).make()
         disc_gamma_sched = as_schedule(cfg.net.disc_gamma).make()
         disc_gamma = disc_gamma_sched(0)
-
-        return BaselineInner(0, key, pol, Vl, Vh, disc_gamma, task, cfg, ent_cf, disc_gamma_sched)
+ 
+        return BaselineSAC(0, key, 1, pol, critic, target_critic, disc_gamma, task, cfg, ent_cf, disc_gamma_sched)
 
     @property
     def train_cfg(self) -> BaselineCfg.TrainCfg:
@@ -162,140 +170,173 @@ class BaselineInner(struct.PyTreeNode):
     def ent_cf(self):
         return self.ent_cf_sched(self.update_idx)
 
-    def make_dset(self, data: RolloutOutput) -> Batch:
-        batch_size, T = data.T_control.shape[:2]
+    def make_dset(self, replay_buffer: ReplayBuffer, data: RolloutOutput) -> Batch:
+        new_replay_buffer = replay_buffer.insert(data)
 
-        # 1: Compute Vl and h_Vh from data.
-        bTp1_Vl = jax_vmap(self.Vl.apply, rep=2)(data.Tp1_obs, data.Tp1_z)
-        bTp1h_Vh = jax_vmap(self.Vh.apply, rep=2)(data.Tp1_obs, data.Tp1_z)
-        bT_z = data.Tp1_z[:, :-1]
-
-        # 2: Compute Vl, Vh and A using GAE.
-        gae_lambda = self.cfg.train.gae_lambda
-        J_max = self.cfg.train.J_max
-        compute_gae = ft.partial(compute_efocp_gae, disc_gamma=self.disc_gamma, gae_lambda=gae_lambda, J_max=J_max)
-        bTh_Qh, bT_Ql, bT_Q = jax_vmap(compute_gae)(data.Th_h, data.T_l, bT_z, bTp1h_Vh, bTp1_Vl)
-
-        # 3: Compute advantage for policy gradient.
-        bTh_Vh, bT_Vl = bTp1h_Vh[:, :-1], bTp1_Vl[:, :-1]
-        bT_V = jax_vmap(compute_efocp_V, rep=2)(bT_z, bTh_Vh, bT_Vl)
-        assert bT_V.shape == (batch_size, T)
-        bT_A = bT_Q - bT_V
-
-        # 4: Make the dataset by flattening (b, T) -> (b * T,)
-        bT_obs = data.Tp1_obs[:, :-1]
-        bT_batch = self.Batch(bT_obs, bT_z, data.T_control, data.T_logprob, bT_Ql, bTh_Qh, bT_A)
-        b_batch = jax.tree_map(merge01, bT_batch)
-        return b_batch
+        num_batches = self.train_cfg.n_batches
+        batch_size = 256 
+        new_replay_buffer, batch_data = new_replay_buffer.sample(num_batches, batch_size)
+        b_batch = self.Batch(
+            b_obs = batch_data.Tp1_obs,
+            b_nxt_obs = batch_data.Tp1_nxt_obs,
+            b_z = batch_data.Tp1_z,
+            b_nxt_z = batch_data.Tp1_nxt_z,
+            b_control = batch_data.T_control,
+            b_logprob = batch_data.T_logprob,
+            b_l = batch_data.T_l
+        )
+        return new_replay_buffer, b_batch
 
     @ft.partial(jax.jit, donate_argnums=0)
-    def update(self, data: RolloutOutput) -> tuple["BaselineInner", dict]:
-        # Compute GAE values.
-        b_dset = self.make_dset(data)
+    def update(self, batch: Batch) -> tuple["BaselineSAC", dict]:
+        def update_one_batch(obj, batch_idx):
+            key_shuffle, key_self = jr.split(obj.key, 2)
+            rand_idxs = jr.permutation(key_shuffle, jnp.arange(batch.batch_size))
+            mb_dset = jax.tree_map(lambda x: x[batch_idx][rand_idxs], batch)
+            
+            # 3: Perform value function and policy updates.
+            def updates_body(alg_: BaselineSAC, b_batch: BaselineSAC.Batch):
+                alg_, critic_info = alg_.update_critic(b_batch)
+                alg_, pol_info = alg_.update_policy(b_batch)
+                return alg_, critic_info | pol_info
 
-        n_batches = self.train_cfg.n_batches
-        assert b_dset.batch_size % n_batches == 0
-        batch_size = b_dset.batch_size // self.train_cfg.n_batches
-        logger.info(f"Using {n_batches} minibatches each epoch!")
-        # 2: Shuffle and reshape
-        key_shuffle, key_self = jr.split(self.key, 2)
-        rand_idxs = jr.permutation(key_shuffle, jnp.arange(b_dset.batch_size))
-        b_dset = jax.tree_map(lambda x: x[rand_idxs], b_dset)
-        mb_dset = tree_split_dims(b_dset, (n_batches, batch_size))
+            new_obj, info = lax.scan(updates_body, obj, mb_dset, length=batch.num_batches)
+            # Take the mean.
+            info = jax.tree_map(jnp.mean, info)
 
-        # 3: Perform value function and policy updates.
-        def updates_body(alg_: BaselineInner, b_batch: BaselineInner.Batch):
-            alg_, val_info = alg_.update_value(b_batch)
-            alg_, pol_info = alg_.update_policy(b_batch)
-            return alg_, val_info | pol_info
+            info["steps/policy"] = obj.policy.step
+            info["steps/critic"] = obj.critic.step
+            info["anneal/ent_cf"] = obj.ent_cf
 
-        new_self, info = lax.scan(updates_body, self, mb_dset, length=n_batches)
-        # Take the mean.
-        info = jax.tree_map(jnp.mean, info)
+            return new_obj.replace(key=key_self, update_idx=obj.update_idx + 1), info
+        
+        new_self, new_info = lax.scan(update_one_batch, self, jnp.arange(batch.num_batches))
+ 
+        return new_self, jtu.tree_map(jnp.mean, new_info)
+    
 
-        info["steps/policy"] = self.policy.step
-        info["steps/Vl"] = self.Vl.step
-        info["anneal/ent_cf"] = self.ent_cf
-        return new_self.replace(key=key_self, update_idx=self.update_idx + 1), info
+    def update_iteratively(self, batch: Batch) -> tuple["BaselineSAC", dict]:
+        info = {}
+        for batch_idx in range(batch.num_batches):
+            key_shuffle, key_self = jr.split(self.key, 2)
+            rand_idxs = jr.permutation(key_shuffle, jnp.arange(batch.batch_size))
+            mb_dset = jax.tree_map(lambda x: x[batch_idx][rand_idxs], batch)
+            
+            # 3: Perform value function and policy updates.
+            def updates_body(alg_: BaselineSAC, b_batch: BaselineSAC.Batch):
+                alg_, critic_info = alg_.update_critic(b_batch)
+                alg_, pol_info = alg_.update_policy(b_batch)
+                return alg_, critic_info | pol_info
 
-    def update_value(self, batch: Batch) -> tuple["BaselineInner", dict]:
-        def get_Vl_loss(params):
-            b_Vl = jax.vmap(ft.partial(self.Vl.apply_with, params=params))(batch.b_obs, batch.b_z)
-            assert b_Vl.shape == (batch.batch_size,)
+            self, info = updates_body(self, mb_dset)
+            # Take the mean.
+            
+            info = jax.tree_map(jnp.mean, info)
 
-            loss_Vl = jnp.mean((b_Vl - batch.b_Ql) ** 2)
+            info["steps/policy"] = self.policy.step
+            info["steps/critic"] = self.critic.step
+            info["anneal/ent_cf"] = self.ent_cf
+          
+        return self, info
+
+
+
+    def update_critic(self, batch: Batch) -> tuple["BaselineSAC", dict]:
+        b_nxt_control, b_nxt_logprob =jax.vmap(lambda obs, z: self.policy.apply(obs, z).experimental_sample_and_log_prob(seed=self.key))(batch.b_nxt_obs, batch.b_nxt_z)
+
+        b_nxt_critic_1_2_all= jax.vmap(self.critic.apply)(batch.b_nxt_obs, batch.b_nxt_z)
+        b_nxt_critic_1_2 = jax.vmap(lambda nxt_critic_1_2, nxt_control: nxt_critic_1_2[:, nxt_control], in_axes = 0)(b_nxt_critic_1_2_all, b_nxt_control) 
+        b_nxt_critic1 = b_nxt_critic_1_2[:, 0].flatten()
+        b_nxt_critic2 = b_nxt_critic_1_2[:, 1].flatten()
+        b_nxt_critic = jnp.minimum(b_nxt_critic1, b_nxt_critic2)
+
+        # reward = - l
+        b_target_critic = (- batch.b_l) + self.disc_gamma * b_nxt_critic
+        b_target_critic -= self.disc_gamma * b_nxt_logprob 
+        
+        def get_critic_loss(params):
+            b_critic_1_2_all = jax.vmap(ft.partial(self.critic.apply_with, params=params))(batch.b_obs, batch.b_z)
+            b_critic_1_2 = jax.vmap(lambda critic_1_2, control: critic_1_2[:, control], in_axes = 0)(b_critic_1_2_all, batch.b_control) 
+            b_critic1 = b_critic_1_2[:, 0].flatten()
+            b_critic2 = b_critic_1_2[:, 1].flatten()
+            assert b_critic1.shape == b_critic2.shape == b_target_critic.shape
+ 
+            loss_critic = jnp.mean((b_critic1 - b_target_critic) ** 2 + (b_critic2 - b_target_critic) ** 2)
+
 
             info = {
-                "Loss/Vl": loss_Vl,
-                "mean_Vl": b_Vl.mean(),
+                "Loss/critic": loss_critic,
+                "mean_critic1": b_critic1.mean(),
+                "mean_critic2": b_critic2.mean(),
             }
-            return loss_Vl, info
+            return loss_critic, info
 
-        def get_Vh_loss(params):
-            bh_Vh = jax.vmap(ft.partial(self.Vh.apply_with, params=params))(batch.b_obs, batch.b_z)
-            assert bh_Vh.shape == (batch.batch_size, self.task.nh)
+        grads_critic, critic_info = jax.grad(get_critic_loss, has_aux=True)(self.critic.params)
+        grads_critic, critic_info["Grad/critic"] = compute_norm_and_clip(grads_critic, self.train_cfg.clip_grad_V)
+        critic = self.critic.apply_gradients(grads=grads_critic)
+        
+        new_target_critic_params = jax.tree_map(lambda p, tp: p * 5e-3 + tp * (1 - 5e-3), self.critic.params, self.target_critic.params)
+        target_critic = self.target_critic.replace(params=new_target_critic_params)
 
-            loss_Vh = jnp.mean((bh_Vh - batch.bh_Qh) ** 2)
+        return self.replace(critic=critic, target_critic=target_critic), critic_info
+     
 
-            info = {"Loss/Vh": loss_Vh}
-            return loss_Vh, info
-
-        grads_Vl, Vl_info = jax.grad(get_Vl_loss, has_aux=True)(self.Vl.params)
-        grads_Vl, Vl_info["Grad/Vl"] = compute_norm_and_clip(grads_Vl, self.train_cfg.clip_grad_V)
-
-        grads_Vh, Vh_info = jax.grad(get_Vh_loss, has_aux=True)(self.Vh.params)
-        grads_Vh, Vh_info["Grad/Vh"] = compute_norm_and_clip(grads_Vh, self.train_cfg.clip_grad_V)
-
-        Vl = self.Vl.apply_gradients(grads=grads_Vl)
-        Vh = self.Vh.apply_gradients(grads=grads_Vh)
-        return self.replace(Vl=Vl, Vh=Vh), Vl_info | Vh_info
-
-    def update_policy(self, batch: Batch) -> tuple["BaselineInner", dict]:
+    def update_policy(self, batch: Batch) -> tuple["BaselineSAC", dict]:
         def get_pol_loss(pol_params):
             pol_apply = ft.partial(self.policy.apply_with, params=pol_params)
 
-            def get_logprob_entropy(obs, z, control):
+            def get_logprob_entropy(obs, z):
                 dist = pol_apply(obs, z)
-                return dist.log_prob(control), dist.entropy()
+                entropy = dist.entropy()
+                sampled_control, sampled_logprob = self.policy.apply(obs, z).experimental_sample_and_log_prob(seed=self.key) 
 
-            b_logprobs, b_entropy = jax.vmap(get_logprob_entropy)(batch.b_obs, batch.b_z, batch.b_control)
-            b_logratios = b_logprobs - batch.b_logprob
-            b_is_ratio = jnp.exp(b_logratios)
+                return entropy, sampled_control, sampled_logprob
+            
+            b_entropy, b_sampled_control, b_sampled_logprob = jax.vmap(get_logprob_entropy)(batch.b_obs, batch.b_z)
+            b_critic_1_2_all = jax.vmap(self.critic.apply)(batch.b_obs, batch.b_z)
+            b_critic_1_2 = jax.vmap(lambda critic_1_2, control: critic_1_2[:, control], in_axes = 0)(b_critic_1_2_all, b_sampled_control)
+        
+            b_critic1, b_critic2 = b_critic_1_2[:, 0].flatten(), b_critic_1_2[:, 1].flatten()
+             
+            b_critic = jnp.minimum(b_critic1, b_critic2)
 
-            b_adv = batch.b_A
-            pg_loss_orig = b_adv * b_is_ratio
-            pg_loss_clip = b_adv * jnp.clip(b_is_ratio, 1 - clip_ratio, 1 + clip_ratio)
-            loss_pg = jnp.maximum(pg_loss_orig, pg_loss_clip).mean()
-            pol_clipfrac = jnp.mean(pg_loss_clip > pg_loss_orig)
-
+            pol_loss = jnp.mean(b_sampled_logprob * self.temp - b_critic)
+  
             mean_entropy = b_entropy.mean()
-            loss_entropy = -mean_entropy
-
-            pol_loss = loss_pg + ent_cf * loss_entropy
+            
             info = {
-                "loss_pol": pol_loss,
-                "entropy": mean_entropy,
-                "pol_clipfrac": pol_clipfrac,
+                "loss_entropy": mean_entropy,
+                "loss_pol": pol_loss
             }
             return pol_loss, info
 
-        clip_ratio = self.train_cfg.clip_ratio
-        ent_cf, clip_ratio = self.ent_cf, self.train_cfg.clip_ratio
+        ent_cf = self.ent_cf
         grads, pol_info = jax.grad(get_pol_loss, has_aux=True)(self.policy.params)
-
+        
         grads, pol_info["Grad/pol"] = compute_norm_and_clip(grads, self.train_cfg.clip_grad_pol)
         policy = self.policy.apply_gradients(grads=grads)
-        return self.replace(policy=policy), pol_info
+
+        new_temp = self.temp - 1e-3 *  ent_cf * pol_info['loss_entropy'] * self.temp
+        #pol_info["temperature"] = new_temp
+        return self.replace(policy=policy, temp = new_temp), pol_info
 
     @ft.partial(jax.jit, donate_argnums=1)
     def collect(self, collector: Collector) -> tuple[Collector, RolloutOutput]:
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max 
         return collector.collect_batch(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
 
-    def collect_iteratively(self, collector: Collector) -> tuple[Collector, RolloutOutput]:
+    def collect_iteratively(self, collector: Collector, replay_buffer: ReplayBuffer) -> tuple[Collector, Batch]:
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
-        return collector.collect_batch_iteratively(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
+        collector, data = collector.collect_batch_iteratively(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
+        # Compute GAE values.
+        replay_buffer, batch = self.make_dset(replay_buffer, data)
 
+        n_batches = self.train_cfg.n_batches
+        assert n_batches == batch.num_batches
+        batch_size = batch.batch_size  
+        logger.info(f"Using {n_batches} x {batch_size} minibatches each epoch!")
+
+        return collector, replay_buffer, batch
 
     def eval_iteratively(self, rollout_T: int) -> EvalData:
         # Evaluate for a range of zs.
@@ -333,9 +374,9 @@ class BaselineInner(struct.PyTreeNode):
         mode_prob = jnp.exp(dist.log_prob(mode_sample))
         return mode_sample, mode_prob
 
-    def get_Vh(self, obs, z):
-        h_Vh = self.Vh.apply(obs, z)
-        return h_Vh.max()
+    def get_target_critic(self, obs, z):
+        h_target_critic = self.target_critic.apply(obs, z)
+        return h_target_critic.max()
 
     def eval_single_z(self, z: float, rollout_T: int):
         # --------------------------------------------
@@ -345,8 +386,8 @@ class BaselineInner(struct.PyTreeNode):
         bb_z = jnp.full(bb_X.shape, z)
 
         bb_pol, bb_prob = jax_vmap(self.get_mode_and_prob, rep=2)(bb_obs, bb_z)
-        bb_Vl = jax_vmap(self.Vl.apply, rep=2)(bb_obs, bb_z)
-        bb_Vh = jax_vmap(self.get_Vh, rep=2)(bb_obs, bb_z)
+        bb_critic = jax_vmap(self.critic.apply, rep=2)(bb_obs, bb_z)
+        bb_target_critic = jax_vmap(self.get_target_critic, rep=2)(bb_obs, bb_z)
 
         # --------------------------------------------
         # Rollout trajectories and get stats.
@@ -381,7 +422,7 @@ class BaselineInner(struct.PyTreeNode):
         # --------------------------------------------
 
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean, "l_final": l_final}
-        return self.EvalData(z, bb_pol, bb_prob, bb_Vl, bb_Vh, b_rollout.Tp1_state, info)
+        return self.EvalData(z, bb_pol, bb_prob, bb_critic, bb_target_critic, b_rollout.Tp1_state, info)
 
     def eval_single_z_iteratively(self, z: float, rollout_T: int):
         # --------------------------------------------
@@ -398,11 +439,11 @@ class BaselineInner(struct.PyTreeNode):
 
         bb_pol = []
         bb_prob = []  
-        bb_Vl = []  
-        bb_Vh = [] 
+        bb_critic = []  
+        bb_target_critic = [] 
 
         for i in range(bb_obs.shape[0]):
-            for bb in [bb_pol, bb_prob, bb_Vl, bb_Vh]:
+            for bb in [bb_pol, bb_prob, bb_critic, bb_target_critic]:
                 bb.append([])
                  
             for j in range(bb_obs.shape[1]):
@@ -410,19 +451,23 @@ class BaselineInner(struct.PyTreeNode):
                 bb_pol[-1].append(pol)
                 bb_prob[-1].append(prob)
                 
-                Vl = self.Vl.apply(bb_obs[i][j], bb_z[i][j])
-                bb_Vl[-1].append(Vl)
+                critics = self.critic.apply(bb_obs[i][j], bb_z[i][j])
+                critic1, critic2 = critics[0].flatten()[pol], critics[1].flatten()[pol]
+                critic = jnp.minimum(critic1, critic2)
+                bb_critic[-1].append(critic)
 
-                Vh = self.get_Vh(bb_obs[i][j], bb_z[i][j])
-                bb_Vh[-1].append(Vh)
+                target_critics = self.target_critic.apply(bb_obs[i][j], bb_z[i][j])
+                target_critic1, target_critic2 = target_critics[0].flatten()[pol], target_critics[1].flatten()[pol]
+                target_critic = jnp.minimum(target_critic1, target_critic2)
+                bb_target_critic[-1].append(target_critic)
 
-            for bb in [bb_pol, bb_prob, bb_Vl, bb_Vh]:
+            for bb in [bb_pol, bb_prob, bb_critic, bb_target_critic]:
                 bb[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb[-1])
         
         bb_pol = jtu.tree_map(lambda *x: jnp.stack(x), *bb_pol)
         bb_prob = jtu.tree_map(lambda *x: jnp.stack(x), *bb_prob)
-        bb_Vl = jtu.tree_map(lambda *x: jnp.stack(x), *bb_Vl)
-        bb_Vh = jtu.tree_map(lambda *x: jnp.stack(x), *bb_Vh)
+        bb_critic = jtu.tree_map(lambda *x: jnp.stack(x), *bb_critic)
+        bb_target_critic = jtu.tree_map(lambda *x: jnp.stack(x), *bb_target_critic)
          
         # --------------------------------------------
         # Rollout trajectories and get stats.
@@ -460,4 +505,4 @@ class BaselineInner(struct.PyTreeNode):
         # --------------------------------------------
 
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean, "l_final": l_final}
-        return self.EvalData(z, bb_pol, bb_prob, bb_Vl, bb_Vh, b_rollout.Tp1_state, info)
+        return self.EvalData(z, bb_pol, bb_prob, bb_critic, bb_target_critic, b_rollout.Tp1_state, info)

@@ -64,11 +64,11 @@ def collect_single_mode(
     def _body(state: CollectorState, _):
         obs_pol = task.get_obs(state.state)
         a_pol: tfd.Distribution = get_pol(obs_pol, state.z)
-        control = a_pol.mode()
+        control = a_pol.mode() 
         envstate_new = task.step(state.state, control)
 
         # Z dynamics.
-        l = task.l(envstate_new, a_pol)
+        l = task.l(envstate_new, control)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
         if hasattr(task, 'l1_control_info'):
@@ -109,7 +109,7 @@ def collect_single(
         envstate_new = task.step(state.state, control)
         
         # Z dynamics.
-        l = task.l(envstate_new, a_pol)
+        l = task.l(envstate_new, control)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
 
@@ -156,7 +156,7 @@ def collect_single_env_mode(
          
 
         # Z dynamics.
-        l = task.l(envstate_new, a_pol)
+        l = task.l(envstate_new, control)
         h = task.h_components(envstate_new)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
@@ -261,7 +261,7 @@ def collect_single_batch(
         '''
         envstate_new = jnp.asarray(task.step(state.state, np.asarray(control).reshape(-1)))
         # Z dynamics.
-        l = task.l(envstate_new, a_pol)
+        l = task.l(envstate_new, control)
         h = task.h_components(envstate_new)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
@@ -428,7 +428,7 @@ class Collector(struct.PyTreeNode):
             collect_state_i = jtu.tree_map(lambda x: x[i], self.collect_state)
             
             #print(f"Env {i} / {self.cfg.n_envs}")
-            shouldreset = i == 0 | jr.bernoulli(key_reset_bernoulli, p_reset)
+            shouldreset = jr.bernoulli(key_reset_bernoulli, p_reset)
             shouldreset = jnp.logical_or(shouldreset, collect_state_i.steps >= max_T).item()
             shouldreset = (self.task.cur_done > 0.).any() | shouldreset | (
                 i > 0 and self.task.should_reset(self.collect_state.state[i - 1])

@@ -40,3 +40,17 @@ class EFWrapper(nn.Module, Generic[_WrappedModule]):
         enc_z = self.z_encoder_cls()(z)
         feat = jnp.concatenate([obs, enc_z], axis=-1)
         return self.base_cls()(feat)
+
+class EFWrapper(nn.Module, Generic[_WrappedModule]):
+    """Wrapper for networks that only take in the state to also take in z."""
+
+    base_cls: Type[_WrappedModule]
+    z_encoder_cls: Type[nn.Module]
+
+    @nn.compact
+    def __call__(self, obs: Obs, z: FloatScalar) -> AnyFloat:
+        assert obs.ndim == (z.ndim + 1)
+        z = z[..., None]
+        enc_z = self.z_encoder_cls()(z)
+        feat = jnp.concatenate([obs, enc_z], axis=-1)
+        return self.base_cls()(feat)

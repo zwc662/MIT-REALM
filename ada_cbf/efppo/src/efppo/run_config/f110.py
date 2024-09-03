@@ -13,6 +13,7 @@ def get():
 
     pol_lr = LinDecay(8e-4, 8.0, warmup_steps=500_000, trans_steps=2_000_000)
     val_lr = LinDecay(8e-4, 8.0, warmup_steps=500_000, trans_steps=2_000_000)
+    temp_lr = 3e-4
     entropy_cf = LinDecay(1e-2, 5e2, warmup_steps=200_000, trans_steps=1_000_000)
     disc_gamma = 0.98
 

@@ -14,7 +14,8 @@ from matplotlib.colors import CenteredNorm
 
 import wandb
 from efppo.rl.collector import Collector, CollectorCfg
-from efppo.rl.baseline import BaselineInner
+from efppo.utils.replay_buffer import ReplayBuffer
+from efppo.rl.baseline import BaselineSAC
 from efppo.task.plotter import Plotter
 from efppo.task.task import Task
 from efppo.utils.cfg_utils import Cfg
@@ -47,13 +48,13 @@ class TrainerCfg(Cfg):
     ckpt_max_keep: int = 100
 
 
-class RLTrainer:
+class BaselineSACTrainer:
     def __init__(self, task: Task):
         self.task = task
         self.plotter = Plotter(task)
         register_cmaps()
 
-    def plot(self, idx: int, plot_dir: pathlib.Path, data: RL.EvalData):
+    def plot(self, idx: int, plot_dir: pathlib.Path, data: BaselineSAC.EvalData):
         fig_opt = dict(layout="constrained", dpi=200)
 
         bb_X, bb_Y, _ = self.task.grid_contour()
@@ -74,7 +75,7 @@ class RLTrainer:
         plt.close(fig)
 
         # --------------------------------------------
-        # Contour of Vl.
+        # Contour of critic.
         cmap = "rocket"
         cmap_Vh = "RdBu_r"
 
@@ -85,14 +86,15 @@ class RLTrainer:
         axes = axes.ravel().tolist()
         for grididx, ax in enumerate(axes[:nz]):
             z = data.z_zs[grididx]
-            cm = ax.contourf(bb_X, bb_Y, data.zbb_Vl[grididx], levels=32, cmap=cmap)
+            cm = ax.contourf(bb_X, bb_Y, data.zbb_critic[grididx], levels=32, cmap=cmap)
             self.task.setup_traj_plot(ax)
             fig.colorbar(cm, ax=ax)
             ax.set(xlabel=xlabel, ylabel=ylabel, title=f"z={z:.1f}")
-        fig_path = mkdir(plot_dir / "Vl") / "Vl_{:08}.jpg".format(idx)
+        fig_path = mkdir(plot_dir / "critic") / "critic_{:08}.jpg".format(idx)
         fig.savefig(fig_path, bbox_inches="tight")
         plt.close(fig)
 
+        '''
         # --------------------------------------------
         # Contour of Vh.
         fig, axes = plt.subplots(3, 3, figsize=figsize, **fig_opt)
@@ -106,17 +108,20 @@ class RLTrainer:
         fig_path = mkdir(plot_dir / "Vh") / "Vh_{:08}.jpg".format(idx)
         fig.savefig(fig_path, bbox_inches="tight")
         plt.close(fig)
+        '''
 
     def train(
-        self, key: PRNGKey, alg_cfg: RL.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: TrainerCfg, iteratively: bool = False, 
+        self, key: PRNGKey, alg_cfg: BaselineSAC.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: TrainerCfg, iteratively: bool = False, 
     ):
-        key0, key1 = jr.split(key, 2)
-        alg: RL = RL.create(key0, self.task, alg_cfg)
+        key0, key1, key2 = jr.split(key, 3)
+        alg: BaselineSAC = BaselineSAC.create(key0, self.task, alg_cfg) 
         collector: Collector = Collector.create(key1, self.task, collect_cfg)
+        replay_buffer = ReplayBuffer.create(key=key2, capacity = 1e5)
 
+        
         task_name = self.task.name
         wandb_config = {"alg": alg_cfg.asdict(), "collect": collect_cfg.asdict(), "trainer": trainer_cfg.asdict()}
-        wandb.init(project=f"rl_{task_name}_inner", config=wandb_config)
+        wandb.init(project=f"baseline_{task_name}_inner", config=wandb_config)#, mode="disabled")
         wandb_run_name = reorder_wandb_name(wandb_name=wandb_name)
 
         run_dir = mkdir(get_runs_dir() / f"{task_name}_inner" / wandb_run_name)
@@ -134,13 +139,13 @@ class RLTrainer:
 
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Collecting ... ")
             if iteratively:
-                collector, col_data = alg.collect_iteratively(collector)
+                collector, replay_buffer, col_data = alg.collect_iteratively(collector, replay_buffer)
             else:
                 collector, col_data = alg.collect(collector)
                 
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Updating ... ")
             t1 = time.time()
-            alg, update_info = alg.update(col_data)
+            alg, update_info = alg.update_iteratively(col_data)
             t2 = time.time()
 
             if should_log:
