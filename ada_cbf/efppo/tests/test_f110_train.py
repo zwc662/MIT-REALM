@@ -22,7 +22,7 @@ def test_train():
         )
     )
     from train_f110_wp import main as train_main
-    train_main(name = 'test_f110_train')
+    train_main(name = 'test_f110_train_sac')
 
 ''' 
 def test_vmap():

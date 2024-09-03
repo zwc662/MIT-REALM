@@ -37,6 +37,7 @@ class Experience(NamedTuple):
     T_l: TFloat
     Th_h: THFloat
     T_done: TDone
+    T_expert_control: TControl
  
 class ReplayBuffer(struct.PyTreeNode):
     _key: PRNGKey
@@ -73,7 +74,8 @@ class ReplayBuffer(struct.PyTreeNode):
                 T_logprob = jnp.zeros((0), dtype=rollout.T_logprob.dtype), 
                 T_l = jnp.zeros((0), dtype=rollout.T_l.dtype), 
                 Th_h = jnp.zeros((0, rollout.Th_h.shape[-1]), dtype=rollout.Th_h.dtype), 
-                T_done = jnp.zeros((0), dtype=rollout.T_done.dtype)
+                T_done = jnp.zeros((0), dtype=rollout.T_done.dtype),
+                T_expert_control = jnp.zeros((0), dtype=rollout.T_control.dtype)
                 )
             cur_offsets = jnp.zeros((0)) 
             cur_dangling = False
@@ -90,7 +92,8 @@ class ReplayBuffer(struct.PyTreeNode):
             T_logprob = merge01(rollout.T_logprob), 
             T_l = merge01(rollout.T_l), 
             Th_h = merge01(rollout.Th_h), 
-            T_done = merge01(rollout.T_done)
+            T_done = merge01(rollout.T_done),
+            T_expert_control = merge01(rollout.T_expert_control)
             )
 
         init_ts = jnp.asarray([new_experiences.T_done.shape[0]]).astype(int)

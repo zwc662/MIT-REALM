@@ -1,13 +1,15 @@
 from efppo.rl.collector import CollectorCfg
 from efppo.rl.efppo_inner import EFPPOCfg
+from efppo.rl.baseline import BaselineCfg
 from efppo.utils.schedules import LinDecay
 
 
-def get():
+def get(alg: str = 'efppo'):
     zmin, zmax = -1.0, 2.5
     nz_enc = 8
     z_mean = 0.5
     z_scale = 1.0
+
 
     pol_hids = val_hids = [256, 256, 256]
 
@@ -19,13 +21,21 @@ def get():
 
     n_batches = 8
 
+    bc_ratio = 1.0
+
+    
     net_cfg = EFPPOCfg.NetCfg(
         pol_lr, val_lr, entropy_cf, disc_gamma, "tanh", pol_hids, val_hids, nz_enc, z_mean, z_scale
     )
+    
     train_cfg = EFPPOCfg.TrainCfg(zmin, zmax, 0.95, 50.0, n_batches, 0.1, 1.0, 1.0)
+    if 'sac' in alg:
+        train_cfg = BaselineCfg.TrainCfg(zmin, zmax, n_batches, bc_ratio, 1.0, 1.0)
+    
     eval_cfg = EFPPOCfg.EvalCfg()
     alg_cfg = EFPPOCfg(net_cfg, train_cfg, eval_cfg)
 
+    
     n_envs = 1
     rollout_T = 128
     mean_age = 1024

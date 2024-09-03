@@ -107,3 +107,6 @@ class Task:
     def get2d(self, state: State) -> tuple[AnyFloat, AnyFloat]:
         x_idx, y_idx = self.get2d_idxs()
         return state[..., x_idx], state[..., y_idx]
+
+    def get_expert_control(self, state: State, control: Control) -> Control:
+        return control

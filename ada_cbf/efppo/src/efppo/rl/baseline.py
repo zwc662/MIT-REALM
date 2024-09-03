@@ -35,9 +35,14 @@ from efppo.utils.replay_buffer import Experience, ReplayBuffer
 class BaselineCfg(Cfg):
     @define
     class TrainCfg(Cfg):
-        
-        
+        z_min: float
+        z_max: float
+
         n_batches: int
+        bc_ratio: float 
+
+        clip_grad_pol: float
+        clip_grad_V: float
 
          
 
@@ -95,6 +100,7 @@ class BaselineSAC(struct.PyTreeNode):
         b_control: BControl
         b_logprob: BFloat
         b_l: BFloat 
+        b_expert_control: BControl
         
         @property
         def batch_size(self) -> int:
@@ -183,7 +189,8 @@ class BaselineSAC(struct.PyTreeNode):
             b_nxt_z = batch_data.Tp1_nxt_z,
             b_control = batch_data.T_control,
             b_logprob = batch_data.T_logprob,
-            b_l = batch_data.T_l
+            b_l = batch_data.T_l,
+            b_expert_control = batch_data.T_expert_control
         )
         return new_replay_buffer, b_batch
 
@@ -285,14 +292,16 @@ class BaselineSAC(struct.PyTreeNode):
         def get_pol_loss(pol_params):
             pol_apply = ft.partial(self.policy.apply_with, params=pol_params)
 
-            def get_logprob_entropy(obs, z):
+            def get_logprob_entropy(obs, z, expert_control):
                 dist = pol_apply(obs, z)
+                expert_logprob = dist.log_prob(expert_control)
+
                 entropy = dist.entropy()
                 sampled_control, sampled_logprob = self.policy.apply(obs, z).experimental_sample_and_log_prob(seed=self.key) 
 
-                return entropy, sampled_control, sampled_logprob
+                return entropy, sampled_control, sampled_logprob, expert_logprob
             
-            b_entropy, b_sampled_control, b_sampled_logprob = jax.vmap(get_logprob_entropy)(batch.b_obs, batch.b_z)
+            b_entropy, b_sampled_control, b_sampled_logprob, b_expert_logprob = jax.vmap(get_logprob_entropy)(batch.b_obs, batch.b_z, batch.b_expert_control)
             b_critic_1_2_all = jax.vmap(self.critic.apply)(batch.b_obs, batch.b_z)
             b_critic_1_2 = jax.vmap(lambda critic_1_2, control: critic_1_2[:, control], in_axes = 0)(b_critic_1_2_all, b_sampled_control)
         
@@ -300,17 +309,24 @@ class BaselineSAC(struct.PyTreeNode):
              
             b_critic = jnp.minimum(b_critic1, b_critic2)
 
-            pol_loss = jnp.mean(b_sampled_logprob * self.temp - b_critic)
+            sac_loss = jnp.mean(b_sampled_logprob * self.temp - b_critic) 
+
+            bc_loss = - jnp.mean(b_expert_logprob)
+
+            pol_loss =  (1 - bc_ratio) * sac_loss + bc_ratio * bc_loss
   
             mean_entropy = b_entropy.mean()
             
             info = {
                 "loss_entropy": mean_entropy,
+                "loss_sac": sac_loss,
+                "loss_bc": bc_loss,
                 "loss_pol": pol_loss
             }
             return pol_loss, info
 
         ent_cf = self.ent_cf
+        bc_ratio = self.train_cfg.bc_ratio
         grads, pol_info = jax.grad(get_pol_loss, has_aux=True)(self.policy.params)
         
         grads, pol_info["Grad/pol"] = compute_norm_and_clip(grads, self.train_cfg.clip_grad_pol)

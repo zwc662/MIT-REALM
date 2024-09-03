@@ -965,6 +965,9 @@ class F1TenthWayPoint(Task):
             self.cur_state = nxt_state
             self.cur_step += 1
         return self.cur_state #, step_reward, done, info
+    
+    def get_expert_control(self, state: State, control: Control) -> Control:
+        return self.cts_to_discr(self.cur_pursuit_action)
          
     def l1(self, state: State, control: Control) -> LFloat:
         weights = 1 #np.array([1.2e-2])
@@ -978,24 +981,12 @@ class F1TenthWayPoint(Task):
         l = - np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum()
 
         ## Greater dist to previous lookahead dist => high cost
-        if False and self.pre_waypoint_ids is not None:
+        if self.pre_waypoint_ids is not None:
             previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
             l += np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum()
             if self.pre_state is not None:
                 l -= np.square(np.asarray(self.get2d(self.pre_state)).reshape(2) - previous_lookahead_point.reshape(2)).sum()
- 
-        ## High diff from pursuit controller => high cost
-        if False and self.cur_pursuit_action is not None:
-            target = self.cts_to_discr(self.cur_pursuit_action) 
-            l += np.abs(target - control)
-       
-        ## Collision 
-        if False and self.cur_collision:
-            l += self.cur_totl
-            self.cur_totl = 0
-        else:
-            self.cur_totl += np.abs(l)
-
+  
         return l
             
     
@@ -1022,11 +1013,11 @@ class F1TenthWayPoint(Task):
 
     def should_reset(self, state: State) -> BoolScalar:
         # Reset the state if it is frozen.
-        # return np.any(np.logical_or(self.cur_done > 0, self.cur_collision > 0))
+        return np.any(np.logical_or(self.cur_done > 0, self.cur_collision > 0))
 
 
         # Reset the state only if it is overflowing
-        return np.any(self.cur_done > 0)
+        #return np.any(self.cur_done > 0)
 
     def get_x0_eval(self) -> TaskState:
         state = self.reset(mode='test')
