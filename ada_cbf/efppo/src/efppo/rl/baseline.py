@@ -30,6 +30,7 @@ from efppo.utils.rng import PRNGKey
 from efppo.utils.schedules import Schedule, as_schedule
 from efppo.utils.tfp import tfd 
 from efppo.utils.replay_buffer import Experience, ReplayBuffer
+from efppo.utils.svgd import compute_kernel_gradient, compute_kernel_matrix, svgd_update
 
 @define
 class BaselineCfg(Cfg):
@@ -143,6 +144,7 @@ class BaselineSAC(struct.PyTreeNode):
         pol = TrainState.create_from_def(key_pol, pol_def, (obs, z), pol_tx)
 
         # Define critic network.
+        print(f"Ensembled {cfg.net.n_critics} critic networks")
         critic_base_cls = ft.partial(MLP, cfg.net.val_hids, act)
         critic_cls = ft.partial(DoubleDiscreteCriticNet, critic_base_cls, task.n_actions, cfg.net.n_critics)
         critic_def = EFWrapper(critic_cls, z_base_cls)
@@ -275,6 +277,15 @@ class BaselineSAC(struct.PyTreeNode):
 
         grads_critic, critic_info = jax.grad(get_critic_loss, has_aux=True)(self.critic.params)
         grads_critic, critic_info["Grad/critic"] = compute_norm_and_clip(grads_critic, self.train_cfg.clip_grad_V)
+
+        # Compute the kernel matrix and kernel gradients
+        kernel_matrix = compute_kernel_matrix(self.critic.params)
+        kernel_gradients = compute_kernel_gradient(self.critic.params)
+
+        # Compute SVGD updates
+        grads_critic = svgd_update(self.critic.params, grads_critic, kernel_matrix, kernel_gradients)
+        grads_critic, critic_info["Grad/critic"] = compute_norm_and_clip(grads_critic, self.train_cfg.clip_grad_V)
+
         critic = self.critic.apply_gradients(grads=grads_critic)
         
         new_target_critic_params = jax.tree_map(lambda p, tp: p * 5e-3 + tp * (1 - 5e-3), self.critic.params, self.target_critic.params)

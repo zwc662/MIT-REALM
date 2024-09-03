@@ -22,7 +22,7 @@ def get(alg: str = 'efppo'):
     
     n_batches = 8
 
-    bc_ratio = 0.
+    
 
     
     net_cfg = EFPPOCfg.NetCfg(
@@ -35,11 +35,12 @@ def get(alg: str = 'efppo'):
 
     
     if 'sac' in alg:
-        n_critics = 2
+        n_critics = 30
+        bc_ratio = 0.
         train_cfg = BaselineCfg.TrainCfg(zmin, zmax, n_batches, bc_ratio, 1.0, 1.0)
-        net_cfg = BaselineCfg.NetCfg(pol_lr, val_lr, entropy_cf, disc_gamma, "tanh", pol_hids, val_hids, nz_enc, z_mean, z_scale, n_critics)
+        net_cfg = BaselineCfg.NetCfg(pol_lr, val_lr, entropy_cf, disc_gamma, "tanh", pol_hids, val_hids, nz_enc, z_mean, z_scale, n_critics = n_critics)
         alg_cfg = BaselineCfg(net_cfg, train_cfg, eval_cfg)
-    
+        
     n_envs = 1
     rollout_T = 128
     mean_age = 1024

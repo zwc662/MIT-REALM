@@ -32,6 +32,7 @@ def main(
     set_logger_format()
     task = F1TenthWayPoint()
     alg_cfg, collect_cfg = efppo.run_config.f110.get(name)
+    
     trainer = BaselineSACTrainer(task)
     #trainer = EFPPOInnerTrainer(task)
     trainer_cfg = TrainerCfg(n_iters=10_000_000, log_every=10, eval_every=10, ckpt_every=10)
