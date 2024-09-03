@@ -187,6 +187,7 @@ def main(
         b_isunsafe = (b_h > 0).astype(float).reshape(-1).astype('float64')
         if b_isunsafe.sum() >= 1.:
             p = b_isunsafe / b_isunsafe.sum() 
+            print(p)
             unsafe_idxs = rng.choice(bTp1_state.shape[0], size=min(b_isunsafe.sum().astype(int).item(), 5), replace=False, p = p)
             #b_isunsafe = bTh_h[unsafe_idxs] 
             # -----------------------------------------------
