@@ -16,7 +16,7 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "(Remote) Python: sysID",
+            "name": "(DEPEND) Python: sysID",
             "type": "python",
             "request": "launch",
             "module": "torch.distributed.run",
@@ -46,7 +46,7 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "(Remote) Pytest: test_f110",
+            "name": "(DEPEND) Pytest: test_f110",
             "type": "python",
             "request": "launch",
             "module": "pytest",
@@ -56,7 +56,7 @@
             "console": "integratedTerminal"
         }, 
         {
-            "name": "(Remote) Pytest: test_collector",
+            "name": "(DEPEND) Pytest: test_collector",
             "type": "python",
             "request": "launch",
             "module": "pytest",
@@ -66,7 +66,7 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "(Remote) f16",
+            "name": "(DEPEND) f16",
             "type": "python",
             "request": "launch",
             "module": "torch.distributed.run",
@@ -77,7 +77,7 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "(Remote) f110",
+            "name": "(DEPEND) f110",
             "type": "python",
             "request": "launch",
             "module": "torch.distributed.run",
@@ -88,7 +88,7 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "(Remote) Pytest: eval_f110",
+            "name": "(DEPEND) Pytest: eval_f110",
             "type": "python",
             "request": "launch",
             "module": "pytest",
@@ -98,7 +98,7 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "(Remote) Pytest: train_f110",
+            "name": "(DEPEND) Pytest: train_f110",
             "type": "python",
             "request": "launch",
             "module": "pytest",
@@ -126,6 +126,19 @@
             "cwd": "${workspaceFolder}/ada_cbf/efppo/tests",
             "args": ["${workspaceFolder}/ada_cbf/efppo/tests/test_replay_buffer.py", "-s"],
             "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "(CONDA) Pytest: train_f110",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "cwd": "${workspaceFolder}/ada_cbf/efppo/tests",
+            "args": [
+                "${workspaceFolder}/ada_cbf/efppo/tests/test_f110_train.py", 
+                "-s"
+            ],
+            "python": "${CONDA_PREFIX}/envs/envelope/bin/python",
             "console": "integratedTerminal"
         }
     ] 

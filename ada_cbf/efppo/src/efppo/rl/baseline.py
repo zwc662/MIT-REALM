@@ -68,8 +68,7 @@ class BaselineCfg(Cfg):
         z_scale: float
 
         act_final: bool = True
-
-
+ 
         n_critics: int = 2
        
 
@@ -268,9 +267,9 @@ class BaselineSAC(struct.PyTreeNode):
             
             assert b_target_critic.shape[0] == b_critics.shape[0] 
  
-            loss_critic = jnp.mean((b_critics - b_target_critic[:, jnp.newaxis]) ** 2, axis = 0)
+            loss_critic = jnp.mean((b_critics - b_target_critic[:, jnp.newaxis]) ** 2)
 
-            info = {"Loss/critic{i}": loss_critic[i] for i in range(self.cfg.net.n_critics)} + {f"mean_critic_{i}": b_critics[:, i].mean() for i in range(self.cfg.net.n_critics)}
+            info = {"Loss/critic": loss_critic} | {f"mean_critic_{i}": b_critics[:, i].mean() for i in range(self.cfg.net.n_critics)}
        
             return loss_critic, info
 
@@ -463,12 +462,14 @@ class BaselineSAC(struct.PyTreeNode):
                 
                 critic_all = self.critic.apply(bb_obs[i][j], bb_z[i][j])
                 critics = jax.vmap(lambda critic: critic.flatten()[pol], in_axes = 0)(critic_all).reshape(-1, self.cfg.net.n_critics)
-                critic = jnp.min(critics, axis = 1)
+                critic = jnp.min(critics, axis = 1).item()
+                #logger.info(f"{i=}, {j=}, {critic=}")
                 bb_critic[-1].append(critic)
 
                 target_critic_all = self.target_critic.apply(bb_obs[i][j], bb_z[i][j])
                 target_critics =jax.vmap(lambda target_critic: target_critic.flatten()[pol], in_axes = 0)(target_critic_all).reshape(-1, self.cfg.net.n_critics)
-                target_critic = jnp.min(target_critics, axis = 1)
+                target_critic = jnp.min(target_critics, axis = 1).item()
+                #logger.info(f"{i=}, {j=}, {target_critic=}")
                 bb_target_critic[-1].append(target_critic)
 
             for bb in [bb_pol, bb_prob, bb_critic, bb_target_critic]:
