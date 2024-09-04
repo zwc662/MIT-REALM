@@ -374,7 +374,7 @@ class BaselineSAC(struct.PyTreeNode):
             Z_datas.append(data)
         Z_data = tree_stack(Z_datas)
 
-        info = jtu.tree_map(lambda arr: {"0": arr[0], "4": arr[4], "7": arr[7]}, Z_data.info)
+        info = jtu.tree_map(lambda arr: {"l2go=0": arr[0], "l2go=4": arr[4], "l2go=7": arr[7]}, Z_data.info)
         info["update_idx"] = self.update_idx
         return Z_data._replace(info=info)
     
@@ -390,7 +390,7 @@ class BaselineSAC(struct.PyTreeNode):
             Z_datas.append(data)
         Z_data = tree_stack(Z_datas)
 
-        info = jtu.tree_map(lambda arr: {"0": arr[0], "4": arr[4], "7": arr[7]}, Z_data.info)
+        info = jtu.tree_map(lambda arr: {"l2go=0": arr[0], "l2go=4": arr[4], "l2go=7": arr[7]}, Z_data.info)
         info["update_idx"] = self.update_idx
         return Z_data._replace(info=info)
 
