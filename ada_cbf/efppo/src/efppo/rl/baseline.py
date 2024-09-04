@@ -272,7 +272,7 @@ class BaselineSAC(struct.PyTreeNode):
  
             loss_critics = (b_critics - b_target_critic[:, jnp.newaxis]) ** 2
 
-            info = {"Loss/critic_{i}": loss_critics[:, i].mean() for i in range(self.cfg.net.n_critics)} | {f"mean_critic_{i}": b_critics[:, i].mean() for i in range(self.cfg.net.n_critics)}
+            info = {f"Loss/critic_{i}": loss_critics[:, i].mean() for i in range(self.cfg.net.n_critics)} | {f"mean_critic_{i}": b_critics[:, i].mean() for i in range(self.cfg.net.n_critics)}
 
             loss_critic = jnp.mean(loss_critics)
             info.update({'Loss/critic': loss_critic})
