@@ -270,10 +270,13 @@ class BaselineSAC(struct.PyTreeNode):
             
             assert b_target_critic.shape[0] == b_critics.shape[0] 
  
-            loss_critic = jnp.mean((b_critics - b_target_critic[:, jnp.newaxis]) ** 2)
+            loss_critics = (b_critics - b_target_critic[:, jnp.newaxis]) ** 2
 
-            info = {"Loss/critic": loss_critic} | {f"mean_critic_{i}": b_critics[:, i].mean() for i in range(self.cfg.net.n_critics)}
-       
+            info = {"Loss/critic_{i}": loss_critics[:, i].mean() for i in range(self.cfg.net.n_critics)} | {f"mean_critic_{i}": b_critics[:, i].mean() for i in range(self.cfg.net.n_critics)}
+
+            loss_critic = jnp.mean(loss_critics)
+            info.update({'Loss/critic': loss_critic})
+
             return loss_critic, info
 
         grads_critic, critic_info = jax.grad(get_critic_loss, has_aux=True)(self.critic.params)
@@ -294,7 +297,6 @@ class BaselineSAC(struct.PyTreeNode):
         
         new_target_critic_params = jax.tree_map(lambda p, tp: p * 5e-3 + tp * (1 - 5e-3), self.critic.params, self.target_critic.params)
         target_critic = self.target_critic.replace(params=new_target_critic_params)
-        print(critic_info)
         return self.replace(critic=critic, target_critic=target_critic), critic_info
      
 
