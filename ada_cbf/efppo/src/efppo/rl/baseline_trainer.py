@@ -147,7 +147,7 @@ class BaselineSACTrainer:
             t1 = time.time()
             alg, update_info = alg.update_iteratively(col_data)
             t2 = time.time()
-            print(update_info)
+            #print(update_info)
             if should_log:
                 if should_eval:
                     logger.info("time  |  collect: {:.3f} update: {:.3f}".format(t1 - t0, t2 - t1))
