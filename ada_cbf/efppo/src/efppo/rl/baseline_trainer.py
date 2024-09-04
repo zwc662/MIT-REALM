@@ -121,7 +121,7 @@ class BaselineSACTrainer:
         
         task_name = self.task.name
         wandb_config = {"alg": alg_cfg.asdict(), "collect": collect_cfg.asdict(), "trainer": trainer_cfg.asdict()}
-        wandb.init(project=f"baseline_{task_name}_inner", config=wandb_config, mode="disabled")
+        wandb.init(project=f"baseline_{task_name}_inner", config=wandb_config)#, mode="disabled")
         wandb_run_name = reorder_wandb_name(wandb_name=wandb_name)
 
         run_dir = mkdir(get_runs_dir() / f"{task_name}_inner" / wandb_run_name)
@@ -147,7 +147,7 @@ class BaselineSACTrainer:
             t1 = time.time()
             alg, update_info = alg.update_iteratively(col_data)
             t2 = time.time()
-
+            print(update_info)
             if should_log:
                 if should_eval:
                     logger.info("time  |  collect: {:.3f} update: {:.3f}".format(t1 - t0, t2 - t1))

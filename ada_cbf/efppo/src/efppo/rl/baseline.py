@@ -257,6 +257,7 @@ class BaselineSAC(struct.PyTreeNode):
 
         b_nxt_critic_all= jax.vmap(self.critic.apply)(batch.b_nxt_obs, batch.b_nxt_z)
         b_nxt_critics = jax.vmap(lambda nxt_critic, nxt_control: nxt_critic[:, nxt_control], in_axes = 0)(b_nxt_critic_all, b_nxt_control).reshape(-1, self.cfg.net.n_critics)
+        
         b_nxt_critic = jnp.min(b_nxt_critics, axis = 1)
 
         # reward = - l
@@ -277,20 +278,23 @@ class BaselineSAC(struct.PyTreeNode):
 
         grads_critic, critic_info = jax.grad(get_critic_loss, has_aux=True)(self.critic.params)
         grads_critic, critic_info["Grad/critic"] = compute_norm_and_clip(grads_critic, self.train_cfg.clip_grad_V)
-
-        # Compute the kernel matrix and kernel gradients
-        kernel_matrix = compute_kernel_matrix(self.critic.params)
-        kernel_gradients = compute_kernel_gradient(self.critic.params)
+ 
+        # Compute the kernel matrix and kernel gradients 
+        ensemble_critic_params = self.critic.params['DoubleDiscreteCriticNet_0'] 
+        ensemble_critic_grads = grads_critic['DoubleDiscreteCriticNet_0']
+        kernel_matrix = compute_kernel_matrix(ensemble_critic_params)
+        kernel_gradients = compute_kernel_gradient(ensemble_critic_params)
 
         # Compute SVGD updates
-        grads_critic = svgd_update(self.critic.params, grads_critic, kernel_matrix, kernel_gradients)
-        grads_critic, critic_info["Grad/critic"] = compute_norm_and_clip(grads_critic, self.train_cfg.clip_grad_V)
+        ensemble_critic_grads = svgd_update(ensemble_critic_grads, kernel_matrix, kernel_gradients)
+        grads_critic['DoubleDiscreteCriticNet_0'] = ensemble_critic_grads
 
+        grads_critic, critic_info["Grad/critic"] = compute_norm_and_clip(grads_critic, self.train_cfg.clip_grad_V)
         critic = self.critic.apply_gradients(grads=grads_critic)
         
         new_target_critic_params = jax.tree_map(lambda p, tp: p * 5e-3 + tp * (1 - 5e-3), self.critic.params, self.target_critic.params)
         target_critic = self.target_critic.replace(params=new_target_critic_params)
-
+        print(critic_info)
         return self.replace(critic=critic, target_critic=target_critic), critic_info
      
 

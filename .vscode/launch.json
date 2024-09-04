@@ -13,7 +13,8 @@
             "cwd": "${workspaceFolder}/ada_cbf/f1tenth_gym/examples",
             "args": ["${workspaceFolder}/ada_cbf/f1tenth_gym/gym/f110_gym/unittest/random_trackgen.py", "--seed", "100"],
             "python": "/opt/anaconda3/envs/envelope/bin/python",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.vscode/project.env",
         },
         {
             "name": "(DEPEND) Python: sysID",
@@ -23,7 +24,8 @@
             "cwd": "${workspaceFolder}/ada_cbf/sysid/",
             "args": ["${workspaceFolder}/ada_cbf/sysid/run.py", "--algo", "sn", "--params", "0"],
             "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.vscode/project.env",
         },
         {
             "name": "(Local) Python: sysID",
@@ -33,7 +35,8 @@
             "cwd": "${workspaceFolder}/ada_cbf/sysid/",
             "args": ["${workspaceFolder}/ada_cbf/sysid/run.py", "--algo", "bm", "--params", "0", "--render"],
             "python": "/opt/anaconda3/envs/envelope/bin/python",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.vscode/project.env",
         },
         {
             "name": "(Local) Python: create map",
@@ -43,7 +46,8 @@
             "cwd": "${workspaceFolder}/ada_cbf/sysid/",
             "args": ["${workspaceFolder}/ada_cbf/sysid/utils/random_trackgen.py", "--seed", "100", "--num_maps", "4"],
             "python": "/opt/anaconda3/envs/envelope/bin/python",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.vscode/project.env",
         },
         {
             "name": "(DEPEND) Pytest: test_f110",
@@ -53,7 +57,8 @@
             "cwd": "${workspaceFolder}/ada_cbf/efppo/tests",
             "args": ["${workspaceFolder}/ada_cbf/efppo/tests/test_f110.py", "-s"],
             "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.vscode/project.env",
         }, 
         {
             "name": "(DEPEND) Pytest: test_collector",
@@ -63,7 +68,8 @@
             "cwd": "${workspaceFolder}/ada_cbf/efppo/tests",
             "args": ["${workspaceFolder}/ada_cbf/efppo/tests/test_f110_collector.py", "-s"],
             "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.vscode/project.env",
         },
         {
             "name": "(DEPEND) f16",
@@ -74,7 +80,8 @@
             "args": ["${workspaceFolder}/ada_cbf/efppo/scripts/train_f16_inner.py", 
             "--name", "efppo_f16_run1"],
             "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.vscode/project.env",
         },
         {
             "name": "(DEPEND) f110",
@@ -85,7 +92,8 @@
             "args": ["${workspaceFolder}/ada_cbf/efppo/scripts/train_f110_wp.py", 
             "--name", "efppo_f110_run1"],
             "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.vscode/project.env",
         },
         {
             "name": "(DEPEND) Pytest: eval_f110",
@@ -108,7 +116,8 @@
                 "-s"
             ],
             "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.vscode/project.env",
         }, {
             "name": "(Local) Pytest: eval_f110",
             "type": "python",
@@ -126,7 +135,8 @@
             "cwd": "${workspaceFolder}/ada_cbf/efppo/tests",
             "args": ["${workspaceFolder}/ada_cbf/efppo/tests/test_replay_buffer.py", "-s"],
             "python": "/home/zwc662/anaconda3/envs/envelope/bin/python",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.vscode/project.env",
         },
         {
             "name": "(CONDA) Pytest: train_f110",
@@ -138,8 +148,9 @@
                 "${workspaceFolder}/ada_cbf/efppo/tests/test_f110_train.py", 
                 "-s"
             ],
-            "python": "${CONDA_PREFIX}/envs/envelope/bin/python",
-            "console": "integratedTerminal"
+            "python": "/home/zhouw534/anaconda3/envs/envelope/bin/python",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.vscode/project.env",
         }
     ] 
 }
