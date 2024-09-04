@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-import jax.vmap as vmap
+from jax import vmap
 
 # Example kernel function: RBF Kernel
 def rbf_kernel(x, y, h=1.0):
