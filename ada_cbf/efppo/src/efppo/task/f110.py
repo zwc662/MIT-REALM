@@ -1001,15 +1001,25 @@ class F1TenthWayPoint(Task):
 
 
     def l(self, state: State, control: Union[Control, tfd.Distribution]) -> LFloat:
+        # Initalize
+        l = 0
+
         ## High velocity => low cost
-        l = - np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum()
+        #l = - np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum()
+
+        ## Stay close to the nearest lookahead point
+        if self.cur_waypoint_ids is not None:
+            nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
+            l += np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
 
         ## Greater dist to previous lookahead dist => high cost
-        if self.pre_waypoint_ids is not None:
+        if self.pre_waypoint_ids is not None and self.pre_state is not None:
             previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
-            l += np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum()
-            if self.pre_state is not None:
-                l -= np.square(np.asarray(self.get2d(self.pre_state)).reshape(2) - previous_lookahead_point.reshape(2)).sum()
+            l += np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum() - \
+                np.square(np.asarray(self.get2d(self.pre_state)).reshape(2) - previous_lookahead_point.reshape(2)).sum()
+            
+        ## Compare agent control w/ expert control
+        l -= int(control == self.get_expert_control(state, control))
   
         return l
             
