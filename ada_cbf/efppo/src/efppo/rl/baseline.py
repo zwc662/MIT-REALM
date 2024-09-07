@@ -1092,6 +1092,6 @@ class BaselineDQN(Baseline):
         Z_data = tree_stack(Z_datas)
         #Z_data = jtu.tree_map(lambda *arr: jnp.stack(arr), *Z_datas)
         
-        info = jtu.tree_map(lambda arr: {f"l2go={val_zs[0]}": arr[0], f"l2go={val_zs[4]}": arr[4], "l2go={val_zs[7]}": arr[7]}, Z_data.info)
+        info = jtu.tree_map(lambda arr: {f"l2go={val_zs[0]}": arr[0], f"l2go={val_zs[4]}": arr[4], f"l2go={val_zs[7]}": arr[7]}, Z_data.info)
         info["update_idx"] = self.update_idx
         return Z_data._replace(info=info) 

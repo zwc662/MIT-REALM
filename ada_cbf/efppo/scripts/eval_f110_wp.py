@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import efppo.run_config.f110 as f110_config
 from efppo.rl.collector import RolloutOutput, collect_single_env_mode
 from efppo.rl.efppo_inner import EFPPOInner
-from efppo.rl.baseline import BaselineSAC
+from efppo.rl.baseline import Baseline 
 from efppo.rl.rootfind_policy import Rootfinder, RootfindPolicy
 from efppo.task.f110 import F1TenthWayPoint
 from efppo.task.plotter import Plotter
@@ -35,7 +35,7 @@ from efppo.utils.cfg_utils import Recursive_Update
 
 
 def main(
-        alg: Optional[Union[BaselineSAC, EFPPOInner]] = None, 
+        alg: Optional[Union[Baseline, EFPPOInner]] = None, 
         ckpt_path: Optional[pathlib.Path] = None,
         render: bool = False,
         pursuit: bool = False,
@@ -46,20 +46,13 @@ def main(
     
     plot_dir = mkdir(pathlib.Path(os.path.join(os.path.dirname(__file__), 'plots')))
     if ckpt_path is not None:
-        
         plot_dir = mkdir(pathlib.Path(os.path.join(os.path.dirname(ckpt_path), 'plots')))
         with open(os.path.join(os.path.dirname(ckpt_path), 'cfg.pt'), 'rb') as fp:
             cfg = pickle.load(fp)
             alg_cfg = cfg["alg_cfg"]
             collect_cfg = cfg['collect_cfg']
-
-            baseline_cfg, baseline_collect_cfg = f110_config.get('sac_ensemble')
-            
-            alg_cfg = Recursive_Update(baseline_cfg, alg_cfg)
-            collect_cfg = Recursive_Update(baseline_collect_cfg, collect_cfg)
-            
-            
-            alg: BaselineSAC = BaselineSAC.create(jr.PRNGKey(0), task, alg_cfg) 
+ 
+            alg: Baseline = alg_cfg.alg.create(jr.PRNGKey(0), task, alg_cfg) 
 
     if alg is None:
         print("run efppo")
@@ -81,7 +74,7 @@ def main(
             ckpt_dict = load_ckpt_ez(ckpt_path, {"alg": alg})
             alg = ckpt_dict["alg"]
         
-        if isinstance(alg, BaselineSAC):
+        if isinstance(alg, Baseline):
             rootfind_pol = alg.policy.apply
         elif isinstance(alg, EFPPOInner):
             rootfind = Rootfinder(alg.Vh.apply, alg.z_min, alg.z_max, h_tgt=-0.70)
