@@ -1,6 +1,6 @@
 from efppo.rl.collector import CollectorCfg
 from efppo.rl.efppo_inner import EFPPOCfg
-from efppo.rl.baseline import BaselineCfg
+from efppo.rl.baseline import BaselineCfg, BaselineSAC, BaselineDQN
 from efppo.utils.schedules import LinDecay
 
 
@@ -22,6 +22,7 @@ def get(alg: str = 'efppo'):
     
     n_batches = 8
 
+    batch_size = 256
     
 
     
@@ -34,12 +35,16 @@ def get(alg: str = 'efppo'):
     alg_cfg = EFPPOCfg(net_cfg, train_cfg, eval_cfg)
 
     
-    if 'sac' in alg:
+    if 'baseline' in alg:
+        if 'sac' in alg:
+            alg = BaselineSAC
+        elif 'dqn' in alg:
+            alg = BaselineDQN
         n_critics = 30
         bc_ratio = 0.
-        train_cfg = BaselineCfg.TrainCfg(zmin, zmax, n_batches, bc_ratio, 1.0, 1.0)
+        train_cfg = BaselineCfg.TrainCfg(zmin, zmax, n_batches, batch_size, bc_ratio, 1.0, 1.0)
         net_cfg = BaselineCfg.NetCfg(pol_lr, val_lr, entropy_cf, disc_gamma, "tanh", pol_hids, val_hids, nz_enc, z_mean, z_scale, n_critics = n_critics)
-        alg_cfg = BaselineCfg(net_cfg, train_cfg, eval_cfg)
+        alg_cfg = BaselineCfg(alg, net_cfg, train_cfg, eval_cfg)
         
     n_envs = 1
     rollout_T = 128

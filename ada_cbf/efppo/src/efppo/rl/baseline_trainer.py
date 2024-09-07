@@ -15,7 +15,7 @@ from matplotlib.colors import CenteredNorm
 import wandb
 from efppo.rl.collector import Collector, CollectorCfg
 from efppo.utils.replay_buffer import ReplayBuffer
-from efppo.rl.baseline import BaselineSAC
+from efppo.rl.baseline import Baseline, BaselineSAC, BaselineDQN
 from efppo.task.plotter import Plotter
 from efppo.task.task import Task
 from efppo.utils.cfg_utils import Cfg
@@ -39,7 +39,7 @@ sys.path.append(
 
 
 @define
-class TrainerCfg(Cfg):
+class BaselineTrainerCfg(Cfg):
     n_iters: int
     log_every: int
     eval_every: int
@@ -48,13 +48,13 @@ class TrainerCfg(Cfg):
     ckpt_max_keep: int = 100
 
 
-class BaselineSACTrainer:
+class BaselineTrainer:
     def __init__(self, task: Task):
         self.task = task
         self.plotter = Plotter(task)
         register_cmaps()
 
-    def plot(self, idx: int, plot_dir: pathlib.Path, data: BaselineSAC.EvalData):
+    def plot(self, idx: int, plot_dir: pathlib.Path, data: Baseline.EvalData):
         fig_opt = dict(layout="constrained", dpi=200)
 
         bb_X, bb_Y, _ = self.task.grid_contour()
@@ -111,17 +111,17 @@ class BaselineSACTrainer:
         '''
 
     def train(
-        self, key: PRNGKey, alg_cfg: BaselineSAC.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: TrainerCfg, iteratively: bool = False, 
+        self, key: PRNGKey, alg_cfg: Baseline.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: BaselineTrainerCfg, iteratively: bool = False, 
     ):
         key0, key1, key2 = jr.split(key, 3)
-        alg: BaselineSAC = BaselineSAC.create(key0, self.task, alg_cfg) 
+        alg: Baseline = alg_cfg.alg.create(key0, self.task, alg_cfg) 
         collector: Collector = Collector.create(key1, self.task, collect_cfg)
         replay_buffer = ReplayBuffer.create(key=key2, capacity = 1e5)
 
         
         task_name = self.task.name
         wandb_config = {"alg": alg_cfg.asdict(), "collect": collect_cfg.asdict(), "trainer": trainer_cfg.asdict()}
-        wandb.init(project=f"baseline_{task_name}_inner", config=wandb_config)#, mode="disabled")
+        wandb.init(project=f"baseline_{task_name}_inner", config=wandb_config) #, mode="disabled")
         wandb_run_name = reorder_wandb_name(wandb_name=wandb_name)
 
         run_dir = mkdir(get_runs_dir() / f"{task_name}_inner" / wandb_run_name)
@@ -138,14 +138,11 @@ class BaselineSACTrainer:
             t0 = time.time()
 
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Collecting ... ")
-            if iteratively:
-                collector, replay_buffer, col_data = alg.collect_iteratively(collector, replay_buffer)
-            else:
-                collector, col_data = alg.collect(collector)
-                
+            collector, replay_buffer = alg.collect_iteratively(collector, replay_buffer)
+        
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Updating ... ")
             t1 = time.time()
-            alg, update_info = alg.update_iteratively(col_data)
+            alg, update_info = alg.update_iteratively(replay_buffer)
             t2 = time.time()
             #print(update_info)
             if should_log:

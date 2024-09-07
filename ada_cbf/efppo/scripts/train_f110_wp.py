@@ -18,7 +18,7 @@ current_timestamp = datetime.now().strftime("%Y_%m_%d")
 
 import efppo.run_config.f110
 from efppo.rl.efppo_inner_trainer import EFPPOInnerTrainer, TrainerCfg
-from efppo.rl.baseline_trainer import BaselineSACTrainer, TrainerCfg
+from efppo.rl.baseline_trainer import BaselineTrainer, BaselineTrainerCfg
 
 from efppo.task.f110 import F1TenthWayPoint
 from efppo.utils.logging import set_logger_format
@@ -33,9 +33,9 @@ def main(
     task = F1TenthWayPoint()
     alg_cfg, collect_cfg = efppo.run_config.f110.get(name)
     
-    trainer = BaselineSACTrainer(task)
+    trainer = BaselineTrainer(task)
     #trainer = EFPPOInnerTrainer(task)
-    trainer_cfg = TrainerCfg(n_iters=10_000_000, log_every=10, eval_every=10, ckpt_every=10)
+    trainer_cfg = BaselineTrainerCfg(n_iters=10_000_000, log_every=10, eval_every=10, ckpt_every=10)
     stamped_name = '_'.join([str(sha)[-5:], current_timestamp, name])
 
     trainer.train(jr.PRNGKey(seed), alg_cfg, collect_cfg, stamped_name, trainer_cfg, iteratively = True)

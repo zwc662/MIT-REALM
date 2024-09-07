@@ -139,31 +139,11 @@ class ReplayBuffer(struct.PyTreeNode):
             experiences = new_experiences
             )
         return new_self
-
-        
-        new_self = lax.while_loop(
-            cond_fun = lambda obj: obj.size > obj._capacity,
-            body_fun = lambda obj: obj.replace(
-                _key = obj._key, 
-                _capacity = obj._capacity,  
-                _dangling = obj._dangling,
-                _offsets = obj._offsets[1:],
-                experiences = jtu.tree_map(lambda x: lax.dynamic_slice_in_dim(x, obj._offsets[1], obj.size - obj._offsets[0]), obj.experiences) 
-            ),
-            init_val = new_self
-        )        
-
-        return new_self
-    
-
-
  
-
     
     def sample(self, num_batches: int, batch_size: int) -> Experience:
-        sample_key, _key = jrd.split(self._key)
         experiences = self.experiences
         def sample_one_batch(_):
-            return jtu.tree_map(lambda x: jrd.choice(sample_key, x, (batch_size,), axis = 0), experiences)
+            return jtu.tree_map(lambda x: jrd.choice(self._key, x, (batch_size,), axis = 0), experiences)
         b_experiences = jax.vmap(sample_one_batch)(jnp.arange(num_batches))
-        return self.replace(_key = _key), b_experiences
+        return b_experiences

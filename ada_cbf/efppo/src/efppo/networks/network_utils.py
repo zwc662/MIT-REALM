@@ -2,6 +2,8 @@ from typing import Any, Callable, Literal, Sequence
 
 import flax.linen as nn
 import jax.numpy as jnp
+
+
 import optax
 from flax import traverse_util
 
@@ -52,3 +54,4 @@ def get_default_tx(
     lr: optax.Schedule | FloatScalar, wd: optax.Schedule | FloatScalar = 1e-4, eps: FloatScalar = 1e-5
 ) -> optax.GradientTransformation:
     return optax.inject_hyperparams(optim)(learning_rate=lr, wd=wd, eps=eps)
+

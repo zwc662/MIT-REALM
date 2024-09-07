@@ -1,3 +1,4 @@
+import functools as ft
 from typing import Callable, Concatenate, Generic, ParamSpec, TypeVar
 
 import flax.linen as nn
@@ -77,7 +78,10 @@ class TrainState(Generic[_R], struct.PyTreeNode):
         variables = net_def.init(key, *init_args)
         params = variables["params"]
         return cls.create(net_def.apply, params, tx, **kwargs)
-
+     
     def strip(self) -> "TrainState":
         """Remove tx and opt_state."""
         return self.replace(tx=None, opt_state=None)
+    
+
+    
