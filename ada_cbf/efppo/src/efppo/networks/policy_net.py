@@ -4,6 +4,7 @@ import flax.linen as nn
 from jaxtyping import Float, Int
 import jax.numpy as jnp
 import jax
+import jax.random as jrd
 
 from efppo.networks.network_utils import default_nn_init
 from efppo.task.dyn_types import Obs
@@ -44,7 +45,7 @@ class DiscretePolicyNet(nn.Module):
     def get_logits(self, obs: Obs, *args, **kwargs) -> Float[Arr, '*']:
         dist = self.__call__(obs, *args, **kwargs)
         return dist.logits
-
+   
 
 class EnsembleDiscretePolicyNet(nn.Module):
     base_cls: Type[nn.Module]
@@ -60,7 +61,7 @@ class EnsembleDiscretePolicyNet(nn.Module):
             in_axes = None,
             out_axes = 0,
             axis_size = self.n_policies,
-            methods = ('get_logits',)
+            methods = ('get_logits', 'rsample')
             )
         return ensemble_net(self.base_cls, self.n_actions).get_logits(obs, *args, **kwargs)
 

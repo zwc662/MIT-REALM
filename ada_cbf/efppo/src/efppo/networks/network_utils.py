@@ -1,8 +1,10 @@
 from typing import Any, Callable, Literal, Sequence
 
 import flax.linen as nn
-import jax.numpy as jnp
 
+import jax
+import jax.numpy as jnp
+import jax.random as jrd
 
 import optax
 from flax import traverse_util
@@ -55,3 +57,24 @@ def get_default_tx(
 ) -> optax.GradientTransformation:
     return optax.inject_hyperparams(optim)(learning_rate=lr, wd=wd, eps=eps)
 
+   
+        
+def rsample(logits, key, tau = 0.5):
+    """Differentiable sampling from a categorical distribution using Gumbel-Softmax."""
+    u = jrd.uniform(key, shape=logits.shape, minval=1e-6, maxval=1.0)
+    gumbel_noise = -jnp.log(-jnp.log(u))
+    y = logits + gumbel_noise
+    softmax_output = jax.nn.softmax(y / tau, axis=-1)
+    # Create a hard sample by taking the argmax, but keep gradients from soft_sample
+    hardmax_output = jax.lax.stop_gradient(jax.nn.one_hot(jnp.argmax(softmax_output, axis=-1), num_classes=logits.shape[-1]))
+    
+    # Return the hard sample for the forward pass, but allow gradients from soft_sample
+    sample = hardmax_output + jax.lax.stop_gradient(softmax_output - hardmax_output)
+
+    # Compute log-softmax to get log-probabilities of the softmax distribution
+    log_probabilities = jax.nn.log_softmax(logits, axis=-1)
+    
+    # Select the log-probability corresponding to the sampled category
+    log_prob = jnp.sum(log_probabilities * sample, axis=-1)
+    
+    return sample, log_prob

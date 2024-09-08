@@ -15,7 +15,7 @@ from loguru import logger
 
 from efppo.networks.ef_wrapper import EFWrapper, ZEncoder, BoltzmanPolicyWrapper, EnsembleBoltzmanPolicyWrapper
 from efppo.networks.mlp import MLP
-from efppo.networks.network_utils import ActLiteral, HidSizes, get_act_from_str, get_default_tx
+from efppo.networks.network_utils import ActLiteral, HidSizes, get_act_from_str, get_default_tx, rsample
 from efppo.networks.policy_net import DiscretePolicyNet, EnsembleDiscretePolicyNet
 from efppo.networks.train_state import TrainState 
 from efppo.networks.critic_net import DiscreteCriticNet, EnsembleDiscreteCriticNet
@@ -350,8 +350,15 @@ class BaselineSAC(Baseline):
     critic: TrainState[LFloat]
     target_critic: TrainState[HFloat]
 
-    @dataclass 
-    class EvalData(Baseline.EvalData):
+    class EvalData(NamedTuple):
+        z_zs: ZFloat
+        zbb_pol: ZBBControl
+        zbb_prob: ZBBFloat
+        
+        zbT_x: ZBTState
+
+        info: dict[str, float]
+        
         zbb_critic: ZBBFloat
         zbb_target_critic: ZBBFloat
         
@@ -502,19 +509,19 @@ class BaselineSAC(Baseline):
             def get_logprob_entropy(obs, z, expert_control):
                 dist = pol_apply(obs, z)
                 expert_logprob = dist.log_prob(expert_control)
-
                 entropy = dist.entropy()
-                sampled_control, sampled_logprob = self.policy.apply(obs, z).experimental_sample_and_log_prob(seed=self.key) 
-
-                return entropy, sampled_control, sampled_logprob, expert_logprob
+                logprobs = dist.logits
+                return entropy, logprobs, expert_logprob
             
-            b_entropy, b_sampled_control, b_sampled_logprob, b_expert_logprob = jax.vmap(get_logprob_entropy)(batch.b_obs, batch.b_z, batch.b_expert_control)
+            b_entropy, b_logprobs, b_expert_logprob = jax.vmap(get_logprob_entropy)(batch.b_obs, batch.b_z, batch.b_expert_control)
             b_critic_all = jax.vmap(self.critic.apply)(batch.b_obs, batch.b_z)
-            b_critics = jax.vmap(lambda critic, control: critic[:, control], in_axes = 0)(b_critic_all, b_sampled_control).reshape(-1, self.cfg.net.n_critics)
+            b_critics = jax.vmap(
+                lambda critics_all, logprobs: jax.vmap(lambda critics: critics @ jnp.exp(logprobs), in_axes = 0)(critics_all), in_axes = 0)(
+                    b_critic_all, b_logprobs).reshape(-1, self.cfg.net.n_critics)
            
             b_critic = jnp.max(b_critics, axis = 1)
 
-            sac_loss = jnp.mean(b_critic - b_sampled_logprob * self.temp) 
+            sac_loss = jnp.mean(b_critic - b_logprobs.mean() * self.temp) 
 
             bc_loss = - jnp.mean(b_expert_logprob)
 
