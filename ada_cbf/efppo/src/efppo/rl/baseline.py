@@ -454,7 +454,7 @@ class BaselineSAC(Baseline):
         b_nxt_critic_all= jax.vmap(self.critic.apply)(batch.b_nxt_obs, batch.b_nxt_z)
         b_nxt_critics = jax.vmap(lambda nxt_critic, nxt_control: nxt_critic[:, nxt_control], in_axes = 0)(b_nxt_critic_all, b_nxt_control).reshape(-1, self.cfg.net.n_critics)
         
-        b_nxt_critic = jnp.min(b_nxt_critics, axis = 1)
+        b_nxt_critic = jnp.max(b_nxt_critics, axis = 1)
  
         b_target_critic = batch.b_l + self.disc_gamma * b_nxt_critic
         b_target_critic -= self.disc_gamma * b_nxt_logprob 
@@ -512,7 +512,7 @@ class BaselineSAC(Baseline):
             b_critic_all = jax.vmap(self.critic.apply)(batch.b_obs, batch.b_z)
             b_critics = jax.vmap(lambda critic, control: critic[:, control], in_axes = 0)(b_critic_all, b_sampled_control).reshape(-1, self.cfg.net.n_critics)
            
-            b_critic = jnp.min(b_critics, axis = 1)
+            b_critic = jnp.max(b_critics, axis = 1)
 
             sac_loss = jnp.mean(b_critic - b_sampled_logprob * self.temp) 
 
@@ -907,8 +907,8 @@ class BaselineDQN(Baseline):
 
     def update_critic(self, batch: Baseline.Batch) -> tuple["BaselineDQN", dict]:
         b_nxt_critic_all= jax.vmap(lambda obs, z: self.target_critic.apply(obs, z))(batch.b_nxt_obs, batch.b_nxt_z)
-        b_nxt_critics = jax.vmap(lambda nxt_critic: jnp.max(nxt_critic, axis = -1), in_axes = 0)(b_nxt_critic_all).reshape(-1, self.cfg.net.n_critics)
-        b_nxt_critic = jnp.min(b_nxt_critics, axis = 1)
+        b_nxt_critics = jax.vmap(lambda nxt_critic: jnp.min(nxt_critic, axis = -1), in_axes = 0)(b_nxt_critic_all).reshape(-1, self.cfg.net.n_critics)
+        b_nxt_critic = jnp.max(b_nxt_critics, axis = 1)
  
         b_target_critic = batch.b_l + self.disc_gamma * b_nxt_critic
          

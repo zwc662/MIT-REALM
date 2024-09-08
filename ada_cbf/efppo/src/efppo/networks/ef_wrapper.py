@@ -51,6 +51,8 @@ class BoltzmanPolicyWrapper(nn.Module, Generic[_WrappedModule]):
    
     def __call__(self, params, *args, **kwargs) -> tfd.Distribution:
         qs = self.net.apply(params, *args, **kwargs)
+        ## The critics output the cost, not the reward
+        ## The lower the cost is, the higher the probability is
         exp_qs = jnp.exp(-qs)
         p = exp_qs / exp_qs.sum(axis = -1, keepdims=False)[..., jnp.newaxis]
         logits = jnp.log(p)
