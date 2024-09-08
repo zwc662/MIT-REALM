@@ -926,7 +926,7 @@ class F1TenthWayPoint(Task):
         self.cur_action = self.discr_to_cts(self.cts_to_discr(self.cur_action))
         #print(f'After projection {self.cur_action=}')
 
-        if self.control_mode == 'pursuit':
+        if self.control_mode == 'pursuit' and self.render:
             print(f'{self.cur_pursuit_action=}')
             input('Enter to proceed')
 
@@ -951,8 +951,7 @@ class F1TenthWayPoint(Task):
         #print(f"Step: {self.cur_step} | Current pos: {self.cur_state[self.get2d_idxs()]} | Current action: {self.cur_action} | Target waypoints ids: {waypoint_ids} | Target waypoints: {self.cur_planner.waypoints[waypoint_ids]} | Lookahead points: {lookahead_points}")
         #else:
         
-        if np.any(self.cur_collision > 0):
-            if self.render:
+        if np.any(self.cur_collision > 0) and self.render:
                 print(f'Collision @ {self.cur_step}: state {self.cur_state}')
                 #input(f'Collision @ {self.cur_step}: state {self.cur_state}')
                 #pass
