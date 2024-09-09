@@ -545,7 +545,7 @@ class BaselineSAC(Baseline):
         policy = self.policy.apply_gradients(grads=grads)
 
         new_temp = self.temp - 1e-3 *  ent_cf * (pol_info['loss_entropy'] - self.target_ent)
-        #pol_info["temperature"] = new_temp
+        pol_info["temperature"] = new_temp
         return self.replace(policy=policy, temp = new_temp), pol_info
 
 
