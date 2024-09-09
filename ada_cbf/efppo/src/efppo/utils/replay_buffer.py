@@ -59,13 +59,23 @@ class ReplayBuffer:
     def size(self):
         return self._offsets.sum()
     
+     
+    def truncate(self):
+        while self.size > self._capacity and (self._offsets.shape[0] > 1 or self._dangling):
+            self.experiences = jtu.tree_map(
+                    lambda x: lax.dynamic_slice_in_dim(x, self._offsets[1], x.shape[0]), 
+                    self.experiences
+                )
+            self._offsets = self._offsets[1:]
+ 
+
     def insert(self, rollout):        
-        cur_experiences = self.experiences
+        
         cur_offsets = self._offsets
         cur_dangling = self._dangling
 
-        if cur_experiences is None:
-            cur_experiences = Experience(
+        if self.experiences is None:
+            self.experiences = Experience(
                 Tp1_state = jnp.zeros((0, rollout.Tp1_state.shape[-1]), dtype=rollout.Tp1_state.dtype), 
                 Tp1_nxt_state = jnp.zeros((0, rollout.Tp1_state.shape[-1]), dtype=rollout.Tp1_state.dtype), 
                 Tp1_obs = jnp.zeros((0, rollout.Tp1_obs.shape[-1]), dtype=rollout.Tp1_obs.dtype), 
@@ -81,8 +91,10 @@ class ReplayBuffer:
                 )
             cur_offsets = jnp.zeros((0)) 
             cur_dangling = False
- 
+    
 
+        cur_experiences = self.experiences
+ 
         new_experiences = Experience(
             Tp1_state = merge01(rollout.Tp1_state[:,:-1]), 
             Tp1_nxt_state = merge01(rollout.Tp1_state[:,1:]), 
@@ -118,22 +130,20 @@ class ReplayBuffer:
             return nxt_experiences, jnp.asarray(traj_lens)
           
 
-        self._experiences, self._offsets = extract_experience_from_init_ts(0, init_ts, cur_experiences)
+        new_experiences, new_offsets = extract_experience_from_init_ts(0, init_ts, cur_experiences)
         if cur_dangling:               
-            self._offsets = jnp.concatenate((cur_offsets.at[-1].set(cur_offsets[-1] + self._offsets[0]), self._offsets[1:]), axis = 0)
+            new_offsets = jnp.concatenate((cur_offsets.at[-1].set(cur_offsets[-1] + new_offsets[0]), new_offsets[1:]), axis = 0)
         elif cur_offsets.shape[0] > 0:
-            self._offsets = jnp.concatenate((cur_offsets, self._offsets))
-         
-        
-        self._dangling = new_experiences.T_done[-1] > 0
-    
-        while self.size > self._capacity and (self._offsets.shape[0] > 1 or self._dangling):
-            self.experiences = jtu.tree_map(
-                    lambda x: lax.dynamic_slice_in_dim(x, self._offsets[1], x.shape[0]), 
-                    self.experiences
-                )
-            self._offsets = self._offsets[1:]
+            new_offsets = jnp.concatenate((cur_offsets, new_offsets))
+        new_dangling = new_experiences.T_done[-1] > 0
+
+        self.experiences = new_experiences
+        self._dangling = new_dangling
+        self._offsets = new_offsets
+
+        self.truncate()
    
+         
     def sample(self, num_batches: int, batch_size: int) -> Experience:
         experiences = self.experiences
         replace = batch_size >= self.size

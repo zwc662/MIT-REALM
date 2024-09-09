@@ -175,11 +175,10 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max 
         return collector.collect_batch(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
 
-    def collect_iteratively(self, collector: Collector, replay_buffer: ReplayBuffer, rollout_T: Optional[int] = None) -> tuple[Collector, Batch]:
+    def collect_iteratively(self, collector: Collector, rollout_T: Optional[int] = None) -> tuple[Collector, Batch]:
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
         collector, data = collector.collect_batch_iteratively(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max, rollout_T)
-        replay_buffer.insert(data)
-        return collector
+        return collector, data
     
     def make_dset(self, replay_buffer: ReplayBuffer) -> Batch:
         num_batches = self.train_cfg.n_batches
@@ -197,13 +196,13 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         )
         return b_batch
 
-    def eval_iteratively(self, rollout_T: int) -> EvalData:
+    def eval_iteratively(self, task: Task, rollout_T: int) -> EvalData:
         # Evaluate for a range of zs.
         val_zs = np.linspace(self.train_cfg.z_min, self.train_cfg.z_max, num=8)
 
         Z_datas = []
         for z in val_zs:
-            data = self.eval_single_z_iteratively(z, rollout_T)
+            data = self.eval_single_z_iteratively(task, z, rollout_T)
             Z_datas.append(data)
         Z_data = tree_stack(Z_datas)
 
@@ -212,13 +211,13 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         return Z_data._replace(info=info)
     
     @ft.partial(jax.jit, static_argnames=["rollout_T"])
-    def eval(self, rollout_T: int) -> EvalData:
+    def eval(self, task: Task, rollout_T: int) -> EvalData:
         # Evaluate for a range of zs.
         val_zs = np.linspace(self.train_cfg.z_min, self.train_cfg.z_max, num=8)
 
         Z_datas = []
         for z in val_zs:
-            data = self.eval_single_z(z, rollout_T)
+            data = self.eval_single_z(task, z, rollout_T)
             Z_datas.append(data)
         Z_data = tree_stack(Z_datas)
 

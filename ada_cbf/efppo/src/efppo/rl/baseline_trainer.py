@@ -146,8 +146,8 @@ class BaselineTrainer:
             t0 = time.time()
 
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Collecting ... ")
-            collector = alg.collect_iteratively(collector, replay_buffer, trainer_cfg.train_every)
-        
+            collector, rollout = alg.collect_iteratively(collector, trainer_cfg.train_every)
+            replay_buffer.insert(rollout)
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Updating ... ")
             t1 = time.time()
             alg, update_info = alg.update_iteratively(replay_buffer)
@@ -167,7 +167,7 @@ class BaselineTrainer:
             eval_rollout_T = collect_cfg.rollout_T
             if should_eval:
                 if iteratively:
-                    data = alg.eval_iteratively(eval_rollout_T)
+                    data = alg.eval_iteratively(self.task, eval_rollout_T)
                     data = jtu.tree_map(np.array, data)
 
                 else:
