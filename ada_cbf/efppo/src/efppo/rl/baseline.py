@@ -506,12 +506,12 @@ class BaselineSAC(Baseline):
         def get_pol_loss(pol_params):
             pol_apply = ft.partial(self.policy.apply_with, params=pol_params)
 
-            def get_logprob_entropy(obs, z, expert_control):
+            def get_logprob_entropy(obs, z, control):
                 dist = pol_apply(obs, z)
-                expert_logprob = dist.log_prob(expert_control)
+                logprob = dist.log_prob(control)
                 entropy = dist.entropy()
-                logprobs = dist.logits
-                return entropy, logprobs, expert_logprob
+                logits = dist.logits
+                return entropy, logits, logprob
             
             b_entropy, b_logprobs, b_expert_logprob = jax.vmap(get_logprob_entropy)(batch.b_obs, batch.b_z, batch.b_expert_control)
             b_critic_all = jax.vmap(self.critic.apply)(batch.b_obs, batch.b_z)
@@ -521,7 +521,7 @@ class BaselineSAC(Baseline):
            
             b_critic = jnp.max(b_critics, axis = 1)
 
-            sac_loss = jnp.mean(b_logprobs.mean() * self.temp + b_critic) 
+            sac_loss = jnp.mean(- b_entropy * self.temp + b_critic) 
 
             bc_loss = - jnp.mean(b_expert_logprob)
 
