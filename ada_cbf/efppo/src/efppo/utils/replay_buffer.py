@@ -3,20 +3,21 @@ import collections
 from typing import Tuple, Union, List, NamedTuple, Optional
 
 import numpy as np
+from dataclasses import dataclass
 
 import jax
 import jax.numpy as jnp
 import jax.tree_util as jtu
 import jax.random as jrd
 from jax import lax
-
 from flax import struct
- 
+
 from efppo.task.task import TaskState
 from efppo.task.dyn_types import TControl, THFloat, TObs, TDone
 from efppo.utils.jax_types import IntScalar, TFloat
 from efppo.utils.rng import PRNGKey 
 from efppo.utils.jax_utils import merge01
+
  
 
 
@@ -39,7 +40,8 @@ class Experience(NamedTuple):
     T_done: TDone
     T_expert_control: TControl
  
-class ReplayBuffer(struct.PyTreeNode):
+@dataclass
+class ReplayBuffer:
     _key: PRNGKey
     _capacity: int = 10240 
     _offsets: IntScalar = jnp.asarray([0])
@@ -116,32 +118,22 @@ class ReplayBuffer(struct.PyTreeNode):
             return nxt_experiences, jnp.asarray(traj_lens)
           
 
-        new_experiences, new_offsets = extract_experience_from_init_ts(0, init_ts, cur_experiences)
+        self._experiences, self._offsets = extract_experience_from_init_ts(0, init_ts, cur_experiences)
         if cur_dangling:               
-            new_offsets = jnp.concatenate((cur_offsets.at[-1].set(cur_offsets[-1] + new_offsets[0]), new_offsets[1:]), axis = 0)
+            self._offsets = jnp.concatenate((cur_offsets.at[-1].set(cur_offsets[-1] + self._offsets[0]), self._offsets[1:]), axis = 0)
         elif cur_offsets.shape[0] > 0:
-            new_offsets = jnp.concatenate((cur_offsets, new_offsets))
+            self._offsets = jnp.concatenate((cur_offsets, self._offsets))
          
         
-        new_dangling = new_experiences.T_done[-1] > 0
+        self._dangling = new_experiences.T_done[-1] > 0
     
-        while self.size > self._capacity and (new_offsets.shape[0] > 1 or new_dangling):
-            new_experiences = jtu.tree_map(
-                    lambda x: lax.dynamic_slice_in_dim(x, new_offsets[1], x.shape[0]), 
-                    new_experiences
+        while self.size > self._capacity and (self._offsets.shape[0] > 1 or self._dangling):
+            self.experiences = jtu.tree_map(
+                    lambda x: lax.dynamic_slice_in_dim(x, self._offsets[1], x.shape[0]), 
+                    self.experiences
                 )
-            new_offsets = new_offsets[1:]
-
-        new_self = self.replace(
-            _key = self._key, 
-            _capacity = self._capacity, 
-            _offsets = new_offsets, 
-            _dangling = new_dangling, 
-            experiences = new_experiences
-            )
-        return new_self
- 
-    
+            self._offsets = self._offsets[1:]
+   
     def sample(self, num_batches: int, batch_size: int) -> Experience:
         experiences = self.experiences
         replace = batch_size >= self.size

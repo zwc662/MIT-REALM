@@ -11,6 +11,7 @@ import numpy as np
 from attrs import define
 from loguru import logger
 from matplotlib.colors import CenteredNorm
+from enum import Enum
 
 import wandb
 from efppo.rl.collector import Collector, CollectorCfg
@@ -36,6 +37,12 @@ sys.path.append(
     )
 )
 #from eval_f110_wp import main as eval_main
+
+
+# Enum mapping strings to classes
+class BaselineEnum(Enum):
+    SAC = BaselineSAC
+    DQN = BaselineDQN
 
 
 @define
@@ -115,7 +122,7 @@ class BaselineTrainer:
         self, key: PRNGKey, alg_cfg: Baseline.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: BaselineTrainerCfg, iteratively: bool = False, 
     ):
         key0, key1, key2 = jr.split(key, 3)
-        alg: Baseline = alg_cfg.alg.create(key0, self.task, alg_cfg) 
+        alg: Baseline = BaselineEnum[alg_cfg.alg.upper()].value.create(key0, self.task, alg_cfg) 
         collector: Collector = Collector.create(key1, self.task, collect_cfg)
         replay_buffer = ReplayBuffer.create(key=key2, capacity = 1e5)
 
@@ -139,7 +146,7 @@ class BaselineTrainer:
             t0 = time.time()
 
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Collecting ... ")
-            collector, replay_buffer = alg.collect_iteratively(collector, replay_buffer, trainer_cfg.train_every)
+            collector = alg.collect_iteratively(collector, replay_buffer, trainer_cfg.train_every)
         
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Updating ... ")
             t1 = time.time()

@@ -30,8 +30,7 @@ from efppo.utils.logging import set_logger_format
 from efppo.utils.path_utils import mkdir
 from efppo.utils.tfp import tfd
 from efppo.utils.cfg_utils import Recursive_Update
-
-
+from efppo.rl.baseline_trainer import BaselineEnum
 
 
 def main(
@@ -52,7 +51,7 @@ def main(
             alg_cfg = cfg["alg_cfg"]
             collect_cfg = cfg['collect_cfg']
  
-            alg: Baseline = alg_cfg.alg.create(jr.PRNGKey(0), task, alg_cfg) 
+            alg: Baseline = BaselineEnum(alg_cfg.alg.upper()).value.create(jr.PRNGKey(0), task, alg_cfg) 
 
     if alg is None:
         print("run efppo")

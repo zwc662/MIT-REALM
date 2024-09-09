@@ -37,9 +37,9 @@ def get(alg: str = 'efppo'):
     
     if 'baseline' in alg:
         if 'sac' in alg:
-            alg = BaselineSAC
+            alg = 'sac'
         elif 'dqn' in alg:
-            alg = BaselineDQN
+            alg = 'dqn'
         n_critics = 30
         bc_ratio = 0.
         train_cfg = BaselineCfg.TrainCfg(zmin, zmax, n_batches, batch_size, bc_ratio, 1.0, 1.0)

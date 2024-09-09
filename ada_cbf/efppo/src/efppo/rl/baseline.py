@@ -35,7 +35,7 @@ from efppo.utils.svgd import compute_kernel_gradient, compute_kernel_matrix, svg
 
 
 _Algo = TypeVar("Baseline_Algorithm")
-  
+
 
 @define
 class BaselineCfg(Cfg):
@@ -78,7 +78,7 @@ class BaselineCfg(Cfg):
  
         n_critics: int = 2
        
-    alg: _Algo
+    alg: str
     net: NetCfg
     train: TrainCfg
     eval: EvalCfg
@@ -92,7 +92,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
 
     disc_gamma: FloatScalar
 
-    task: Task = struct.field(pytree_node=False)
+    #task: Task = struct.field(pytree_node=False)
     cfg: BaselineCfg = struct.field(pytree_node=False)
 
     ent_cf_sched: optax.Schedule = struct.field(pytree_node=False)
@@ -150,7 +150,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         disc_gamma_sched = as_schedule(cfg.net.disc_gamma).make()
         disc_gamma = disc_gamma_sched(0)
  
-        return Baseline(0, key, 1, pol, disc_gamma, task, cfg, ent_cf, disc_gamma_sched)
+        return Baseline(0, key, 1, pol, disc_gamma, cfg, ent_cf, disc_gamma_sched)
 
        
     @property
@@ -178,9 +178,9 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
     def collect_iteratively(self, collector: Collector, replay_buffer: ReplayBuffer, rollout_T: Optional[int] = None) -> tuple[Collector, Batch]:
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
         collector, data = collector.collect_batch_iteratively(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max, rollout_T)
-        # Compute GAE values.
-        return collector, replay_buffer.insert(data)
- 
+        replay_buffer.insert(data)
+        return collector
+    
     def make_dset(self, replay_buffer: ReplayBuffer) -> Batch:
         num_batches = self.train_cfg.n_batches
         batch_size =  self.train_cfg.batch_size
@@ -233,11 +233,11 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         return mode_sample, mode_prob
 
     
-    def eval_single_z(self, z: float, rollout_T: int):
+    def eval_single_z(self, task: Task, z: float, rollout_T: int):
         # --------------------------------------------
         # Plot value functions.
-        bb_X, bb_Y, bb_state = self.task.grid_contour()
-        bb_obs = jax_vmap(self.task.get_obs, rep=2)(bb_state)
+        bb_X, bb_Y, bb_state = task.grid_contour()
+        bb_obs = jax_vmap(task.get_obs, rep=2)(bb_state)
         bb_z = jnp.full(bb_X.shape, z)
 
         bb_pol, bb_prob = jax_vmap(self.get_mode_and_prob, rep=2)(bb_obs, bb_z) 
@@ -246,13 +246,13 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         # Rollout trajectories and get stats.
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
 
-        b_x0 = self.task.get_x0_eval()
+        b_x0 = task.get_x0_eval()
         batch_size = len(b_x0)
         b_z0 = jnp.full(batch_size, z)
 
         collect_fn = ft.partial(
             collect_single_mode,
-            self.task,
+            task,
             get_pol=self.policy.apply,
             disc_gamma=self.disc_gamma,
             z_min=z_min,
@@ -277,15 +277,15 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean, "l_final": l_final}
         return self.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info)
      
-    def eval_single_z_iteratively(self, z: float, rollout_T: int):
+    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int):
         # --------------------------------------------
         # Plot value functions.
-        bb_X, bb_Y, bb_state = jax2np(self.task.grid_contour())
+        bb_X, bb_Y, bb_state = jax2np(task.grid_contour())
         bb_obs = []
         for i in range(bb_state.shape[0]):
             bb_obs.append([])
             for j in range(bb_state.shape[1]): 
-                bb_obs[-1].append(self.task.get_obs(bb_state[i][j]))
+                bb_obs[-1].append(task.get_obs(bb_state[i][j]))
             bb_obs[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs[-1]) 
         bb_obs = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs)
         bb_z = jnp.full(bb_X.shape, z)
@@ -311,13 +311,13 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         # Rollout trajectories and get stats.
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
 
-        b_x0 = self.task.get_x0_eval()
+        b_x0 = task.get_x0_eval()
         batch_size = len(b_x0)
         b_z0 = jnp.full(batch_size, z)
 
         collect_fn = ft.partial(
             collect_single_env_mode,
-            self.task,
+            task,
             get_pol=self.policy.apply,
             disc_gamma=self.disc_gamma,
             z_min=z_min,
@@ -553,11 +553,11 @@ class BaselineSAC(Baseline):
         h_target_critic = self.target_critic.apply(obs, z)
         return h_target_critic.max()
 
-    def eval_single_z(self, z: float, rollout_T: int):
+    def eval_single_z(self, task: Task, z: float, rollout_T: int):
         # --------------------------------------------
         # Plot value functions.
-        bb_X, bb_Y, bb_state = self.task.grid_contour()
-        bb_obs = jax_vmap(self.task.get_obs, rep=2)(bb_state)
+        bb_X, bb_Y, bb_state = task.grid_contour()
+        bb_obs = jax_vmap(task.get_obs, rep=2)(bb_state)
         bb_z = jnp.full(bb_X.shape, z)
 
         bb_pol, bb_prob = jax_vmap(self.get_mode_and_prob, rep=2)(bb_obs, bb_z)
@@ -568,13 +568,13 @@ class BaselineSAC(Baseline):
         # Rollout trajectories and get stats.
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
 
-        b_x0 = self.task.get_x0_eval()
+        b_x0 = task.get_x0_eval()
         batch_size = len(b_x0)
         b_z0 = jnp.full(batch_size, z)
 
         collect_fn = ft.partial(
             collect_single_mode,
-            self.task,
+            task,
             get_pol=self.policy.apply,
             disc_gamma=self.disc_gamma,
             z_min=z_min,
@@ -599,15 +599,15 @@ class BaselineSAC(Baseline):
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean, "l_final": l_final}
         return self.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic)
      
-    def eval_single_z_iteratively(self, z: float, rollout_T: int):
+    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int):
         # --------------------------------------------
         # Plot value functions.
-        bb_X, bb_Y, bb_state = jax2np(self.task.grid_contour())
+        bb_X, bb_Y, bb_state = jax2np(task.grid_contour())
         bb_obs = []
         for i in range(bb_state.shape[0]):
             bb_obs.append([])
             for j in range(bb_state.shape[1]): 
-                bb_obs[-1].append(self.task.get_obs(bb_state[i][j]))
+                bb_obs[-1].append(task.get_obs(bb_state[i][j]))
             bb_obs[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs[-1]) 
         bb_obs = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs)
         bb_z = jnp.full(bb_X.shape, z)
@@ -650,13 +650,13 @@ class BaselineSAC(Baseline):
         # Rollout trajectories and get stats.
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
 
-        b_x0 = self.task.get_x0_eval()
+        b_x0 = task.get_x0_eval()
         batch_size = len(b_x0)
         b_z0 = jnp.full(batch_size, z)
 
         collect_fn = ft.partial(
             collect_single_env_mode,
-            self.task,
+            task,
             get_pol=self.policy.apply,
             disc_gamma=self.disc_gamma,
             z_min=z_min,
@@ -963,11 +963,11 @@ class BaselineDQN(Baseline):
         h_target_critic = self.target_critic.apply(obs, z) 
         return h_target_critic.max()
 
-    def eval_single_z(self, z: float, rollout_T: int):
+    def eval_single_z(self, task: Task, z: float, rollout_T: int):
         # --------------------------------------------
         # Plot value functions.
-        bb_X, bb_Y, bb_state = self.task.grid_contour()
-        bb_obs = jax_vmap(self.task.get_obs, rep=2)(bb_state)
+        bb_X, bb_Y, bb_state = task.grid_contour()
+        bb_obs = jax_vmap(task.get_obs, rep=2)(bb_state)
         bb_z = jnp.full(bb_X.shape, z)
 
         bb_pol, bb_prob = jax_vmap(self.get_mode_and_prob, rep=2)(bb_obs, bb_z)
@@ -977,13 +977,13 @@ class BaselineDQN(Baseline):
         # Rollout trajectories and get stats.
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
 
-        b_x0 = self.task.get_x0_eval()
+        b_x0 = task.get_x0_eval()
         batch_size = len(b_x0)
         b_z0 = jnp.full(batch_size, z)
 
         collect_fn = ft.partial(
             collect_single_mode,
-            self.task,
+            task,
             get_pol=self.policy.apply,
             disc_gamma=self.disc_gamma,
             z_min=z_min,
@@ -1008,15 +1008,15 @@ class BaselineDQN(Baseline):
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean, "l_final": l_final}
         return BaselineDQN.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic)
      
-    def eval_single_z_iteratively(self, z: float, rollout_T: int):
+    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int):
         # --------------------------------------------
         # Plot value functions.
-        bb_X, bb_Y, bb_state = jax2np(self.task.grid_contour())
+        bb_X, bb_Y, bb_state = jax2np(task.grid_contour())
         bb_obs = []
         for i in range(bb_state.shape[0]):
             bb_obs.append([])
             for j in range(bb_state.shape[1]): 
-                bb_obs[-1].append(self.task.get_obs(bb_state[i][j]))
+                bb_obs[-1].append(task.get_obs(bb_state[i][j]))
             bb_obs[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs[-1]) 
         bb_obs = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs)
         bb_z = jnp.full(bb_X.shape, z)
@@ -1053,13 +1053,13 @@ class BaselineDQN(Baseline):
         # Rollout trajectories and get stats.
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
 
-        b_x0 = self.task.get_x0_eval()
+        b_x0 = task.get_x0_eval()
         batch_size = len(b_x0)
         b_z0 = jnp.full(batch_size, z)
 
         collect_fn = ft.partial(
             collect_single_env_mode,
-            self.task,
+            task,
             get_pol=self.policy.apply,
             disc_gamma=self.disc_gamma,
             z_min=z_min,
