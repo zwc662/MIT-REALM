@@ -521,7 +521,7 @@ class BaselineSAC(Baseline):
            
             b_critic = jnp.max(b_critics, axis = 1)
 
-            sac_loss = jnp.mean(b_critic - b_logprobs.mean() * self.temp) 
+            sac_loss = jnp.mean(b_logprobs.mean() * self.temp + b_critic) 
 
             bc_loss = - jnp.mean(b_expert_logprob)
 
