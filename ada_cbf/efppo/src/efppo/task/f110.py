@@ -771,12 +771,11 @@ class F1TenthWayPoint(Task):
         self.pre_reset(mode, random_map)
         
         if init_pose is None:
-            if 'soft' in mode.lower() and not random_map:
+            if 'soft' in mode.lower():
                 init_pose = self.pose_from_random_waypoint()
-                #init_pose = self.pose_from_nearest_waypoint()
-                #else:
-                
-             
+            elif 'correction':
+                init_pose = self.pose_from_nearest_waypoint()
+                 
         print(f"Reset from {init_pose}")
         state_dict, step_reward, done, info = self.cur_env.reset(init_pose.reshape(1, -1))
         
