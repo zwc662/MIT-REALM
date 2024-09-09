@@ -42,6 +42,7 @@ sys.path.append(
 class BaselineTrainerCfg(Cfg):
     n_iters: int
     log_every: int
+    train_every: int
     eval_every: int
     ckpt_every: int
 
@@ -138,7 +139,7 @@ class BaselineTrainer:
             t0 = time.time()
 
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Collecting ... ")
-            collector, replay_buffer = alg.collect_iteratively(collector, replay_buffer)
+            collector, replay_buffer = alg.collect_iteratively(collector, replay_buffer, trainer_cfg.train_every)
         
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Updating ... ")
             t1 = time.time()
@@ -156,7 +157,7 @@ class BaselineTrainer:
                 loss_info = {k[5:]: float(v) for k, v in update_info.items() if k.startswith("Loss/")}
                 logger.info(f"[{idx:8}]   {loss_info}")
 
-            eval_rollout_T = 128
+            eval_rollout_T = collect_cfg.rollout_T
             if should_eval:
                 if iteratively:
                     data = alg.eval_iteratively(eval_rollout_T)

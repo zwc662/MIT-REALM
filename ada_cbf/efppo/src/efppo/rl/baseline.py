@@ -1,5 +1,5 @@
 import functools as ft
-from typing import NamedTuple, TypeVar, Generic
+from typing import NamedTuple, TypeVar, Generic, Optional
 from dataclasses import dataclass
 
 import jax
@@ -175,9 +175,9 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max 
         return collector.collect_batch(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
 
-    def collect_iteratively(self, collector: Collector, replay_buffer: ReplayBuffer) -> tuple[Collector, Batch]:
+    def collect_iteratively(self, collector: Collector, replay_buffer: ReplayBuffer, rollout_T: Optional[int] = None) -> tuple[Collector, Batch]:
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
-        collector, data = collector.collect_batch_iteratively(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
+        collector, data = collector.collect_batch_iteratively(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max, rollout_T)
         # Compute GAE values.
         return collector, replay_buffer.insert(data)
  

@@ -95,9 +95,10 @@ class ReplayBuffer(struct.PyTreeNode):
             T_done = merge01(rollout.T_done),
             T_expert_control = merge01(rollout.T_expert_control)
             )
-
+        # Add the last experience time + 1 as if it is an initial step for the nxt
         init_ts = jnp.asarray([new_experiences.T_done.shape[0]]).astype(int)
         if jnp.any(new_experiences.T_done[:-1]) > 0: 
+            # Get the time step where done == 1 and add 1 to the time step to get the initial step for the next state
             init_ts = jnp.concatenate((jnp.where(new_experiences.T_done[:-1] > 0)[0] + 1, init_ts), axis= 0).astype(int)
          
     
@@ -143,7 +144,8 @@ class ReplayBuffer(struct.PyTreeNode):
     
     def sample(self, num_batches: int, batch_size: int) -> Experience:
         experiences = self.experiences
+        replace = batch_size >= self.size
         def sample_one_batch(_):
-            return jtu.tree_map(lambda x: jrd.choice(self._key, x, (batch_size,), axis = 0), experiences)
+            return jtu.tree_map(lambda x: jrd.choice(self._key, x, (batch_size,), axis = 0, replace = replace), experiences)
         b_experiences = jax.vmap(sample_one_batch)(jnp.arange(num_batches))
         return b_experiences

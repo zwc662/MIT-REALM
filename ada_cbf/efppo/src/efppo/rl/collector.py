@@ -328,7 +328,7 @@ def collect_single_batch(
         else:
             T_envstate.append(envstate_new)
             T_done.append(0.0)
-    print(f"Single batch sampled control {len(T_u)=}, {len(T_logprob)=}, {np.mean(T_logprob)=}")
+    #print(f"Single batch sampled control {len(T_u)=}, {len(T_logprob)=}, {np.mean(T_logprob)=}")
     # Convert lists to jnp arrays
     T_envstate = jnp.stack(T_envstate)
     T_obs = jnp.stack(T_obs)
@@ -416,13 +416,13 @@ class Collector(struct.PyTreeNode):
         return new_self, bT_outputs
 
     def _collect_single_batch(
-        self, env_idx: int, key0: PRNGKey, colstate0: CollectorState, get_pol, disc_gamma: float, z_min: float, z_max: float
+        self, env_idx: int, key0: PRNGKey, colstate0: CollectorState, get_pol, disc_gamma: float, z_min: float, z_max: float, rollout_T: Optional[int] = None
     ) -> tuple[CollectorState, RolloutOutput]: 
-        return collect_single_batch(self.task, key0, colstate0, get_pol, disc_gamma, z_min, z_max, self.cfg.rollout_T)
+        return collect_single_batch(self.task, key0, colstate0, get_pol, disc_gamma, z_min, z_max, self.cfg.rollout_T if rollout_T is None else rollout_T)
 
 
     def collect_batch_iteratively(
-        self, get_pol, disc_gamma: float, z_min: float, z_max: float
+        self, get_pol, disc_gamma: float, z_min: float, z_max: float, rollout_T: Optional[int] = None
     ) -> tuple["Collector", RolloutOutput]:
         key0 = jr.fold_in(self.key, self.collect_idx)
         key_pol, key_reset_bernoulli, key_reset = jr.split(key0, 3)
@@ -471,7 +471,8 @@ class Collector(struct.PyTreeNode):
                 get_pol,
                 disc_gamma=disc_gamma, 
                 z_min=z_min, 
-                z_max=z_max
+                z_max=z_max,
+                rollout_T = rollout_T
                 )
             print(f"Sampled control {np.mean(bT_output.T_logprob)=}")
             # Resample x0
