@@ -94,7 +94,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
 
     #task: Task = struct.field(pytree_node=False)
     cfg: BaselineCfg = struct.field(pytree_node=False)
-
+    ent_target: float
     ent_cf_sched: optax.Schedule = struct.field(pytree_node=False)
     disc_gamma_sched: optax.Schedule = struct.field(pytree_node=False)
 
@@ -149,8 +149,9 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         ent_cf = as_schedule(cfg.net.entropy_cf).make()
         disc_gamma_sched = as_schedule(cfg.net.disc_gamma).make()
         disc_gamma = disc_gamma_sched(0)
+        ent_target =  -task.n_actions / (task.n_actions + 1) * np.log(1/(task.n_actions+1))
  
-        return Baseline(0, key, 1, pol, disc_gamma, cfg, ent_cf, disc_gamma_sched)
+        return Baseline(0, key, 1, pol, disc_gamma, cfg, ent_target, ent_cf, disc_gamma_sched)
 
        
     @property
@@ -543,7 +544,7 @@ class BaselineSAC(Baseline):
         grads, pol_info["Grad/pol"] = compute_norm_and_clip(grads, self.train_cfg.clip_grad_pol)
         policy = self.policy.apply_gradients(grads=grads)
 
-        new_temp = self.temp - 1e-3 *  ent_cf * pol_info['loss_entropy'] * self.temp
+        new_temp = self.temp - 1e-3 *  ent_cf * (pol_info['loss_entropy'] - self.target_ent)
         #pol_info["temperature"] = new_temp
         return self.replace(policy=policy, temp = new_temp), pol_info
 
