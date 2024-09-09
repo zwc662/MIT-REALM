@@ -122,7 +122,7 @@ class BaselineTrainer:
         self, key: PRNGKey, alg_cfg: Baseline.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: BaselineTrainerCfg, iteratively: bool = False, 
     ):
         key0, key1, key2 = jr.split(key, 3)
-        alg: Baseline = BaselineEnum[alg_cfg.alg.upper()].value.create(key0, self.task, alg_cfg) 
+        alg: Baseline = alg_cfg.alg.create(key0, self.task, alg_cfg) 
         collector: Collector = Collector.create(key1, self.task, collect_cfg)
         replay_buffer = ReplayBuffer.create(key=key2, capacity = 1e5)
 

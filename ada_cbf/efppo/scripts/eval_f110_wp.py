@@ -16,8 +16,8 @@ import pickle
 
 from efppo.utils.tfp import tfd
  
-import matplotlib.pyplot as plt
-import efppo.run_config.f110 as f110_config
+import matplotlib.pyplot as plt 
+from efppo.run_config.f110 import BaselineEnum, f110 as f110_config
 from efppo.rl.collector import RolloutOutput, collect_single_env_mode
 from efppo.rl.efppo_inner import EFPPOInner
 from efppo.rl.baseline import Baseline 
@@ -29,8 +29,7 @@ from efppo.utils.jax_utils import jax2np, jax_vmap, merge01
 from efppo.utils.logging import set_logger_format
 from efppo.utils.path_utils import mkdir
 from efppo.utils.tfp import tfd
-from efppo.utils.cfg_utils import Recursive_Update
-from efppo.rl.baseline_trainer import BaselineEnum
+from efppo.utils.cfg_utils import Recursive_Update 
 
 
 def main(
@@ -50,9 +49,10 @@ def main(
             cfg = pickle.load(fp)
             alg_cfg = cfg["alg_cfg"]
             collect_cfg = cfg['collect_cfg']
- 
-            alg: Baseline = BaselineEnum(alg_cfg.alg.upper()).value.create(jr.PRNGKey(0), task, alg_cfg) 
-
+            if 'sac' in ckpt_path:
+                alg: Baseline = BaselineEnum.SAC.value.create(jr.PRNGKey(0), task, alg_cfg) 
+            elif 'dqn' in ckpt_path:
+                alg: Baseline = BaselineEnum.DQN.value.create(jr.PRNGKey(0), task, alg_cfg) 
     if alg is None:
         print("run efppo")
         alg_cfg, collect_cfg = f110_config.get()
