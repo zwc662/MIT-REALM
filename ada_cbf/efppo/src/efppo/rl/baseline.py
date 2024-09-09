@@ -94,7 +94,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
 
     #task: Task = struct.field(pytree_node=False)
     cfg: BaselineCfg = struct.field(pytree_node=False)
-    target_ent: float
+    target_ent: float = struct.field(pytree_node=False)
     ent_cf_sched: optax.Schedule = struct.field(pytree_node=False)
     disc_gamma_sched: optax.Schedule = struct.field(pytree_node=False)
 
