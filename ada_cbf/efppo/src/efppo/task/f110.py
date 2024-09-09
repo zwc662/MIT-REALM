@@ -1004,22 +1004,33 @@ class F1TenthWayPoint(Task):
         l = 0
 
         ## High velocity => low cost
-        #l = - np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum()
+        if False:
+            l = - np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum()
 
-        ## Stay close to the nearest lookahead point
-        if self.cur_waypoint_ids is not None:
-            nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
-            l += np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
-
-        ## Greater dist to previous lookahead dist => high cost
+        
+        ## Stability: greater dist to previous lookahead dist => high cost
         if self.pre_waypoint_ids is not None and self.pre_state is not None:
             previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
             l += np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum() - \
                 np.square(np.asarray(self.get2d(self.pre_state)).reshape(2) - previous_lookahead_point.reshape(2)).sum()
             
         ## Compare agent control w/ expert control
-        l -= int(control == self.get_expert_control(state, control))
-  
+        if False:
+            l -= int(control == self.get_expert_control(state, control))
+        
+        
+        self.cur_totl += l
+        
+        ## Avoidance: stay close to the nearest lookahead point
+        if np.any(self.cur_collision > 0):
+            if self.cur_waypoint_ids is not None:
+                ## Use deviation from nearest waypoint as cost
+                nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
+                l += np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
+            else:
+                ## Guaranteed overwhelmed cost for collision
+                l = np.abs(self.cur_totl)
+    
         return l
             
     
