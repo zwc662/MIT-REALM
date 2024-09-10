@@ -544,7 +544,7 @@ class BaselineSAC(Baseline):
         grads, pol_info["Grad/pol"] = compute_norm_and_clip(grads, self.train_cfg.clip_grad_pol)
         policy = self.policy.apply_gradients(grads=grads)
 
-        new_temp = self.temp - 1e-3 *  ent_cf * (pol_info['loss_entropy'] - self.target_ent)
+        new_temp = self.temp - ent_cf * (pol_info['loss_entropy'] - self.target_ent)
         pol_info["temperature"] = new_temp
         return self.replace(policy=policy, temp = new_temp), pol_info
 
@@ -1088,13 +1088,13 @@ class BaselineDQN(Baseline):
         return BaselineDQN.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info = info, zbb_critic = bb_critic)
 
 
-    def eval_iteratively(self, rollout_T: int) -> EvalData:
+    def eval_iteratively(self, task: Task, rollout_T: int) -> EvalData:
         # Evaluate for a range of zs.
         val_zs = np.linspace(self.train_cfg.z_min, self.train_cfg.z_max, num=8)
 
         Z_datas = []
         for z in val_zs:
-            data = self.eval_single_z_iteratively(z, rollout_T)
+            data = self.eval_single_z_iteratively(task, z, rollout_T)
             Z_datas.append(data)
         Z_data = tree_stack(Z_datas)
         #Z_data = jtu.tree_map(lambda *arr: jnp.stack(arr), *Z_datas)
