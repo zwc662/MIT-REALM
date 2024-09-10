@@ -94,7 +94,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
 
     #task: Task = struct.field(pytree_node=False)
     cfg: BaselineCfg = struct.field(pytree_node=False)
-    ent_target: float
+    target_ent: float = struct.field(pytree_node=False)
     ent_cf_sched: optax.Schedule = struct.field(pytree_node=False)
     disc_gamma_sched: optax.Schedule = struct.field(pytree_node=False)
 
@@ -149,9 +149,9 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         ent_cf = as_schedule(cfg.net.entropy_cf).make()
         disc_gamma_sched = as_schedule(cfg.net.disc_gamma).make()
         disc_gamma = disc_gamma_sched(0)
-        ent_target =  -task.n_actions / (task.n_actions + 1) * np.log(1/(task.n_actions+1))
+        target_ent =  -task.n_actions / (task.n_actions + 1) * np.log(1/(task.n_actions+1))
  
-        return Baseline(0, key, 1, pol, disc_gamma, cfg, ent_target, ent_cf, disc_gamma_sched)
+        return Baseline(0, key, 1, pol, disc_gamma, cfg, target_ent, ent_cf, disc_gamma_sched)
 
        
     @property
