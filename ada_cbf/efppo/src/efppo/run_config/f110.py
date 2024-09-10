@@ -5,11 +5,6 @@ from efppo.utils.schedules import LinDecay
 
 from enum import Enum
 
-# Enum mapping strings to classes
-class BaselineEnum(Enum):
-    SAC = BaselineSAC
-    DQN = BaselineDQN
-
 
 
 def get(alg: str = 'efppo'):
@@ -45,9 +40,9 @@ def get(alg: str = 'efppo'):
     
     if 'baseline' in alg:
         if 'sac' in alg:
-            alg = BaselineEnum.SAC
+            alg = BaselineSAC
         elif 'dqn' in alg:
-            alg = BaselineEnum.DQN
+            alg = BaselineDQN
         n_critics = 30
         bc_ratio = 0.
         train_cfg = BaselineCfg.TrainCfg(zmin, zmax, n_batches, batch_size, bc_ratio, 1.0, 1.0)

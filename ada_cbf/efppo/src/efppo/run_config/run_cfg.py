@@ -7,6 +7,7 @@ AlgCfg = TypeVar("AlgCfg")
 LoopCfg = TypeVar("LoopCfg")
 
 
+
 @define
 class RunCfg(Generic[AlgCfg, LoopCfg]):
     seed: int = 31415
