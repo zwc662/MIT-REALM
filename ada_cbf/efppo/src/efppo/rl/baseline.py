@@ -78,7 +78,7 @@ class BaselineCfg(Cfg):
  
         n_critics: int = 2
        
-    alg: str
+    alg: _Algo
     net: NetCfg
     train: TrainCfg
     eval: EvalCfg
@@ -207,7 +207,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
             Z_datas.append(data)
         Z_data = tree_stack(Z_datas)
 
-        info = jtu.tree_map(lambda arr: {"l2go=0": arr[0], "l2go=4": arr[4], "l2go=7": arr[7]}, Z_data.info)
+        info = jtu.tree_map(lambda arr: {"z=0": arr[0], "z=4": arr[4], "z=7": arr[7]}, Z_data.info)
         info["update_idx"] = self.update_idx
         return Z_data._replace(info=info)
     
@@ -222,7 +222,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
             Z_datas.append(data)
         Z_data = tree_stack(Z_datas)
 
-        info = jtu.tree_map(lambda arr: {"l2go=0": arr[0], "l2go=4": arr[4], "l2go=7": arr[7]}, Z_data.info)
+        info = jtu.tree_map(lambda arr: {"z=0": arr[0], "z=4": arr[4], "z=7": arr[7]}, Z_data.info)
         info["update_idx"] = self.update_idx
         return Z_data._replace(info=info)
 
@@ -274,7 +274,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         l_final = jnp.mean(b_l_final)
         # --------------------------------------------
 
-        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean, "l_final": l_final}
+        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}#
         return self.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info)
      
     def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int):
@@ -342,7 +342,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         l_final = jnp.mean(b_l_final)
         # --------------------------------------------
 
-        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean, "l_final": l_final} 
+        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}# 
         return self.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info)
 
 
@@ -596,7 +596,7 @@ class BaselineSAC(Baseline):
         l_final = jnp.mean(b_l_final)
         # --------------------------------------------
 
-        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean, "l_final": l_final}
+        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}#
         return self.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic)
      
     def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int):
@@ -681,7 +681,7 @@ class BaselineSAC(Baseline):
         l_final = jnp.mean(b_l_final)
         # --------------------------------------------
 
-        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean, "l_final": l_final} 
+        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}# 
         return BaselineSAC.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic)
      
 
@@ -1005,7 +1005,7 @@ class BaselineDQN(Baseline):
         l_final = jnp.mean(b_l_final)
         # --------------------------------------------
 
-        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean, "l_final": l_final}
+        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "l_mean": l_mean}
         return BaselineDQN.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic)
      
     def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int):
@@ -1084,7 +1084,7 @@ class BaselineDQN(Baseline):
         l_final = jnp.mean(b_l_final)
         # --------------------------------------------
 
-        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean, "l_final": l_final} 
+        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}# 
         return BaselineDQN.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info = info, zbb_critic = bb_critic)
 
 
@@ -1099,6 +1099,6 @@ class BaselineDQN(Baseline):
         Z_data = tree_stack(Z_datas)
         #Z_data = jtu.tree_map(lambda *arr: jnp.stack(arr), *Z_datas)
         
-        info = jtu.tree_map(lambda arr: {f"l2go={val_zs[0]}": arr[0], f"l2go={val_zs[4]}": arr[4], f"l2go={val_zs[7]}": arr[7]}, Z_data.info)
+        info = jtu.tree_map(lambda arr: {f"z={val_zs[0]}": arr[0], f"z={val_zs[4]}": arr[4], f"z={val_zs[7]}": arr[7]}, Z_data.info)
         info["update_idx"] = self.update_idx
         return Z_data._replace(info=info) 
