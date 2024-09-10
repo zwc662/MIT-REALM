@@ -17,7 +17,7 @@ import pickle
 from efppo.utils.tfp import tfd
  
 import matplotlib.pyplot as plt 
-from efppo.run_config.f110 import BaselineEnum, f110 as f110_config
+from efppo.run_config import BaselineEnum, f110 as f110_config
 from efppo.rl.collector import RolloutOutput, collect_single_env_mode
 from efppo.rl.efppo_inner import EFPPOInner
 from efppo.rl.baseline import Baseline 
