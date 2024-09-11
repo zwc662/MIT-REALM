@@ -79,7 +79,7 @@ def main(
             collect_single_env_mode,
             task,
             get_pol=rootfind_pol,
-            disc_gamma=0.99
+            disc_gamma=0.99,
             z_min=0,
             z_max=1,
             rollout_T=rollout_T,
