@@ -282,9 +282,9 @@ def main():
     start = time.time()
     step = 0
     while not done:
-        print(step, obs)
+        print(step, obs, step_reward)
         print(planner.waypoints[0])
-        exit(0)
+        #exit(0)
         step += 1
         speed, steer = planner.plan(obs['poses_x'][0], obs['poses_y'][0], obs['poses_theta'][0], work['tlad'], work['vgain'])
         obs, step_reward, done, info = env.step(np.array([[steer, speed]]))

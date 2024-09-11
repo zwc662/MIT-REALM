@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import efppo.run_config.f110 as f110_config
 from efppo.rl.collector import RolloutOutput, collect_single_env_mode
 from efppo.rl.efppo_inner import EFPPOInner
-from efppo.rl.baseline import Baseline 
+from efppo.rl.baseline import Baseline, BaselineSAC, BaselineDQN
 from efppo.rl.rootfind_policy import Rootfinder, RootfindPolicy
 from efppo.task.f110 import F1TenthWayPoint
 from efppo.task.plotter import Plotter
@@ -50,9 +50,9 @@ def main(
             alg_cfg = cfg["alg_cfg"]
             collect_cfg = cfg['collect_cfg']
             if 'sac' in ckpt_path:
-                alg: Baseline = BaselineSAC.value.create(jr.PRNGKey(0), task, alg_cfg) 
+                alg: Baseline = BaselineSAC.create(jr.PRNGKey(0), task, alg_cfg) 
             elif 'dqn' in ckpt_path:
-                alg: Baseline = BaselineDQN.value.create(jr.PRNGKey(0), task, alg_cfg) 
+                alg: Baseline = BaselineDQN.create(jr.PRNGKey(0), task, alg_cfg) 
     if alg is None:
         print("run efppo")
         alg_cfg, collect_cfg = f110_config.get()
