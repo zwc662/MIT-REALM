@@ -1044,7 +1044,7 @@ class F1TenthWayPoint(Task):
             print(f"{l_vel=} | {l_stability=} | {l_bc=} | {l=}")
         
 
-        l =  - np.log(-l_stability)
+        l =  - 10 * np.log(-l_stability)
 
         return l
 
