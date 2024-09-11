@@ -721,7 +721,7 @@ class F1TenthWayPoint(Task):
         self.cur_waypoint_ids = None
         self.pre_waypoints_ids = None
 
-        self.cur_map_name = self.train_map_names[0] if 'train' in mode.lower else self.test_map_names[0]
+        self.cur_map_name = self.train_map_names[0] if 'train' in mode.lower() else self.test_map_names[0]
         if False and random_map:
             self.cur_map_name = random.choice(
                 self.train_map_names if 'train' in mode.lower() else self.test_map_names
