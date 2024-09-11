@@ -75,6 +75,8 @@ def main(
         
         if isinstance(alg, Baseline):
             rootfind_pol = lambda obs, z: alg.policy.apply(obs, z).mode()
+            if isinstance(alg, BaselineDQN):
+                alg = alg.replace(policy = alg.policy.replace(params = alg.critic.params))
         elif isinstance(alg, EFPPOInner):
             rootfind = Rootfinder(alg.Vh.apply, alg.z_min, alg.z_max, h_tgt=-0.70)
             rootfind_pol = RootfindPolicy(alg.policy.apply, rootfind)
