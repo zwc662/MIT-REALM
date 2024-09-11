@@ -1013,8 +1013,7 @@ class F1TenthWayPoint(Task):
         if True:
             max_speed = 1.5**2
             l_vel = - max(1, np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum() / max_speed)
-
-        
+      
         ## Stability: greater dist to previous lookahead dist => high cost
         l_stability = 0
         if self.pre_waypoint_ids is not None and self.pre_state is not None:
@@ -1053,6 +1052,9 @@ class F1TenthWayPoint(Task):
         
         l = l_vel + l_stability + l_bc # + l_avoid
         self.cur_totl += l
+
+        if self.render:
+            print(f"{l_vel=} | {l_stability=} | {l_bc=} | {l=}")
         
         return l
             
