@@ -73,7 +73,7 @@ def main(
                 alg_cls = SACV1Learner 
             elif 'ql' in ckpt_path and 'ql' in ckpt_path:
                 alg_cls = SACLearner 
-            obs_example = np.zeros([task.nx])
+            obs_example = np.zeros([task.nobs])
             act_example = np.zeros([task.nu])
             alg = alg_cls(0, str(ckpt_path), obs_example, act_example, **kwargs) 
             rootfind_pol = lambda obs, *args, **kwargs: alg.sample_actions(obs)

@@ -592,7 +592,7 @@ class F1TenthWayPoint(Task):
                 discrete_actions = np.linspace(self._lb[d], self._ub[d], n_actions[d] - 1)
             self.discrete_actionss.append(discrete_actions)
         self.n_discrete_actionss = np.asarray([
-            (discrete_actions.shape[0] + int(discrete_actions.shape[0] > 2)) for discrete_actions in self.discrete_actionss
+            (discrete_actions.shape[0] + int(discrete_actions.shape[0] > 1)) for discrete_actions in self.discrete_actionss
             ])
        
     @property
@@ -760,8 +760,8 @@ class F1TenthWayPoint(Task):
             init_pose = self.pose_from_random_waypoint()
             if 'soft' in mode.lower():
                 init_pose = self.pose_from_nearest_waypoint() 
-                 
-        print(f"Reset from {init_pose}")
+        if self.render:
+            print(f"Reset from {init_pose}")
         state_dict, step_reward, done, info = self.cur_env.reset(init_pose.reshape(1, -1))
         
         cur_state = self.post_reset(state_dict)
