@@ -1008,32 +1008,35 @@ class F1TenthWayPoint(Task):
 
     def l(self, state: State, control: Union[Control, Action, tfd.Distribution]) -> LFloat:
         # Initalize
-        l = 0
-
+       
         ## High velocity => low cost
-        if False:
-            l = - np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum()
+        l_vel = 0
+        if True:
+            max_speed = 1.5**2
+            l_vel = - max(1, np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum() / max_speed)
 
         
         ## Stability: greater dist to previous lookahead dist => high cost
+        l_stability = 0
         if self.pre_waypoint_ids is not None and self.pre_state is not None:
             previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
-            l += np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum() - \
-                np.square(np.asarray(self.get2d(self.pre_state)).reshape(2) - previous_lookahead_point.reshape(2)).sum()
+            l_stability = min(0, np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum() - \
+                np.square(np.asarray(self.get2d(self.pre_state)).reshape(2) - previous_lookahead_point.reshape(2)).sum())
             
         ## Compare agent control w/ expert control
+        l_bc = 0
         if False:
             if hasattr(control, logprob):
                 if hasattr(control, 'logits'):
-                    l -= control.logprob(self.get_expert_action())
+                    l_bc = - control.logprob(self.get_expert_action())
                 elif hasattr(control, 'loc'):
-                    l -= control.logprob(self.get_expert_control())
+                    l_bc = - control.logprob(self.get_expert_control())
                 else:
                     raise NotImplementedError
             elif np.asarray([control]).flatten().shape[0] == 1:
-                l -= int(np.any(control == self.get_expert_action()))
+                l_bc = - int(np.any(control == self.get_expert_action()))
             elif type(np.asarray([control]).flatten()[0]) == float:
-                l -= np.abs(control - self.get_expert_control())
+                l_bc = - np.abs(control - self.get_expert_control())
             else:
                 raise NotImplementedError
 
@@ -1041,15 +1044,16 @@ class F1TenthWayPoint(Task):
         self.cur_totl += l
         
         ## Avoidance: stay close to the nearest lookahead point
-        
+        l_avoid = 0
         if self.cur_waypoint_ids is not None:
             ## Use deviation from nearest waypoint as cost
             nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
-            l += np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
-        
-        if np.any(self.cur_collision > 0):
+            l_avoid = np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
+        if False and np.any(self.cur_collision > 0):
             ## Guaranteed overwhelmed cost for collision
-            l = np.abs(self.cur_totl)
+            l_avoid = np.abs(self.cur_totl)
+        
+        l = l_vel + l_stability + l_bc + l_avoid
     
         return l
             
