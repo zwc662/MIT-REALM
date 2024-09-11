@@ -402,12 +402,12 @@ def partition_line(points, n):
     return jnp.concatenate((jnp.asarray(points[0].reshape(1, -1)), boundary_points, jnp.asarray(points[-1]).reshape(1, -1)))
     
 @njit(fastmath=False, cache=True)
-def get_actuation(pose_theta, lookahead_point, position, lookahead_distance, wheelbase):
+def get_actuation(pose_theta, nearest_waypoint, lookahead_point, position, lookahead_distance, wheelbase):
     """
     Returns actuation
     """
     waypoint_y = np.dot(np.array([np.sin(-pose_theta), np.cos(-pose_theta)]), lookahead_point[0:2]-position)
-    speed = np.linalg.norm(lookahead_point[0:2]-position, ord=2) / lookahead_distance #lookahead_point[2]
+    speed = max(0, np.linalg.norm(lookahead_point[0:2]-position, ord=2) - np.linalg.norm(nearest_waypoint[0:2]-position, ord=2))  #lookahead_point[2]
     if np.abs(waypoint_y) < 1e-6:
         return speed, 0.
     radius = 1/(2.0*waypoint_y/lookahead_distance**2)
@@ -531,7 +531,7 @@ class Planner:
         else:
             lookahead_points = partition_line(points = waypoints, n = work.nlad) 
 
-        speed, steer = get_actuation(pose_theta, waypoints[-1], position, lookahead_distance, self.wheelbase)
+        speed, steer = get_actuation(pose_theta, waypoints[0], waypoints[-1], position, lookahead_distance, self.wheelbase)
         speed = work.vgain * speed
 
  
