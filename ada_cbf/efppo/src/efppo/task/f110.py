@@ -555,7 +555,7 @@ class F1TenthWayPoint(Task):
     PLOT_2D_INDXS = [STATE_X, STATE_Y]
 
 
-    def __init__(self, seed = 10, assets_location = None, n_actions = (7, 3), control_mode = ''):
+    def __init__(self, seed = 10, assets_location = None, n_actions = (20, 1), control_mode = ''):
        
         self.dt = 0.05
         self.conf = None
@@ -588,7 +588,7 @@ class F1TenthWayPoint(Task):
         self.cur_waypoint_ids = None
         self.pre_waypoints_ids = None
  
-        self._lb = np.array([-np.pi/2., 3])
+        self._lb = np.array([-np.pi/2., 5])
         self._ub = np.array([np.pi/2., 5])
         
         self.render = False
@@ -602,11 +602,13 @@ class F1TenthWayPoint(Task):
         self.discrete_actionss = []
         for d in range(len(n_actions)):
             discrete_actions = np.asarray([(self._lb[d] + self._ub[d]) * 0.5])
-            if n_actions[d] > 1:
+            if n_actions[d] > 2:
                 discrete_actions = np.linspace(self._lb[d], self._ub[d], n_actions[d] - 1)
             self.discrete_actionss.append(discrete_actions)
-        self.n_discrete_actionss = np.asarray([(discrete_actions.shape[0] + 1) for discrete_actions in self.discrete_actionss])
-           
+        self.n_discrete_actionss = np.asarray([
+            (discrete_actions.shape[0] + int(discrete_actions.shape[0] > 2)) for discrete_actions in self.discrete_actionss
+            ])
+        print(self.n_discrete_actionss)
     @property
     def nx(self):
         return 5 + 2 * self.conf.work.nlad
@@ -928,9 +930,6 @@ class F1TenthWayPoint(Task):
                 self.cur_action = int(control)
             self.cur_control = self.discr_to_cts(self.cur_action)
         elif self.render:
-            self.discr_to_cts(self.cur_action)
-            self.cts_to_discr(self.cur_control)
-
             print(f'{self.cur_pursuit_action=}, {self.cur_pursuit_control=}')
             input('Enter to proceed')
 
@@ -1095,19 +1094,19 @@ class F1TenthWayPoint(Task):
     
     def discr_to_cts(self, control_idx) -> Control:
         """Convert discrete control to continuous."""
-        strides = np.cumprod(self.n_discrete_actionss[::-1][:-1])[::-1]  # Compute strides dynamically
+        strides = np.cumprod(self.n_discrete_actionss[::-1][:-1])[::-1].tolist() + [1]  # Compute strides dynamically
         control = []
    
         for d, stride in enumerate(strides):
             coord = control_idx // stride
             if coord == 0:
-                control.append(self.discrete_actionss[- d - 1][coord])
-            elif coord == len(self.discrte_actions[- d - 1]):
-                control.append(self.discrete_actionss[- d - 1][coord - 1])
+                control.append(self.discrete_actionss[d][coord])
+            elif coord == len(self.discrete_actionss[d]):
+                control.append(self.discrete_actionss[d][coord - 1])
             else:
-                control.append((self.discrete_actionss[- d - 1][coord] - self.discrete_actionss[d][coord - 1]) * 0.5)
+                control.append((self.discrete_actionss[d][coord] + self.discrete_actionss[d][coord - 1]) * 0.5)
     
-            index %= stride
+            control_idx %= stride
         return np.asarray([control])
          
     
@@ -1119,7 +1118,7 @@ class F1TenthWayPoint(Task):
 
     @property
     def n_actions(self) -> int:
-        return self.n_discrete_actionss.sum() 
+        return self.n_discrete_actionss.prod() 
     
     @property
     def h_labels(self) -> int:
