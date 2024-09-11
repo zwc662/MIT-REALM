@@ -153,11 +153,11 @@ def collect_single_env_mode(
 ):
     def _body(state: CollectorState, _):
         obs_pol = task.get_obs(state.state)
-        a_pol: tfd.Distribution = get_pol(obs_pol, state.z)
-        control = a_pol.mode()
+        #a_pol: tfd.Distribution = get_pol(obs_pol, state.z)
+        #control = a_pol.mode()
+        control = get_pol(obs_pol, state.z)
         envstate_new = task.step(state.state, control)
-         
-
+ 
         # Z dynamics.
         l = task.l(envstate_new, control)
         expert_control = task.get_expert_action(envstate_new, control)

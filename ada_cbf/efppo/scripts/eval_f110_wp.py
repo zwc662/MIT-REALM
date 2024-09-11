@@ -66,7 +66,7 @@ def main(
         rootfind_pol = lambda obs_pol, z: tfd.Normal(
             loc=(steer_fn (obs_pol), vgain), 
             scale=(np.pi * 0.5 * 0.7, 0.1)
-            ) #[jnp.array([-2, -1])])
+            ).mode() #[jnp.array([-2, -1])])
         # -----------------------------------------------------
         if ckpt_path is not None: 
             print(f'Load from {ckpt_path}')
@@ -74,7 +74,7 @@ def main(
             alg = ckpt_dict["alg"]
         
         if isinstance(alg, Baseline):
-            rootfind_pol = alg.policy.apply
+            rootfind_pol = lambda obs, z: alg.policy.apply(obs, z).mode()
         elif isinstance(alg, EFPPOInner):
             rootfind = Rootfinder(alg.Vh.apply, alg.z_min, alg.z_max, h_tgt=-0.70)
             rootfind_pol = RootfindPolicy(alg.policy.apply, rootfind)

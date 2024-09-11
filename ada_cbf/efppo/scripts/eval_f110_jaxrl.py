@@ -2,6 +2,7 @@ import os
 import sys
 
 from typing import Optional, Annotated, Union
+import functools as ft
  
 import argparse
 import functools as ft
@@ -67,7 +68,7 @@ def main(
         if ckpt_path is not None: 
             print(f'Load from {ckpt_path}')
             alg.load(ckpt_path)
-            rootfind_pol = alg.actor.apply
+            rootfind_pol = lambda obs, *args, **kwargs: alg.sample_actions(obs)
          
         rollout_T = 1000
 
