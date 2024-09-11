@@ -34,7 +34,7 @@ class JAXRLTrainer:
     seed: int = 42
     eval_episodes: int  = 10
     log_interval: int = int(1e3)        # ('Logging interval.')
-    eval_interval: int = int(1e4)       # ('Eval interval.')
+    eval_interval: int = int(5e3)       # ('Eval interval.')
     batch_size: int = 256        # ('Mini batch size.')
     updates_per_step: int = 1        # ('Gradient updates per step.')
     max_steps: int = int(1e7)        # ('Number of training steps.')
@@ -80,6 +80,7 @@ class JAXRLTrainer:
 
         eval_returns = []
         observation = train_env.reset(mode='train')
+        tot_step = 0
         for i in tqdm.tqdm(range(1, self.max_steps + 1),
                         smoothing=0.1,
                         disable=not self.tqdm):
@@ -90,10 +91,12 @@ class JAXRLTrainer:
             next_observation = train_env.step(observation, action)
             reward = - train_env.l(next_observation, action)
             done = train_env.should_reset()
-            if not done:
+            tot_step += 1
+            if not done and tot_step <= 1e3:
                 mask = 1.0
             else:
                 mask = 0.0
+                tot_step = 0
 
             replay_buffer.insert(observation, action, reward, mask, float(done),
                                 next_observation)
@@ -121,10 +124,9 @@ class JAXRLTrainer:
                 
 
                 print(eval_stats)
-                eval_returns.append((i, eval_stats['cost']))
-
-                
-
-                np.savetxt(os.path.join(ckpt_dir, f'{self.seed}.txt'), eval_returns, fmt=['%d', '%.1f'])
-                agent.save(i)
+                eval_returns.append((i, eval_stats['cost'], eval_stats['err']))
+ 
+                save_dir = agent.save(i)
+                np.savetxt(os.path.join(ckpt_dir, f'{self.seed}.txt'), eval_returns, fmt=['%d', '%.1f', '%.1f'])
+               
                 

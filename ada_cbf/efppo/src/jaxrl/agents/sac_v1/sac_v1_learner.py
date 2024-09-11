@@ -157,6 +157,6 @@ class SACV1Learner(object):
         self.temp.save(save_dir / 'temp')
 
         print(f"Saved ckpt at {str(save_dir)}!")
-
+        return save_dir
 
  
