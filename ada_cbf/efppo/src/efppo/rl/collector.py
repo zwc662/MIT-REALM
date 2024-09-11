@@ -70,7 +70,7 @@ def collect_single_mode(
 
         # Z dynamics.
         l = task.l(envstate_new, control)
-        expert_control = task.get_expert_control(envstate_new, control)
+        expert_control = task.get_expert_action(envstate_new, control)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
         if hasattr(task, 'l1_control_info'):
@@ -112,7 +112,7 @@ def collect_single(
         
         # Z dynamics.
         l = task.l(envstate_new, control)
-        expert_control = task.get_expert_control(envstate_new, control)
+        expert_control = task.get_expert_action(envstate_new, control)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
 
@@ -160,7 +160,7 @@ def collect_single_env_mode(
 
         # Z dynamics.
         l = task.l(envstate_new, control)
-        expert_control = task.get_expert_control(envstate_new, control)
+        expert_control = task.get_expert_action(envstate_new, control)
         h = task.h_components(envstate_new)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
@@ -269,13 +269,11 @@ def collect_single_batch(
         envstate_new = jnp.asarray(task.step(state.state, np.asarray(control).reshape(-1)))
         # Z dynamics.
         l = task.l(envstate_new, control)
-        expert_control = task.get_expert_control(envstate_new, control)
+        expert_control = task.get_expert_action(envstate_new, control)
         h = task.h_components(envstate_new)
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
-
-        expert_control = task.get_expert_control(envstate_new, control)
-
+ 
         new_state = CollectorState(state.steps + 1, envstate_new.reshape(-1), z_new)
         return new_state, (envstate_new, obs_pol, z_new, l, h, control, logprob, expert_control)
     

@@ -920,7 +920,7 @@ class F1TenthWayPoint(Task):
         if np.asarray([control]).flatten().shape[0] > 1:
             self.cur__action = np.asarray([control]).flatten().reshape(1, self.nu)
         else:
-            self.cur__action = self.discr_to_cts(control)(control)
+            self.cur__action = self.discr_to_cts(control)
 
         #action = np.clip(control.reshape(-1, 2), self.lb, self.ub)
        
@@ -1041,8 +1041,7 @@ class F1TenthWayPoint(Task):
                 raise NotImplementedError
 
          
-        self.cur_totl += l
-        
+       
         ## Avoidance: stay close to the nearest lookahead point
         l_avoid = 0
         if self.cur_waypoint_ids is not None:
@@ -1054,7 +1053,8 @@ class F1TenthWayPoint(Task):
             l_avoid = np.abs(self.cur_totl)
         
         l = l_vel + l_stability + l_bc + l_avoid
-    
+        self.cur_totl += l
+        
         return l
             
     
