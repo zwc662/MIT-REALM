@@ -555,7 +555,7 @@ class F1TenthWayPoint(Task):
     PLOT_2D_INDXS = [STATE_X, STATE_Y]
 
 
-    def __init__(self, seed = 10, assets_location = None, n_actions = (20, 1), control_mode = ''):
+    def __init__(self, seed = 10, assets_location = None, n_actions = (10, 3), control_mode = ''):
        
         self.dt = 0.05
         self.conf = None
@@ -588,7 +588,7 @@ class F1TenthWayPoint(Task):
         self.cur_waypoint_ids = None
         self.pre_waypoints_ids = None
  
-        self._lb = np.array([-np.pi/2., 5])
+        self._lb = np.array([-np.pi/2., -3])
         self._ub = np.array([np.pi/2., 5])
         
         self.render = False
@@ -608,7 +608,7 @@ class F1TenthWayPoint(Task):
         self.n_discrete_actionss = np.asarray([
             (discrete_actions.shape[0] + int(discrete_actions.shape[0] > 2)) for discrete_actions in self.discrete_actionss
             ])
-        print(self.n_discrete_actionss)
+       
     @property
     def nx(self):
         return 5 + 2 * self.conf.work.nlad
@@ -1010,8 +1010,8 @@ class F1TenthWayPoint(Task):
        
         ## High velocity => low cost
         l_vel = 0
-        if True:
-            max_speed = 3**2
+        if False:
+            max_speed = 1**2
             l_vel = - min(1, np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum() / max_speed)
       
         ## Stability: greater dist to previous lookahead dist => high cost
@@ -1023,7 +1023,7 @@ class F1TenthWayPoint(Task):
             
         ## Compare agent control w/ expert control
         l_bc = 0
-        if True:
+        if False:
             if hasattr(control, 'logprob'):
                 if hasattr(control, 'logits'):
                     l_bc = - control.logprob(self.get_expert_action())
@@ -1042,15 +1042,16 @@ class F1TenthWayPoint(Task):
        
         ## Avoidance: stay close to the nearest lookahead point
         l_avoid = 0
-        if self.cur_waypoint_ids is not None:
-            ## Use deviation from nearest waypoint as cost
-            nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
-            l_avoid = np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
-        if False and np.any(self.cur_collision > 0):
-            ## Guaranteed overwhelmed cost for collision
-            l_avoid = np.abs(self.cur_totl)
+        if False:
+            if self.cur_waypoint_ids is not None:
+                ## Use deviation from nearest waypoint as cost
+                nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
+                l_avoid = np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
+            if False and np.any(self.cur_collision > 0):
+                ## Guaranteed overwhelmed cost for collision
+                l_avoid = np.abs(self.cur_totl)
         
-        l = l_vel + l_stability #  l_bc + l_avoid
+        l = l_stability #  l_vel + l_bc + l_avoid
         self.cur_totl += l
 
         if self.render:
