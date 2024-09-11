@@ -130,7 +130,7 @@ class SACV1Learner(object):
         self.rng = rng
 
         actions = np.asarray(actions)
-        return np.clip(actions, -1, 1)
+        return actions
 
     def update(self, batch: Batch) -> InfoDict:
         self.step += 1

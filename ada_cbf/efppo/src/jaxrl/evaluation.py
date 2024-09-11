@@ -27,6 +27,8 @@ def evaluate(agent, env: gym.Env, num_episodes: int) -> Dict[str, float]:
             tot_cost += cost
             tot_length += 1
             tot_step += 1
+            
+
         stats['cost'].append(tot_cost / tot_length)
         stats['length'].append(tot_length)
         stats['err'].append(tot_err / tot_length)

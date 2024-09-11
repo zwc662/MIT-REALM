@@ -147,7 +147,7 @@ class REDQLearner(object):
         self.rng = rng
 
         actions = np.asarray(actions)
-        return np.clip(actions, -1, 1)
+        return actions #np.clip(actions, -1, 1)
 
     def update(self, batch: Batch) -> InfoDict:
         self.step += 1

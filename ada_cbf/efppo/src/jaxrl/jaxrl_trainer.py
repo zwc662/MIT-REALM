@@ -97,6 +97,7 @@ class JAXRLTrainer:
             else:
                 mask = 0.0
                 tot_step = 0
+                done = True
 
             replay_buffer.insert(observation, action, reward, mask, float(done),
                                 next_observation)
