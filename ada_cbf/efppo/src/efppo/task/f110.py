@@ -1052,7 +1052,7 @@ class F1TenthWayPoint(Task):
             ## Guaranteed overwhelmed cost for collision
             l_avoid = np.abs(self.cur_totl)
         
-        l = l_vel + l_stability + l_bc + l_avoid
+        l = l_vel + l_stability + l_bc # + l_avoid
         self.cur_totl += l
         
         return l

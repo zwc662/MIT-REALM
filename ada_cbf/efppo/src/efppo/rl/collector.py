@@ -318,7 +318,7 @@ def collect_single_batch(
         if (task.cur_done > 0.).any() | task.should_reset(envstate_new):
             collect_state = collect_state._replace(
                 steps = 0,
-                state = task.reset(mode = 'train', random_map = True),
+                state = task.reset(mode = 'train'),
                 z=collect_state.z
                 )
             T_done.append(1.0)
@@ -472,7 +472,7 @@ class Collector(struct.PyTreeNode):
                 z_max=z_max,
                 rollout_T = rollout_T
                 )
-            print(f"Sampled control {np.mean(bT_output.T_logprob)=}")
+            #print(f"Sampled control {np.mean(bT_output.T_logprob)=}")
             # Resample x0
             
             bT_outputs.append(bT_output)
