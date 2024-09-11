@@ -132,7 +132,7 @@ class BaselineTrainer:
         wandb.init(project=f"baseline_{task_name}_inner", config=wandb_config, entity = 'zwc662') #, mode="disabled")
         wandb_run_name = reorder_wandb_name(wandb_name=wandb_name)
 
-        run_dir = mkdir(get_runs_dir() / f"{task_name}_inner" / wandb_run_name)
+        run_dir = mkdir(get_runs_dir() / f"{task_name}_Baseline" / wandb_run_name)
         plot_dir = mkdir(run_dir / "plots")
         ckpt_dir = mkdir(run_dir / "ckpts")
         ckpt_manager = get_ckpt_manager_sync(ckpt_dir, max_to_keep=trainer_cfg.ckpt_max_keep)

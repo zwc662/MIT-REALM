@@ -50,18 +50,19 @@ def main(
     plot_dir = mkdir(pathlib.Path(os.path.join(os.path.dirname(__file__), 'plots')))
     if ckpt_path is not None:
         plot_dir = mkdir(pathlib.Path(os.path.join(os.path.dirname(ckpt_path), 'plots')))
-        if 'sac' in ckpt_path:
-            alg_cls = SACV1Learner 
-        elif 'ql' in ckpt_path:
-            alg_cls = SACLearner 
-        alg = alg_cls(0, str(ckpt_path), obs_example, act_example, **kwargs) 
-     
-     
-    for vgain in ([1, 0.2, 0.5, 2] if ckpt_path is None else [0]):
-   
+        if 'jaxrl' in ckpt_path:
+            if 'sac' in ckpt_path:
+                alg_cls = SACV1Learner 
+            elif 'ql' in ckpt_path and 'ql' in ckpt_path:
+                alg_cls = SACLearner 
+            alg = alg_cls(0, str(ckpt_path), obs_example, act_example, **kwargs) 
+            rootfind_pol = lambda obs, *args, **kwargs: alg.sample_actions(obs)
+        elif 'baseline' in ckpt_path        
+    
+    
         steer_fn = lambda obs_pol: np.arctan(obs_pol[-1] / obs_pol[-2]) - obs_pol[task.OBS_YAW]
         rootfind_pol = lambda obs_pol, z: tfd.Normal(
-            loc=(steer_fn (obs_pol), vgain), 
+            loc=(steer_fn (obs_pol), 3), 
             scale=(np.pi * 0.5 * 0.7, 0.1)
             ) #[jnp.array([-2, -1])])
         # -----------------------------------------------------
@@ -118,9 +119,7 @@ def main(
 
         bbTh_h = bb_rollout.Th_h
         bTh_h = merge01(bbTh_h)
-
-        
-        
+ 
 
         figsize = np.array([2.8, 2.2])
         for label in ['fst_wps', 'lst_wps', 'trajs']:
