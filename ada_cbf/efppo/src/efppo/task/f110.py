@@ -588,8 +588,8 @@ class F1TenthWayPoint(Task):
         self.cur_waypoint_ids = None
         self.pre_waypoints_ids = None
  
-        self._lb = np.array([-np.pi/2., -3])
-        self._ub = np.array([np.pi/2., 5])
+        self._lb = np.array([-np.pi/4., 3])
+        self._ub = np.array([np.pi/4., 5])
         
         self.render = False
 
