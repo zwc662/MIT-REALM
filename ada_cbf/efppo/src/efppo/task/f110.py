@@ -407,7 +407,7 @@ def get_actuation(pose_theta, lookahead_point, position, lookahead_distance, whe
     Returns actuation
     """
     waypoint_y = np.dot(np.array([np.sin(-pose_theta), np.cos(-pose_theta)]), lookahead_point[0:2]-position)
-    speed = 1 #lookahead_point[2]
+    speed = np.linalg.norm(lookahead_point[0:2]-position, ord=2) / lookahead_distance #lookahead_point[2]
     if np.abs(waypoint_y) < 1e-6:
         return speed, 0.
     radius = 1/(2.0*waypoint_y/lookahead_distance**2)
@@ -555,7 +555,7 @@ class F1TenthWayPoint(Task):
     PLOT_2D_INDXS = [STATE_X, STATE_Y]
 
 
-    def __init__(self, seed = 10, assets_location = None, control_mode = ''):
+    def __init__(self, seed = 10, assets_location = None, n_actions = 20, control_mode = ''):
        
         self.dt = 0.05
         self.conf = None
@@ -574,6 +574,7 @@ class F1TenthWayPoint(Task):
         self.pre_state = None
         self.cur_state = None
         self.cur_action = None
+        self.cur_control = None
         self.cur_pursuit_control = None
         self.cur_pursuit_action = None
         self.cur_state_dict = {}
@@ -598,7 +599,7 @@ class F1TenthWayPoint(Task):
 
         
         def get_discrete_actions():
-            return [[steer, self._ub[1]] for steer in np.linspace(self._lb[0], self._ub[0], 20)]
+            return [[steer, self._ub[1]] for steer in np.linspace(self._lb[0], self._ub[0], n_actions)]
             '''
             controls = list(zip(self._lb, self._ub)) 
             controls = np.stack(list(itertools.product(*controls)), axis=0)
@@ -607,8 +608,7 @@ class F1TenthWayPoint(Task):
             '''
         
         self.discrete_actions = get_discrete_actions()
-        
-
+   
     @property
     def nx(self):
         return 5 + 2 * self.conf.work.nlad
@@ -720,6 +720,7 @@ class F1TenthWayPoint(Task):
 
         self.cur_state = None
         self.cur_action = None
+        self.cur_control = None
         self.cur_state_dict = {}
         
         self.cur_collision = np.asarray([0])
@@ -918,23 +919,22 @@ class F1TenthWayPoint(Task):
         assert state.shape[-1] == self.nx
 
         if np.asarray([control]).flatten().shape[0] > 1:
-            self.cur__action = np.asarray([control]).flatten().reshape(1, self.nu)
+            #print(f'Before projection {self.cur_action=}')
+            self.cur__action = self.cts_to_discr(control)
+            #print(f'After projection {self.cur_action=}')
         else:
-            self.cur__action = self.discr_to_cts(control)
-
+            assert control > 0 and control < self.n_actions
+            self.cur__action = int(control)
+                    
         #action = np.clip(control.reshape(-1, 2), self.lb, self.ub)
        
-        self.cur_action = getattr(self, f"cur_{self.control_mode}_action")
-
-        #print(f'Before projection {self.cur_action=}')
-        self.cur_action = self.discr_to_cts(self.cts_to_discr(self.cur_action))
-        #print(f'After projection {self.cur_action=}')
-
+        self.cur_control = getattr(self, f"cur_{self.control_mode}_action") #self.discr_to_cts(getattr(self, f"cur_{self.control_mode}_action"))
+        
         if 'pursuit' in self.control_mode and self.render:
-            print(f'{self.expert_action=}')
+            print(f'{self.get_expert_action=}, {self.get_expert_control=}')
             input('Enter to proceed')
 
-        nxt_state_dict, step_reward, done, info = self.cur_env.step(self.cur_action)
+        nxt_state_dict, step_reward, done, info = self.cur_env.step(self.cur_control)
         #print(self.cur_step, nxt_state_dict, action)
              
         if self.render:
