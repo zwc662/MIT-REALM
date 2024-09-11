@@ -69,7 +69,7 @@ class JAXRLTrainer:
        
         train_env = F1TenthWayPoint()
         eval_env = F1TenthWayPoint()
-        obs_example = np.zeros([train_env.nx])
+        obs_example = np.zeros([train_env.nobs])
         act_example = np.zeros([train_env.nu])
        
         seed = kwargs.pop('seed')
@@ -79,7 +79,8 @@ class JAXRLTrainer:
         replay_buffer = ReplayBuffer(obs_example, act_example, self.replay_buffer_size)
 
         eval_returns = []
-        observation = train_env.reset(mode='train')
+        state = train_env.reset(mode='train')
+        observation = train_env.get_obs(state)
         tot_step = 0
         for i in tqdm.tqdm(range(1, self.max_steps + 1),
                         smoothing=0.1,
@@ -88,8 +89,9 @@ class JAXRLTrainer:
                 action = train_env.get_expert_control()
             else:
                 action = agent.sample_actions(observation)
-            next_observation = train_env.step(observation, action)
-            reward = - train_env.l(next_observation, action)
+            next_state = train_env.step(state, action)
+            next_observation = train_env.get_obs(state)
+            reward = - train_env.l(next_state, action)
             done = train_env.should_reset()
             tot_step += 1
             if not done and tot_step <= 1e3:
@@ -103,9 +105,11 @@ class JAXRLTrainer:
                                 next_observation)
             
             observation = next_observation
+            state = next_state
 
             if done:
-                observation = train_env.reset(mode='train')
+                state = train_env.reset(mode='train')
+                observation = train_env.get_obs(state)
     
             if i >= self.start_training:
                 for _ in range(self.updates_per_step):
@@ -117,17 +121,17 @@ class JAXRLTrainer:
                         wandb.log({f'training/{k}': v}, i)
                     
 
-            if i % self.eval_interval == 0:
-                eval_stats = evaluate(agent, eval_env, self.eval_episodes)
+                if i % self.eval_interval == 0:
+                    eval_stats = evaluate(agent, eval_env, self.eval_episodes)
 
-                for k, v in eval_stats.items():
-                    wandb.log({f'evaluation/average_{k}s': v}, i)
-                
+                    for k, v in eval_stats.items():
+                        wandb.log({f'evaluation/average_{k}s': v}, i)
+                    
 
-                print(eval_stats)
-                eval_returns.append((i, eval_stats['cost'], eval_stats['err']))
- 
-                save_dir = agent.save(i)
-                np.savetxt(os.path.join(ckpt_dir, f'{self.seed}.txt'), eval_returns, fmt=['%d', '%.1f', '%.1f'])
-               
+                    print(eval_stats)
+                    eval_returns.append((i, eval_stats['cost'], eval_stats['err']))
+    
+                    save_dir = agent.save(i)
+                    np.savetxt(os.path.join(ckpt_dir, f'{self.seed}.txt'), eval_returns, fmt=['%d', '%.1f', '%.1f'])
                 
+                    
