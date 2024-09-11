@@ -555,7 +555,7 @@ class F1TenthWayPoint(Task):
     PLOT_2D_INDXS = [STATE_X, STATE_Y]
 
 
-    def __init__(self, seed = 10, assets_location = None, n_actions = 20, control_mode = ''):
+    def __init__(self, seed = 10, assets_location = None, n_actions = (7, 3), control_mode = ''):
        
         self.dt = 0.05
         self.conf = None
@@ -589,7 +589,7 @@ class F1TenthWayPoint(Task):
         self.pre_waypoints_ids = None
  
         self._lb = np.array([-np.pi/2., 3])
-        self._ub = np.array([np.pi/2., 3])
+        self._ub = np.array([np.pi/2., 5])
         
         self.render = False
 
@@ -598,17 +598,15 @@ class F1TenthWayPoint(Task):
         self.control_mode = control_mode
 
         
-        def get_discrete_actions():
-            return [[steer, self._ub[1]] for steer in np.linspace(self._lb[0], self._ub[0], n_actions)]
-            '''
-            controls = list(zip(self._lb, self._ub)) 
-            controls = np.stack(list(itertools.product(*controls)), axis=0)
-            controls = np.concatenate([np.zeros((1, 2)), controls], axis=0)
-            return controls
-            '''
-        
-        self.discrete_actions = get_discrete_actions()
-   
+         
+        self.discrete_actionss = []
+        for d in range(len(n_actions)):
+            discrete_actions = np.asarray([(self._lb[d] + self._ub[d]) * 0.5])
+            if n_actions[d] > 1:
+                discrete_actions = np.linspace(self._lb[d], self._ub[d], n_actions[d] - 1)
+            self.discrete_actionss.append(discrete_actions)
+        self.n_discrete_actionss = np.asarray([(discrete_actions.shape[0] + 1) for discrete_actions in self.discrete_actionss])
+           
     @property
     def nx(self):
         return 5 + 2 * self.conf.work.nlad
@@ -930,6 +928,9 @@ class F1TenthWayPoint(Task):
                 self.cur_action = int(control)
             self.cur_control = self.discr_to_cts(self.cur_action)
         elif self.render:
+            self.discr_to_cts(self.cur_action)
+            self.cts_to_discr(self.cur_control)
+
             print(f'{self.cur_pursuit_action=}, {self.cur_pursuit_control=}')
             input('Enter to proceed')
 
@@ -1023,8 +1024,8 @@ class F1TenthWayPoint(Task):
             
         ## Compare agent control w/ expert control
         l_bc = 0
-        if False:
-            if hasattr(control, logprob):
+        if True:
+            if hasattr(control, 'logprob'):
                 if hasattr(control, 'logits'):
                     l_bc = - control.logprob(self.get_expert_action())
                 elif hasattr(control, 'loc'):
@@ -1050,7 +1051,7 @@ class F1TenthWayPoint(Task):
             ## Guaranteed overwhelmed cost for collision
             l_avoid = np.abs(self.cur_totl)
         
-        l = l_vel + l_stability + l_bc # + l_avoid
+        l = l_vel + l_stability #  l_bc + l_avoid
         self.cur_totl += l
 
         if self.render:
@@ -1094,22 +1095,31 @@ class F1TenthWayPoint(Task):
     
     def discr_to_cts(self, control_idx) -> Control:
         """Convert discrete control to continuous."""
-        return np.array(self.discrete_actions)[control_idx].reshape(1, self.nu)
+        strides = np.cumprod(self.n_discrete_actionss[::-1][:-1])[::-1]  # Compute strides dynamically
+        control = []
+   
+        for d, stride in enumerate(strides):
+            coord = control_idx // stride
+            if coord == 0:
+                control.append(self.discrete_actionss[- d - 1][coord])
+            elif coord == len(self.discrte_actions[- d - 1]):
+                control.append(self.discrete_actionss[- d - 1][coord - 1])
+            else:
+                control.append((self.discrete_actionss[- d - 1][coord] - self.discrete_actionss[d][coord - 1]) * 0.5)
+    
+            index %= stride
+        return np.asarray([control])
+         
     
     def cts_to_discr(self, control: Control) -> int:
-        flat_control = np.array(control).reshape(-1)
- 
-        min_diff = (0, np.abs(flat_control).sum())
-        for i in range(1, self.n_actions):
-            diff = np.abs(np.asarray(self.discrete_actions[i]).reshape(-1) - flat_control).sum()
-            if diff <= min_diff[1]:
-                min_diff = (i, diff)
-        #assert np.any(np.asarray(self.discrete_actions).reshape(-1, self.nu) == np.asarray(proj_control).reshape(-1)), f'{control} projected as {proj_control} not found in {self.discrete_actions}'
-        return min_diff[0]
+        flattened_control = np.asarray(control).flatten()
+        coordinates = [jnp.searchsorted(discrete_actions, control_, side='right') for (discrete_actions, control_) in zip(self.discrete_actionss, flattened_control)] 
+        strides = np.cumprod(self.n_discrete_actionss[::-1][:-1])[::-1]  # Compute strides dynamically
+        return np.dot(coordinates[:-1], strides) + coordinates[-1]
 
     @property
     def n_actions(self) -> int:
-        return len(self.discrete_actions)
+        return self.n_discrete_actionss.sum() 
     
     @property
     def h_labels(self) -> int:
