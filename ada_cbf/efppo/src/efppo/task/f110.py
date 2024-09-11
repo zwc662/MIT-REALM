@@ -1011,8 +1011,8 @@ class F1TenthWayPoint(Task):
         ## High velocity => low cost
         l_vel = 0
         if True:
-            max_speed = 1.5**2
-            l_vel = - max(1, np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum() / max_speed)
+            max_speed = 3**2
+            l_vel = - min(1, np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum() / max_speed)
       
         ## Stability: greater dist to previous lookahead dist => high cost
         l_stability = 0
