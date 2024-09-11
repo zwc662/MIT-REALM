@@ -203,7 +203,7 @@ def collect_single_env_mode(
             # Add done to the data collection used as mask
             collect_state = collect_state._replace(
                 steps = collect_state.steps,
-                state = task.reset(mode='soft'),
+                state = task.reset(),
                 z=collect_state.z
                 )
             T_envstate.append(collect_state.state)

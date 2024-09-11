@@ -151,6 +151,20 @@
             "python": "/home/zhouw534/anaconda3/envs/envelope/bin/python",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.vscode/project.env",
+        }, 
+        {
+            "name": "(CONDA) Pytest: train_f110_jaxrl",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "cwd": "${workspaceFolder}/ada_cbf/efppo/tests",
+            "args": [
+                "${workspaceFolder}/ada_cbf/efppo/tests/test_f110_jaxrl_train.py", 
+                "-s"
+            ],
+            "python": "/home/zhouw534/anaconda3/envs/envelope/bin/python",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.vscode/project.env",
         }
     ] 
 }

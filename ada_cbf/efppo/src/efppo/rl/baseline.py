@@ -430,6 +430,7 @@ class BaselineSAC(Baseline):
         batch = self.make_dset(replay_buffer)
  
         info = {}
+ 
         for batch_idx in range(batch.num_batches):
             key_shuffle, key_self = jr.split(self.key, 2)
             self = self.replace(key = key_self)
@@ -812,17 +813,17 @@ class BaselineDQN(Baseline):
             
             # 3: Perform value function and policy updates.
             def updates_body(alg_: BaselineDQN, b_batch: BaselineDQN.Batch):
-                alg_, pol_info = alg_.update_critic(b_batch)
-                return alg_, pol_info
+                alg_, policy_info = alg_.update_policy(b_batch)  
+                alg_, critic_info = alg_.update_critic(b_batch)
+
+                return alg_,  critic_info | policy_info
 
             new_obj, info = lax.scan(updates_body, obj, mb_dset, length=batch.num_batches)
             # Take the mean.
             info = jax.tree_map(jnp.mean, info)
 
-            info["steps/policy"] = obj.policy.step
             info["steps/critic"] = obj.critic.step
-            info["anneal/ent_cf"] = obj.ent_cf
-
+             
             return new_obj.replace(key=key_self, update_idx=obj.update_idx + 1), info
         
         new_self, new_info = lax.scan(update_one_batch, self, jnp.arange(batch.num_batches))
@@ -885,7 +886,7 @@ class BaselineDQN(Baseline):
             mean_entropy = b_entropy.mean()
 
 
-            pol_loss = bc_ratio * bc_loss - ent_cf * mean_entropy
+            pol_loss = bc_ratio * bc_loss - 0. * ent_cf * mean_entropy
   
             
             info = {
@@ -935,7 +936,7 @@ class BaselineDQN(Baseline):
             return loss_critic, info
 
         grads, info = jax.grad(get_critic_loss, has_aux=True)(self.critic.params)
-        grads,  _ = compute_norm_and_clip(grads, self.train_cfg.clip_grad_V)
+        grads, info["Grad/critic"] = compute_norm_and_clip(grads, self.train_cfg.clip_grad_V)
  
         # Compute the kernel matrix and kernel gradients 
         ensemble_params = self.critic.params['EnsembleDiscreteCriticNet_0'] 
@@ -947,7 +948,7 @@ class BaselineDQN(Baseline):
         ensemble_grads = svgd_update(ensemble_grads, kernel_matrix, kernel_gradients)
         grads['EnsembleDiscreteCriticNet_0'] = ensemble_grads
 
-        grads, info["Grad/critic"] = compute_norm_and_clip(grads, self.train_cfg.clip_grad_V)
+        grads, info["SVGD/critic"] = compute_norm_and_clip(grads, self.train_cfg.clip_grad_V)
         critic = self.critic.apply_gradients(grads=grads)
         
         return self.replace(critic=critic), info

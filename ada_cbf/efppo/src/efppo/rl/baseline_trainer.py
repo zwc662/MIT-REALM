@@ -150,7 +150,7 @@ class BaselineTrainer:
             replay_buffer.insert(rollout)
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Updating ... ")
             t1 = time.time()
-            alg, update_info = alg.update_iteratively(replay_buffer)
+            alg, update_info = alg.update_iteratively(replay_buffer) #alg.update(replay_buffer) #
             t2 = time.time()
             #print(update_info)
             if should_log:

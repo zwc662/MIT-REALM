@@ -30,7 +30,7 @@ from f110_gym.envs.collision_models import get_vertices
 
 from matplotlib import pyplot as plt
 
-from efppo.task.dyn_types import Control, HFloat, LFloat, Obs, State 
+from efppo.task.dyn_types import Control, HFloat, LFloat, Obs, State, Action
 from efppo.task.task import Task, TaskState
 from efppo.utils.angle_utils import rotx, roty, rotz
 from efppo.utils.jax_types import BBFloat, BoolScalar, FloatScalar
@@ -574,6 +574,7 @@ class F1TenthWayPoint(Task):
         self.pre_state = None
         self.cur_state = None
         self.cur_action = None
+        self.cur_pursuit_control = None
         self.cur_pursuit_action = None
         self.cur_state_dict = {}
         self.cur_collision = np.asarray([0])
@@ -739,42 +740,40 @@ class F1TenthWayPoint(Task):
                 self.train_map_names if 'train' in mode.lower() else self.test_map_names
                 )
             
-        cur_map_conf = getattr(self.conf, self.cur_map_name).copy()
-        for attr in cur_map_conf.name_lst:
-            if 'path' in attr.lower():
-                setattr(
-                    cur_map_conf, 
-                    attr, 
-                    os.path.join(
-                        self.assets_location,
-                        getattr(cur_map_conf, attr)
-                        )
+            
+            cur_map_conf = getattr(self.conf, self.cur_map_name).copy()
+            for attr in cur_map_conf.name_lst:
+                if 'path' in attr.lower():
+                    setattr(
+                        cur_map_conf, 
+                        attr, 
+                        os.path.join(
+                            self.assets_location,
+                            getattr(cur_map_conf, attr)
+                            )
+                    )
+            self.cur_env = gym.make(
+                'f110_gym:f110-v0', 
+                map=cur_map_conf.map_path,
+                map_ext=getattr(self.conf, self.cur_map_name).map_ext, 
+                num_agents=1, 
+                timestep=self.dt, 
+                integrator=Integrator.RK4
                 )
-
-        wheelbase = self.conf.work.lf + self.conf.work.lr
-        self.cur_planner = Planner(cur_map_conf, wheelbase)
-
-        self.cur_env = gym.make(
-            'f110_gym:f110-v0', 
-            map=cur_map_conf.map_path,
-            map_ext=getattr(self.conf, self.cur_map_name).map_ext, 
-            num_agents=1, 
-            timestep=self.dt, 
-            integrator=Integrator.RK4
-            )
-        self.cur_env.timestep =  self.dt
-        self.cur_env.renderer = None
+             
+            self.cur_planner = Planner(cur_map_conf, wheelbase = self.conf.work.lf + self.conf.work.lr)
  
-        return  
+            self.cur_env.timestep =  self.dt
 
+        self.cur_env.renderer = None
+   
     def reset(self, mode: str = 'train', random_map = False, init_pose = None):
         self.pre_reset(mode, random_map)
         
         if init_pose is None:
+            init_pose = self.pose_from_random_waypoint()
             if 'soft' in mode.lower():
-                init_pose = self.pose_from_random_waypoint()
-            elif 'correction':
-                init_pose = self.pose_from_nearest_waypoint()
+                init_pose = self.pose_from_nearest_waypoint() 
                  
         print(f"Reset from {init_pose}")
         state_dict, step_reward, done, info = self.cur_env.reset(init_pose.reshape(1, -1))
@@ -786,8 +785,11 @@ class F1TenthWayPoint(Task):
     def post_reset(self, state_dict: Dict[str, Any]):
         self.cur_collision = state_dict['collisions']
         self.cur_state_dict = {k: v for k, v in state_dict.items()}
-        lookahead_points, waypoint_ids, self.cur_pursuit_action = self.cur_planner.plan(state_dict, self.conf.work) 
-   
+        lookahead_points, waypoint_ids, pursuit_control = self.cur_planner.plan(state_dict, self.conf.work) 
+        
+        self.cur_pursuit_control = pursuit_control
+        self.cur_pursuit_action = self.cts_to_discr(self.cur_pursuit_control)
+
         self.pre_waypoint_ids = waypoint_ids[:]
         self.cur_waypoint_ids = waypoint_ids[:]
         if not self.check_lad(lookahead_points):
@@ -804,7 +806,7 @@ class F1TenthWayPoint(Task):
             self.cur_env.render(mode='human')
              
              
-        return self.cur_state#, 0, done, info
+        return self.cur_state #, 0, done, info
  
 
     
@@ -901,7 +903,7 @@ class F1TenthWayPoint(Task):
 
 
     @override
-    def step(self, state: State, control: Control) -> State:
+    def step(self, state: State, control: Union[Control, Action]) -> State:
         ## Ensure pausing the simulator when the agent is already out of bound (out of lane boundary or inf/nan in states)
         if False and np.any(self.cur_done > 0.): 
             print(f'Simulation fronzen @ {self.cur_step}: {self.cur_state_dict}')
@@ -915,8 +917,10 @@ class F1TenthWayPoint(Task):
         #assert control.shape[-1] == 1
         assert state.shape[-1] == self.nx
 
-        
-        self.cur__action = self.efppo_control_transform(control)
+        if np.asarray([control]).flatten().shape[0] > 1:
+            self.cur__action = np.asarray([control]).flatten().reshape(1, self.nu)
+        else:
+            self.cur__action = self.discr_to_cts(control)(control)
 
         #action = np.clip(control.reshape(-1, 2), self.lb, self.ub)
        
@@ -926,8 +930,8 @@ class F1TenthWayPoint(Task):
         self.cur_action = self.discr_to_cts(self.cts_to_discr(self.cur_action))
         #print(f'After projection {self.cur_action=}')
 
-        if self.control_mode == 'pursuit' and self.render:
-            print(f'{self.cur_pursuit_action=}')
+        if 'pursuit' in self.control_mode and self.render:
+            print(f'{self.expert_action=}')
             input('Enter to proceed')
 
         nxt_state_dict, step_reward, done, info = self.cur_env.step(self.cur_action)
@@ -945,8 +949,12 @@ class F1TenthWayPoint(Task):
 
         nxt_state = np.empty(self.nx)
         #if np.all(self.cur_collision <= 0):
-        lookahead_points, waypoint_ids, self.cur_pursuit_action = self.cur_planner.plan(nxt_state_dict, self.conf.work) 
-        nxt_state = self.get_state(nxt_state_dict, lookahead_points)
+        nxt_lookahead_points, nxt_waypoint_ids, nxt_pursuit_control = self.cur_planner.plan(nxt_state_dict, self.conf.work) 
+        
+        self.cur_pursuit_control = nxt_pursuit_control
+        self.cur_pursuit_action = self.cts_to_discr(self.cur_pursuit_control)
+
+        nxt_state = self.get_state(nxt_state_dict, nxt_lookahead_points)
             
         #print(f"Step: {self.cur_step} | Current pos: {self.cur_state[self.get2d_idxs()]} | Current action: {self.cur_action} | Target waypoints ids: {waypoint_ids} | Target waypoints: {self.cur_planner.waypoints[waypoint_ids]} | Lookahead points: {lookahead_points}")
         #else:
@@ -955,10 +963,7 @@ class F1TenthWayPoint(Task):
                 print(f'Collision @ {self.cur_step}: state {self.cur_state}')
                 #input(f'Collision @ {self.cur_step}: state {self.cur_state}')
                 #pass
-
-        
-            
-
+ 
         if np.any(np.isnan(nxt_state)) or \
             np.any(np.isinf(nxt_state)) or \
                 np.any(np.abs(nxt_state) > 1e6):
@@ -975,13 +980,12 @@ class F1TenthWayPoint(Task):
         else:
             assert (nxt_state[self.get2d_idxs()] == (nxt_state_dict['poses_x'][0], nxt_state_dict['poses_y'][0])).all(), f"State dict: {(nxt_state_dict['poses_x'][0], nxt_state_dict['poses_y'][0])} vs nxt_state: {nxt_state[self.get2d_idxs()]}"
             
-            self.pre_waypoint_ids = self.cur_waypoint_ids[:] if self.cur_waypoint_ids is not None else waypoint_ids[:]
-            self.cur_waypoint_ids = waypoint_ids[:]
+            self.pre_waypoint_ids = self.cur_waypoint_ids[:] if self.cur_waypoint_ids is not None else nxt_waypoint_ids[:]
+            self.cur_waypoint_ids = nxt_waypoint_ids[:]
 
-            if not self.check_lad(lookahead_points):
-                lookahead_points = self.cur_lookahead_points[:]
-            else:
-                self.cur_lookahead_points = lookahead_points[:]
+            if not self.check_lad(nxt_lookahead_points):
+                nxt_lookahead_points = self.cur_lookahead_points[:]
+            self.cur_lookahead_points = nxt_lookahead_points[:]
             
             self.cur_state_dict = {k: v for k, v in nxt_state_dict.items()}
             self.pre_state = self.cur_state
@@ -989,8 +993,11 @@ class F1TenthWayPoint(Task):
             self.cur_step += 1
         return self.cur_state #, step_reward, done, info
     
-    def get_expert_control(self, state: State, control: Control) -> Control:
-        return self.cts_to_discr(self.cur_pursuit_action)
+    def get_expert_control(self, *args, **kwargs) -> Control:
+        return self.cur_pursuit_control
+     
+    def get_expert_action(self, *args, **kwargs) -> Action:
+        return self.cur_pursuit_action
          
     def l1(self, state: State, control: Control) -> LFloat:
         weights = 1 #np.array([1.2e-2])
@@ -999,7 +1006,7 @@ class F1TenthWayPoint(Task):
             np.sqrt(np.sum(state[self.STATE_FST_LAD:]**2)).item()
 
 
-    def l(self, state: State, control: Union[Control, tfd.Distribution]) -> LFloat:
+    def l(self, state: State, control: Union[Control, Action, tfd.Distribution]) -> LFloat:
         # Initalize
         l = 0
 
@@ -1016,20 +1023,33 @@ class F1TenthWayPoint(Task):
             
         ## Compare agent control w/ expert control
         if False:
-            l -= int(control == self.get_expert_control(state, control))
-        
-        
+            if hasattr(control, logprob):
+                if hasattr(control, 'logits'):
+                    l -= control.logprob(self.get_expert_action())
+                elif hasattr(control, 'loc'):
+                    l -= control.logprob(self.get_expert_control())
+                else:
+                    raise NotImplementedError
+            elif np.asarray([control]).flatten().shape[0] == 1:
+                l -= int(np.any(control == self.get_expert_action()))
+            elif type(np.asarray([control]).flatten()[0]) == float:
+                l -= np.abs(control - self.get_expert_control())
+            else:
+                raise NotImplementedError
+
+         
         self.cur_totl += l
         
         ## Avoidance: stay close to the nearest lookahead point
+        
+        if self.cur_waypoint_ids is not None:
+            ## Use deviation from nearest waypoint as cost
+            nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
+            l += np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
+        
         if np.any(self.cur_collision > 0):
-            if self.cur_waypoint_ids is not None:
-                ## Use deviation from nearest waypoint as cost
-                nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
-                l += np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
-            else:
-                ## Guaranteed overwhelmed cost for collision
-                l = np.abs(self.cur_totl)
+            ## Guaranteed overwhelmed cost for collision
+            l = np.abs(self.cur_totl)
     
         return l
             
@@ -1055,7 +1075,7 @@ class F1TenthWayPoint(Task):
     def sample_x0_train(self, key: PRNGKey, num: int = 1) -> TaskState:
         return jnp.asarray(np.random.normal(loc = np.zeros([num, self.nx]), scale = 0.7 * 1e-2 * np.ones([num, self.nx])))
 
-    def should_reset(self, state: State) -> BoolScalar:
+    def should_reset(self, state: Optional[State] = None) -> BoolScalar:
         # Reset the state if it is frozen.
         return np.any(np.logical_or(self.cur_done > 0, self.cur_collision > 0))
 

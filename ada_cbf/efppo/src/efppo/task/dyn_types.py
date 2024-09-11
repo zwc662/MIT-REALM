@@ -1,7 +1,8 @@
-from efppo.utils.jax_types import Arr, Float, FloatScalar
+from efppo.utils.jax_types import Arr, Float, FloatScalar, IntScalar 
 
 State = Float[Arr, "nx"]
 Control = Float[Arr, "nu"]
+Action = IntScalar 
 Obs = Float[Arr, "nobs"]
 Sample = Float[Arr, "*"]
 Done = Float[Arr, ""]
