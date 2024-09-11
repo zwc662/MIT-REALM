@@ -159,4 +159,13 @@ class SACV1Learner(object):
         print(f"Saved ckpt at {str(save_dir)}!")
         return save_dir
 
+    def load(self, idx: int):
+        load_dir = pathlib.Path(f'{self.save_dir}/{idx:08}/default/')
+        self.actor.save(load_dir / 'actor')
+        self.critic.save(load_dir / 'critic')
+        self.value.save(load_dir / 'value' )
+        self.temp.save(load_dir / 'temp')
+
+        print(f"Loaded ckpt at {str(load_dir)}!")
+        
  

@@ -185,4 +185,12 @@ class REDQLearner(object):
         print(f"Saved ckpt at {str(save_dir)}!")
 
 
+    def load(self, load_dir: pathlib.Path):
+        self.actor.load(load_dir / 'actor')
+        self.critic.load(load_dir / 'critic')
+        self.value.load(load_dir / 'value' )
+        self.temp.load(load_dir / 'temp')
+
+        print(f"Loaded ckpt at {str(load_dir)}!")
+        
  
