@@ -929,8 +929,8 @@ class F1TenthWayPoint(Task):
                 assert control >= 0 and control < self.n_actions
                 self.cur_action = int(control)
             self.cur_control = self.discr_to_cts(self.cur_action)
-        elif self.render:
-            print(f'{self.cur_pursuit_action=}, {self.cur_pursuit_control=}')
+        if self.render:
+            print(f'{self.cur_action=}, {self.cur_control=}')
             input('Enter to proceed')
 
         nxt_state_dict, step_reward, done, info = self.cur_env.step(self.cur_control)
