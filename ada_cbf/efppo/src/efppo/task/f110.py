@@ -918,19 +918,18 @@ class F1TenthWayPoint(Task):
         #assert control.shape[-1] == 1
         assert state.shape[-1] == self.nx
 
-        if np.asarray([control]).flatten().shape[0] > 1:
-            #print(f'Before projection {self.cur_action=}')
-            self.cur__action = self.cts_to_discr(control)
-            #print(f'After projection {self.cur_action=}')
-        else:
-            assert control > 0 and control < self.n_actions
-            self.cur__action = int(control)
-                    
-        #action = np.clip(control.reshape(-1, 2), self.lb, self.ub)
-       
-        self.cur_control = getattr(self, f"cur_{self.control_mode}_action") #self.discr_to_cts(getattr(self, f"cur_{self.control_mode}_action"))
-        
-        if 'pursuit' in self.control_mode and self.render:
+        self.cur_action = self.cur_pursuit_action
+        self.cur_control = self.cur_pursuit_control
+        if 'pursuit' not in self.control_mode:
+            if np.asarray([control]).flatten().shape[0] > 1:
+                #print(f'Before projection {self.cur_action=}')
+                self.cur_action = self.cts_to_discr(control)
+                #print(f'After projection {self.cur_action=}')
+            else:
+                assert control > 0 and control < self.n_actions
+                self.cur_action = int(control)
+            self.cur_control = self.discr_to_cts(self.cur_action)
+        elif self.render:
             print(f'{self.get_expert_action=}, {self.get_expert_control=}')
             input('Enter to proceed')
 
