@@ -926,7 +926,7 @@ class F1TenthWayPoint(Task):
                 self.cur_action = self.cts_to_discr(control)
                 #print(f'After projection {self.cur_action=}')
             else:
-                assert control > 0 and control < self.n_actions
+                assert control >= 0 and control < self.n_actions
                 self.cur_action = int(control)
             self.cur_control = self.discr_to_cts(self.cur_action)
         elif self.render:
