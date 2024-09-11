@@ -44,10 +44,10 @@ def main(
         trainer = BaselineTrainer(task)
         #trainer = EFPPOInnerTrainer(task)
         trainer_cfg = BaselineTrainerCfg(n_iters=10_000_000, train_every= 10, log_every=10, eval_every=100, ckpt_every=100)
-        trainer_cfg.train_every = 1
+        trainer_cfg.train_every = 5
         trainer_cfg.log_every = 100
         trainer_cfg.eval_every = 100
-        
+
         trainer.train(jr.PRNGKey(seed), alg_cfg, collect_cfg, stamped_name, trainer_cfg, iteratively = True)
     
 

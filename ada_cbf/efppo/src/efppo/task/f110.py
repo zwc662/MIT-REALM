@@ -721,13 +721,13 @@ class F1TenthWayPoint(Task):
         self.cur_waypoint_ids = None
         self.pre_waypoints_ids = None
 
- 
-        if (random_map or self.cur_planner is None or self.cur_env is None):
+        self.cur_map_name = self.train_map_names[0] if 'train' in mode.lower else self.test_map_names[0]
+        if False and random_map:
             self.cur_map_name = random.choice(
                 self.train_map_names if 'train' in mode.lower() else self.test_map_names
                 )
-            
-            
+        
+        if self.cur_planner is None or self.cur_env is None:
             cur_map_conf = getattr(self.conf, self.cur_map_name).copy()
             for attr in cur_map_conf.name_lst:
                 if 'path' in attr.lower():
@@ -756,7 +756,6 @@ class F1TenthWayPoint(Task):
    
     def reset(self, mode: str = 'train', random_map = False, init_pose = None):
         self.pre_reset(mode, random_map)
-        
         if init_pose is None:
             init_pose = self.pose_from_random_waypoint()
             if 'soft' in mode.lower():
@@ -912,7 +911,7 @@ class F1TenthWayPoint(Task):
                 self.cur_action = self.cts_to_discr(control)
                 #print(f'After projection {self.cur_action=}')
             else:
-                assert control >= 0 and control < self.n_actions
+                assert control >= 0 and control < self.n_actions, f"{control=} is out of bounds for [0, {self.n_actions - 1}]"
                 self.cur_action = int(control)
             self.cur_control = self.discr_to_cts(self.cur_action)
         if self.render:
@@ -1004,8 +1003,8 @@ class F1TenthWayPoint(Task):
         l_stability = 0
         if self.pre_waypoint_ids is not None and self.pre_state is not None:
             previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
-            l_stability = min(0, np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum() - \
-                np.square(np.asarray(self.get2d(self.pre_state)).reshape(2) - previous_lookahead_point.reshape(2)).sum())
+            l_stability = np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum() - \
+                np.square(np.asarray(self.get2d(self.pre_state)).reshape(2) - previous_lookahead_point.reshape(2)).sum()
             
         ## Compare agent control w/ expert control
         l_bc = 0
@@ -1043,9 +1042,6 @@ class F1TenthWayPoint(Task):
         if self.render:
             print(f"{l_vel=} | {l_stability=} | {l_bc=} | {l=}")
         
-
-        l =  - 2. * np.log(-l_stability+1e-3)
-
         return l
 
     

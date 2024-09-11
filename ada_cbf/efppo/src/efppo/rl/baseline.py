@@ -660,7 +660,7 @@ class BaselineSAC(Baseline):
         collect_fn = ft.partial(
             collect_single_env_mode,
             task,
-            get_pol=self.policy.apply,
+            get_pol=lambda obs, z: self.policy.apply(obs, z).mode(),
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
@@ -670,7 +670,11 @@ class BaselineSAC(Baseline):
         for i in range(batch_size):
             bb_rollouts.append(collect_fn(b_x0[i], b_z0[i]))
         b_rollout: RolloutOutput = jtu.tree_map(lambda *x: jnp.stack(x), *bb_rollouts)
- 
+
+
+        b_done = b_rollout.T_done
+        avg_len = b_done.flatten().shape[0] / (1 + b_done.sum())
+
         b_h = jnp.max(b_rollout.Th_h, axis=(1, 2))
         assert b_h.shape == (batch_size,)
         b_issafe = b_h <= 0
@@ -684,7 +688,7 @@ class BaselineSAC(Baseline):
         l_final = jnp.mean(b_l_final)
         # --------------------------------------------
 
-        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}# 
+        info = {"avg_len": avg_len, "p_unsafe": p_unsafe, "h_mean": h_mean, "l_mean": l_mean}# 
         return BaselineSAC.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic)
      
 
@@ -996,6 +1000,10 @@ class BaselineDQN(Baseline):
         )
         b_rollout: RolloutOutput = jax_vmap(collect_fn)(b_x0, b_z0)
 
+        b_done = b_rollout.T_done
+        avg_len = b_done.flatten().shape[0] / (1 + b_done.sum())
+
+
         b_h = jnp.max(b_rollout.Th_h, axis=(1, 2))
         assert b_h.shape == (batch_size,)
         b_issafe = b_h <= 0
@@ -1009,7 +1017,7 @@ class BaselineDQN(Baseline):
         l_final = jnp.mean(b_l_final)
         # --------------------------------------------
 
-        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "l_mean": l_mean}
+        info = {"avg_len": avg_len, "p_unsafe": p_unsafe, "h_mean": h_mean, "l_mean": l_mean}
         return BaselineDQN.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic)
      
     def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int):
@@ -1064,7 +1072,7 @@ class BaselineDQN(Baseline):
         collect_fn = ft.partial(
             collect_single_env_mode,
             task,
-            get_pol=self.policy.apply,
+            get_pol=lambda obs, z: jnp.mean(self.critic.apply(obs, z), axis = -2).argmax(),
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
@@ -1074,7 +1082,10 @@ class BaselineDQN(Baseline):
         for i in range(batch_size):
             bb_rollouts.append(collect_fn(b_x0[i], b_z0[i]))
         b_rollout: RolloutOutput = jtu.tree_map(lambda *x: jnp.stack(x), *bb_rollouts)
- 
+
+        b_done = b_rollout.T_done
+        avg_len = b_done.flatten().shape[0] / (1 + b_done.sum())
+
         b_h = jnp.max(b_rollout.Th_h, axis=(1, 2))
         assert b_h.shape == (batch_size,)
         b_issafe = b_h <= 0
@@ -1088,7 +1099,7 @@ class BaselineDQN(Baseline):
         l_final = jnp.mean(b_l_final)
         # --------------------------------------------
 
-        info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}# 
+        info = {"avg_len": avg_len, "p_unsafe": p_unsafe, "h_mean": h_mean, "l_mean": l_mean}# 
         return BaselineDQN.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info = info, zbb_critic = bb_critic)
 
 
