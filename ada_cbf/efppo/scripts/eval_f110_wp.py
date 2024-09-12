@@ -166,7 +166,7 @@ def main(
 
     figsize = np.array([2.8, 2.2])
 
-    ## Draw first, last waypoints, and trajectories
+    ## 1. Draw first, last waypoints, and trajectories
     for label in ['fst_wps', 'lst_wps', 'trajs']:
         if label == 'fst_wps':
             plotter.task.PLOT_2D_INDXS = [
@@ -190,7 +190,7 @@ def main(
         print(f"Saved figure at {fig_path}")
         plt.close(fig)
 
-    ## Draw values along the trajectories
+    ## 2. Draw values along the trajectories
     Tp1_state = merge01(bTp1_state[:, :-1])
     Tp1_obs = merge01(merge01(bb_rollout.Tp1_obs)[:, :-1])
     T_control =  merge01(merge01(bb_rollout.T_control))
@@ -224,7 +224,7 @@ def main(
     print(f"Saved figure at {fig_path}")
     plt.close(fig)
 
-    ## Draw h and l values along safe and unsafe trajectories
+    ## 3. Draw h and l values along safe and unsafe trajectories
     b_h = merge01(np.max(bb_rollout.Th_h, axis=(2, 3)))
 
     b_issafe = (b_h <= -1e-3).astype(float).reshape(-1).astype('float64')
