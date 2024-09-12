@@ -90,7 +90,7 @@ class JAXRLTrainer:
             else:
                 action = agent.sample_actions(observation)
             next_state = train_env.step(state, action)
-            next_observation = train_env.get_obs(state)
+            next_observation = train_env.get_obs(next_state)
             reward = - train_env.l(next_state, action)
             done = train_env.should_reset()
             tot_step += 1
