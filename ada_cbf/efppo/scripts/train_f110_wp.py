@@ -13,7 +13,7 @@ sha = repo.head.object.hexsha
 from datetime import datetime
 
 # Get current timestamp in yyy_mm_dd format
-current_timestamp = datetime.now().strftime("%Y_%m_%d")
+current_timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 
 
 import efppo.run_config.f110
@@ -30,7 +30,7 @@ def main(
     seed: int = 123445,
 ):
     set_logger_format()
-    stamped_name = '_'.join([str(sha)[-5:], current_timestamp, name])
+    stamped_name = '_'.join([current_timestamp, str(sha)[-5:], name])
 
     if 'jaxrl' in name:
         trainer = JAXRLTrainer(name = stamped_name, seed = seed)     
