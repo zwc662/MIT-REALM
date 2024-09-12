@@ -1147,8 +1147,8 @@ class F1TenthWayPoint(Task):
         bb_x0 = ei.repeat(x0, "nx -> b1 b2 nx", b1=n_ys, b2=n_xs)
 
         bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
-        bb_x0 = bb_x0.at[:, :, self.STATE_X].set(bb_X)
-        bb_x0 = bb_x0.at[:, :, self.STATE_Y].set(bb_Y)
+        bb_x0[:, :, self.STATE_X] = (bb_X)
+        bb_x0[:, :, self.STATE_Y] = (bb_Y)
 
         return bb_X, bb_Y, bb_x0
     
