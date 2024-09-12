@@ -543,6 +543,7 @@ class F1TenthWayPoint(Task):
 
     def __init__(self, seed = 10, assets_location = None, n_actions = (10, 3), control_mode = ''):
        
+        self.seed = seed
         self.dt = 0.05
         self.conf = None
         self.train_map_names = None
@@ -594,7 +595,13 @@ class F1TenthWayPoint(Task):
         self.n_discrete_actionss = np.asarray([
             (discrete_actions.shape[0] + int(discrete_actions.shape[0] > 1)) for discrete_actions in self.discrete_actionss
             ])
-       
+        assert (self.n_discrete_actions == n_actions).all()
+    
+
+    @property
+    def n_actions(self):
+        return self.n_discrete_actions
+    
     @property
     def nx(self):
         return 5 + 2 * self.conf.work.nlad
@@ -1064,7 +1071,8 @@ class F1TenthWayPoint(Task):
     
 
     def sample_x0_train(self, key: PRNGKey, num: int = 1) -> TaskState:
-        return self.reset(mode='train')
+        states = [states.append(self.reset(mode='train'))]
+        
         #return np.random.normal(loc = np.zeros([num, self.nx]), scale = 0.7 * 1e-2 * np.ones([num, self.nx]))
 
     def should_reset(self, state: Optional[State] = None) -> BoolScalar:
