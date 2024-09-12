@@ -253,6 +253,7 @@ def collect_single_batch(
     z_min: float,
     z_max: float,
     rollout_T: int,
+    max_T: float = float('inf')
 ):
     def _body(state: CollectorState, key):
         obs_pol = task.get_obs(state.state)
@@ -315,7 +316,8 @@ def collect_single_batch(
         Th_h.append(h)
         T_expert_u.append(expert_control)
 
-        if (task.cur_done > 0.).any() | (collect_state.steps >= self.cfg.max_T) | task.should_reset(envstate_new):
+        shouldreset = (task.cur_done > 0.).any() | task.should_reset(envstate_new) | collect_state.steps >= max_T
+        if shouldreset:
             collect_state = collect_state._replace(
                 steps = 0,
                 state = task.reset(mode = 'train'),
@@ -421,7 +423,12 @@ class Collector(struct.PyTreeNode):
                 rollout_T = self.cfg.rollout_T
             else:
                 rollout_T = 1
-        return collect_single_batch(self.task, key0, colstate0, get_pol, disc_gamma, z_min, z_max, rollout_T)
+        
+        max_T = float('inf')
+        if hasattr(self.cfg, 'max_T'):
+            max_T = self.cfg.max_T
+
+        return collect_single_batch(self.task, key0, colstate0, get_pol, disc_gamma, z_min, z_max, rollout_T, max_T)
 
 
     def collect_batch_iteratively(
