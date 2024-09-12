@@ -1064,7 +1064,8 @@ class F1TenthWayPoint(Task):
     
 
     def sample_x0_train(self, key: PRNGKey, num: int = 1) -> TaskState:
-        return np.random.normal(loc = np.zeros([num, self.nx]), scale = 0.7 * 1e-2 * np.ones([num, self.nx]))
+        return self.reset(mode='train')
+        #return np.random.normal(loc = np.zeros([num, self.nx]), scale = 0.7 * 1e-2 * np.ones([num, self.nx]))
 
     def should_reset(self, state: Optional[State] = None) -> BoolScalar:
         # Reset the state if it is frozen.
