@@ -595,12 +595,12 @@ class F1TenthWayPoint(Task):
         self.n_discrete_actionss = np.asarray([
             (discrete_actions.shape[0] + int(discrete_actions.shape[0] > 1)) for discrete_actions in self.discrete_actionss
             ])
-        assert (self.n_discrete_actions == n_actions).all()
+        assert (self.n_discrete_actionss == n_actions).all()
     
 
     @property
     def n_actions(self):
-        return self.n_discrete_actions
+        return self.n_discrete_actionss
     
     @property
     def nx(self):
