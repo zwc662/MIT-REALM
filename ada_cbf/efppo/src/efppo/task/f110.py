@@ -654,7 +654,7 @@ class F1TenthWayPoint(Task):
         if len(map_keys) == 1:
             self.train_map_names = self.test_map_names =  map_keys 
         else:
-            random.shuffle(map_keys)
+            #random.shuffle(map_keys)
             self.train_map_names = map_keys[:int(np.ceil(len(map_keys) / 2))]
             self.test_map_names = map_keys[min(len(map_keys) - 1, len(self.train_map_names)):]
 
