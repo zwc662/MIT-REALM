@@ -922,6 +922,7 @@ class F1TenthWayPoint(Task):
                 self.cur_action = int(control)
             self.cur_control = self.discr_to_cts(self.cur_action)
         if self.render:
+            print(f'{self.cur_pursuit_action=}, {self.cur_pursuit_control=}')
             print(f'{self.cur_action=}, {self.cur_control=}')
             input('Enter to proceed')
 
@@ -984,10 +985,16 @@ class F1TenthWayPoint(Task):
             self.cur_step += 1
         return self.cur_state #, step_reward, done, info
     
-    def get_expert_control(self, *args, **kwargs) -> Control:
+    def get_expert(self, state: State, ref_control: Union[Control, Action]) -> Union[Control, Action]:
+        if np.asarray([ref_control]).flatten().shape[0] > 1:
+            return self.get_expert_control()
+        else:
+            return self.get_expert_action()
+
+    def get_expert_control(self) -> Control:
         return self.cur_pursuit_control
      
-    def get_expert_action(self, *args, **kwargs) -> Action:
+    def get_expert_action(self) -> Action:
         return self.cur_pursuit_action
          
     def l1(self, state: State, control: Control) -> LFloat:
@@ -1152,12 +1159,12 @@ class F1TenthWayPoint(Task):
         b_xs = np.linspace(-0.1, 0.1, num=n_xs)
         b_ys = np.linspace(-0.1, 0.1, num=n_ys)
 
-        x0 = np.zeros([self.nx])
+        x0 = jnp.zeros([self.nx])
         bb_x0 = ei.repeat(x0, "nx -> b1 b2 nx", b1=n_ys, b2=n_xs)
 
         bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
-        bb_x0[:, :, self.STATE_X] = (bb_X)
-        bb_x0[:, :, self.STATE_Y] = (bb_Y)
+        bb_x0 = jnp.asarray(bb_x0).at[:, :, self.STATE_X].set(bb_X)
+        bb_x0 = bb_x0.at[:, :, self.STATE_Y].set(bb_Y)
 
         return bb_X, bb_Y, bb_x0
     

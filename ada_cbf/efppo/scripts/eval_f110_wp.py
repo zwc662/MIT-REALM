@@ -92,8 +92,9 @@ def main(
             rootfind_pol = lambda obs, z: alg.policy.apply(obs, z).mode()
             rollout_T = collect_cfg.max_T
             disc_gamma=alg.disc_gamma
-            z_min=alg.z_min,
-            z_max=alg.z_max,
+            z_min=alg.cfg.train.z_min
+            z_max=alg.cfg.train.z_max
+
         elif 'F1TenthWayPoint_Inner' in ckpt_path:
             alg_cfg, collect_cfg = f110_config.get()
             alg: EFPPOInner = EFPPOInner.create(jr.PRNGKey(0), task, alg_cfg)
@@ -104,8 +105,8 @@ def main(
             rootfind_pol = lambda obs, z: RootfindPolicy(alg.policy.apply, rootfind)(obs, z).mode()
             rollout_T = collect_cfg.max_T
             disc_gamma=alg.disc_gamma
-            z_min=alg.z_min,
-            z_max=alg.z_max,
+            z_min=alg.cfg.train.z_min
+            z_max=alg.cfg.train.z_max
 
     bb_X, bb_Y, bb_x0 = jax2np(task.grid_contour())
     b1, b2 = bb_X.shape
