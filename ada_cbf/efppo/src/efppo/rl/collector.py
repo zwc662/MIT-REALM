@@ -46,7 +46,7 @@ class CollectorCfg(Cfg):
 
 
 class CollectorState(NamedTuple):
-    steps: IntScalar = -1
+    steps: IntScalar
     state: TaskState
     z: FloatScalar
 
@@ -442,13 +442,14 @@ class Collector(struct.PyTreeNode):
         for i in range(self.cfg.n_envs):
             collect_state_i = jtu.tree_map(lambda x: x[i], self.collect_state)
             
-            #print(f"Env {i} / {self.cfg.n_envs}")
-            #shouldreset = jr.bernoulli(key_reset_bernoulli, p_reset)
-            #shouldreset = jnp.logical_or(shouldreset, collect_state_i.steps >= max_T).item()
-            #shouldreset = (self.task.cur_done > 0.).any() | shouldreset | (
-            #    i > 0 and self.task.should_reset(self.collect_state.state[i - 1])
-            #    )
-            shouldreset = (collect_state_i.steps == -1)
+            '''
+            print(f"Env {i} / {self.cfg.n_envs}")
+            shouldreset = jr.bernoulli(key_reset_bernoulli, p_reset)
+            shouldreset = jnp.logical_or(shouldreset, collect_state_i.steps >= max_T).item()
+            shouldreset = (self.task.cur_done > 0.).any() | shouldreset | (
+                i > 0 and self.task.should_reset(self.collect_state.state[i - 1])
+                )
+            shouldreset = (collect_state_i.steps < self.cfg.max_T)
             if shouldreset:
                 random_map = False #jr.bernoulli(key_reset, p_reset)
                 # Randomly sample z0.
@@ -466,6 +467,7 @@ class Collector(struct.PyTreeNode):
                     state = self.collect_state.state[i - 1],
                     z = self.collect_state.z[i-1]
                 )
+            '''
             collect_state_i, bT_output = self._collect_single_batch(
                 i, 
                 key0, 
