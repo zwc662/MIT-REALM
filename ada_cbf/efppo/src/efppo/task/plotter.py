@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import LineCollection
 
-from efppo.task.dyn_types import BTState
+from efppo.task.dyn_types import BTState, BState, BLFloat 
 from efppo.task.task import Task
 from efppo.utils.register_cmaps import register_cmaps
 
@@ -108,3 +108,22 @@ class Plotter:
         self.task.setup_traj2_plot(axes)
         return fig
 
+    def plot_dots(self, states: BState, colors: BLFloat, ax: plt.Axes = None):
+        xs, ys = self.task.get2d(states)
+        colors = (colors - np.min(colors)) / (1e-2 + np.max(colors) - np.min(colors))
+        if ax is None:
+            fig, ax = plt.subplots(dpi=self.dpi)
+        else:
+            fig = ax.figure
+
+        self.task.setup_traj_plot(ax)
+         
+        #line_col = LineCollection(bT_line, lw=1.0, zorder=5, colors=colors)
+        #ax.add_collection(line_col)
+
+        scatters = ax.scatter(xs, ys, c = colors, cmap='viridis', zorder=5, s=0.8**2)
+        # Add a colorbar to show the heatmap scale
+        plt.colorbar(scatters, ax=ax)
+
+        ax.autoscale_view()
+        return fig

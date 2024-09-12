@@ -13,6 +13,7 @@ import jax.numpy as jnp
 import jax.lax as lax
 import jax.tree_util as jtu
 import pickle
+import h5py
 
 from efppo.utils.tfp import tfd
  
@@ -34,17 +35,27 @@ from efppo.utils.cfg_utils import Recursive_Update
 from jaxrl.agents import (AWACLearner, DDPGLearner, REDQLearner, SACLearner,
                           SACV1Learner)
 
+import git
+repo = git.Repo(search_parent_directories=True)
+sha = repo.head.object.hexsha
+
+
+from datetime import datetime
+
+# Get current timestamp in yyy_mm_dd format
+current_timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+stamped_name = '_'.join([current_timestamp, str(sha)[-5:]])
 
 
 def main(
         alg: Optional[Union[Baseline, EFPPOInner]] = None, 
         ckpt_path: Optional[pathlib.Path] = None,
         render: bool = False,
-        pursuit: bool = False,
+        control_mode: Optional[str] = None,
         **kwargs):
     set_logger_format()
 
-    task = F1TenthWayPoint(control_mode = 'pursuit' if pursuit else '')
+    task = F1TenthWayPoint(control_mode = control_mode)
     
     plot_dir = mkdir(pathlib.Path(os.path.join(os.path.dirname(__file__), 'plots')))
 
@@ -108,7 +119,7 @@ def main(
             z_min=alg.cfg.train.z_min
             z_max=alg.cfg.train.z_max
 
-    bb_X, bb_Y, bb_x0 = jax2np(task.grid_contour())
+    bb_X, bb_Y, bb_x0 = jax2np(task.grid_contour(n_xs=5, n_ys=5))
     b1, b2 = bb_X.shape
     bb_z0 = np.full((b1, b2), z_max)
 
@@ -120,7 +131,7 @@ def main(
         z_min=z_min,
         z_max=z_max,
         rollout_T=rollout_T,
-        verbose=True
+        verbose=False
     )
     print("Collecting rollouts...")
     bb_rollouts: list[list[RolloutOutput]] = []
@@ -128,12 +139,8 @@ def main(
         bb_rollouts.append([])
         for j in range(bb_x0.shape[1]): 
             print('Initialization state coord', (i, j))
-            state_0 = None
-            if (i, j) == (0, 0):
-                state_0 = task.reset(mode=f"eval{'+render' if render else ''}", random_map = True)
-            else:
-                state_0 = task.reset(mode=f"eval{'+render' if render else ''}") 
-            state_0 += 0 * bb_x0[i][j]
+            state_0 = task.reset(mode=f"eval{'+render' if render else ''}", init_dist = np.random.normal(loc = 0, scale = 0.1, size = (3)))
+            task.cur_reset_mode = 'soft'
             rollout = collect_fn(state_0, bb_z0[i][j])
             #print(rollout.Tp1_state.shape, rollout.Tp1_obs.shape, rollout.Tp1_z.shape, rollout.T_control.shape, rollout.T_l.shape, rollout.Th_h.shape)
             bb_rollouts[-1].append(rollout) 
@@ -155,18 +162,13 @@ def main(
     bbTh_h = bb_rollout.Th_h
     bTh_h = merge01(bbTh_h)
 
-    bbT_controls = bb_rollout.T_control
-    bT_controls = merge01(bbT_controls)
-
+   
 
     figsize = np.array([2.8, 2.2])
-    for label in ['controls', 'fst_wps', 'lst_wps', 'trajs']:
-        if label == 'controls':
-            plotter.task.PLOT_2D_INDXS = [
-                plotter.task.STATE_FST_LAD, 
-                plotter.task.STATE_FST_LAD + 1
-                ] 
-        elif label == 'fst_wps':
+
+    ## Draw first, last waypoints, and trajectories
+    for label in ['fst_wps', 'lst_wps', 'trajs']:
+        if label == 'fst_wps':
             plotter.task.PLOT_2D_INDXS = [
                 plotter.task.STATE_FST_LAD, 
                 plotter.task.STATE_FST_LAD + 1
@@ -183,12 +185,46 @@ def main(
                 ]
         fig, ax = plt.subplots(figsize=figsize, dpi=500)
         fig = plotter.plot_traj(bTp1_state, multicolor=True, ax=ax)
-        fig_path = plot_dir / f"eval_{label}.jpg"
+        fig_path = plot_dir / f"{task.cur_map_name}_eval_{label}.jpg"
         fig.savefig(fig_path, bbox_inches="tight")
         print(f"Saved figure at {fig_path}")
         plt.close(fig)
-    
 
+    ## Draw values along the trajectories
+    Tp1_state = merge01(bTp1_state[:, :-1])
+    Tp1_obs = merge01(merge01(bb_rollout.Tp1_obs)[:, :-1])
+    T_control =  merge01(merge01(bb_rollout.T_control))
+    Tp1_z = merge01(merge01(bb_rollout.Tp1_z)[:, :-1])
+
+    T_target_critics_all = jax.vmap(alg.target_critic.apply)(Tp1_obs, Tp1_z)
+    T_target_critics = jax.vmap(lambda critic, control: critic[:, control], in_axes = 0)(T_target_critics_all, T_control).reshape(-1, alg.cfg.net.n_critics)
+    T_target_critic = jnp.min(T_target_critics, axis = 1).flatten()
+
+    states_path, critics_path = plot_dir / f"{task.cur_map_name}_states.h5", plot_dir / f"{task.cur_map_name}_critics.h5"
+    
+    with h5py.File(states_path, 'a' if os.path.exists(states_path) else 'w' ) as fp:
+        fp.create_dataset(f'{stamped_name}_states', data = Tp1_state)
+    with h5py.File(critics_path, 'a' if os.path.exists(critics_path) else 'w') as fp:
+        fp.create_dataset(f'{stamped_name}_critics', data = T_target_critic)
+
+
+    plotter.task.PLOT_2D_INDXS = [
+                plotter.task.STATE_X, 
+                plotter.task.STATE_Y
+                ]
+    
+    with h5py.File(states_path, 'r') as fp:
+        Tp1_state = np.concatenate([fp[k] for k in list(fp.keys())])
+    with h5py.File(critics_path, 'r') as fp:
+        T_target_critic = np.concatenate([fp[k] for k in list(fp.keys())])
+    
+    fig = plotter.plot_dots(states = Tp1_state, colors = T_target_critic)
+    fig_path = plot_dir / f"{task.cur_map_name}_eval_value.jpg"
+    fig.savefig(fig_path, bbox_inches="tight")
+    print(f"Saved figure at {fig_path}")
+    plt.close(fig)
+
+    ## Draw h and l values along safe and unsafe trajectories
     b_h = merge01(np.max(bb_rollout.Th_h, axis=(2, 3)))
 
     b_issafe = (b_h <= -1e-3).astype(float).reshape(-1).astype('float64')
@@ -202,7 +238,7 @@ def main(
         bT_l_safe = bT_l[safe_idxs]
         bTh_h_safe = bTh_h[safe_idxs] 
         fig = plotter.plot_traj3(bTp1_state_safe, bTh_h_safe, bT_l_safe)  
-        fig_path = plot_dir / f"eval_safe_traj_time{('_' + kwargs['idx']) if 'idx' in kwargs else ''}.jpg"
+        fig_path = plot_dir / f"{task.cur_map_name}_eval_safe_traj_time{('_' + kwargs['idx']) if 'idx' in kwargs else ''}.jpg"
         fig.savefig(fig_path, bbox_inches="tight")
         plt.close(fig)
 
@@ -219,7 +255,7 @@ def main(
         bT_l_unsafe = bT_l[unsafe_idxs]
         bTh_h_unsafe = bTh_h[unsafe_idxs] 
         fig = plotter.plot_traj3(bTp1_state_unsafe, bTh_h_unsafe, bT_l_unsafe)
-        fig_path = plot_dir / f"eval_unsafe_traj_time{('_' + kwargs['idx']) if 'idx' in kwargs else ''}.jpg"
+        fig_path = plot_dir / f"{task.cur_map_name}_eval_unsafe_traj_time{('_' + kwargs['idx']) if 'idx' in kwargs else ''}.jpg"
         fig.savefig(fig_path, bbox_inches="tight")
         plt.close(fig)
 
@@ -230,10 +266,16 @@ if __name__ == "__main__":
     parser.add_argument('--work', type=int, required=False, default = 0, help='Path to the map without extensions')
     parser.add_argument('--params', type=int, required=False, default = 0, help='Path to the map without extensions')
     parser.add_argument('--pursuit', action='store_true', help='use pursuit planner to override any control input')
+    parser.add_argument('--random', action='store_true', help='use random control to override any control input')
     parser.add_argument('--render', action='store_true', help='render track')
     args = parser.parse_args()
 
-    
-    main(alg = args.alg, ckpt_path = args.ckpt, render = args.render, pursuit = args.pursuit)
+    control_mode = None
+    if args.pursuit:
+        control_mode = 'pursuit'
+    if args.random:
+        control_mode = 'random'
+
+    main(alg = args.alg, ckpt_path = args.ckpt, render = args.render, control_mode = control_mode)
     #with ipdb.launch_ipdb_on_exception():
     #    typer.run(main)

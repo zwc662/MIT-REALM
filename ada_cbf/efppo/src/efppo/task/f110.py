@@ -541,7 +541,7 @@ class F1TenthWayPoint(Task):
     PLOT_2D_INDXS = [STATE_X, STATE_Y]
 
 
-    def __init__(self, seed = 10, assets_location = None, n_actions = (10, 3), control_mode = ''):
+    def __init__(self, seed = 10, assets_location = None, n_actions = (10, 3), control_mode: Optional[str] = None):
        
         self.seed = seed
         self.dt = 0.05
@@ -555,7 +555,7 @@ class F1TenthWayPoint(Task):
 
 
         self.cur_map_name = None
-        self.cur_mode = 'train'
+        self.cur_reset_mode = 'train'
         self.cur_planner = None
         self.cur_env = None
         self.pre_state = None
@@ -580,8 +580,6 @@ class F1TenthWayPoint(Task):
         
         self.render = False
 
-        if control_mode not in ['pursuit', '']:
-            raise NotImplementedError
         self.control_mode = control_mode
 
         
@@ -665,7 +663,7 @@ class F1TenthWayPoint(Task):
         return self.pose_from_waypoint(init_pose_ind)
     
     def pose_from_nearest_waypoint(self):
-        init_pose_ind = 0
+        init_pose_ind = self.cur_waypoint_ids[0]
         return self.pose_from_waypoint(init_pose_ind)
 
     def pose_from_waypoint(self, init_pose_ind: int):
@@ -761,14 +759,28 @@ class F1TenthWayPoint(Task):
 
         self.cur_env.renderer = None
    
-    def reset(self, mode: str = 'train', random_map = False, init_pose = None):
-        self.pre_reset(mode, random_map)
+    def reset(self, mode: Optional[str] = None, random_map = False, init_pose = None, init_dist = None):
+        if mode is None:
+            mode = self.cur_reset_mode
+        
+        if 'soft' in mode and \
+            len(self.cur_state_dict) > 0 and \
+                self.cur_waypoint_ids is not None and \
+                    self.cur_map_name is not None and \
+                        self.cur_planner is not None \
+                            and self.cur_env is not None:
+                init_pose = self.pose_from_nearest_waypoint()
+        else:
+            self.pre_reset(mode, random_map)
+
         if init_pose is None:
             init_pose = self.pose_from_random_waypoint()
-            if 'soft' in mode.lower():
-                init_pose = self.pose_from_nearest_waypoint() 
+        if init_dist is not None:
+            init_pose += init_dist.reshape(init_pose.shape)
+ 
         if self.render:
             print(f"Reset from {init_pose}")
+
         state_dict, step_reward, done, info = self.cur_env.reset(init_pose.reshape(1, -1))
         
         cur_state = self.post_reset(state_dict)
@@ -910,9 +922,11 @@ class F1TenthWayPoint(Task):
         #assert control.shape[-1] == 1
         assert state.shape[-1] == self.nx
 
+        ## Initialized as pursuit planner
         self.cur_action = self.cur_pursuit_action
         self.cur_control = self.cur_pursuit_control
-        if 'pursuit' not in self.control_mode:
+        if self.control_mode is None:
+            ## If using external control
             if np.asarray([control]).flatten().shape[0] > 1:
                 #print(f'Before projection {self.cur_action=}')
                 self.cur_action = self.cts_to_discr(control)
@@ -921,6 +935,11 @@ class F1TenthWayPoint(Task):
                 assert control >= 0 and control < self.n_actions, f"{control=} is out of bounds for [0, {self.n_actions - 1}]"
                 self.cur_action = int(control)
             self.cur_control = self.discr_to_cts(self.cur_action)
+        elif self.control_mode == 'random':
+            ## If using random control
+            self.cur_action = np.random.randint(self.n_actions)
+            self.cur_control = self.discr_to_cts(self.cur_action)
+        
         if self.render:
             print(f'{self.cur_pursuit_action=}, {self.cur_pursuit_control=}')
             print(f'{self.cur_action=}, {self.cur_control=}')
@@ -1152,10 +1171,8 @@ class F1TenthWayPoint(Task):
             )
         
             
-    def grid_contour(self) -> tuple[BBFloat, BBFloat, TaskState]:
+    def grid_contour(self, n_xs = 2, n_ys = 2) -> tuple[BBFloat, BBFloat, TaskState]:
         # Contour with ( x axis=θ, y axis=H )
-        n_xs = 2
-        n_ys = 2
         b_xs = np.linspace(-0.1, 0.1, num=n_xs)
         b_ys = np.linspace(-0.1, 0.1, num=n_ys)
 
