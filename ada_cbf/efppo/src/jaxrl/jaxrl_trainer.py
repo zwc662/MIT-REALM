@@ -129,9 +129,9 @@ class JAXRLTrainer:
                     
 
                     print(eval_stats)
-                    eval_returns.append((i, eval_stats['cost'], eval_stats['err']))
+                    eval_returns.append((i, eval_stats['length'], eval_stats['cost'], eval_stats['err']))
     
-                    save_dir = agent.save(i)
-                    np.savetxt(os.path.join(ckpt_dir, f'{self.seed}.txt'), eval_returns, fmt=['%d', '%.1f', '%.1f'])
+                    agent.save(i)
+                    np.savetxt(os.path.join(ckpt_dir, f'{self.seed}.txt'), eval_returns, fmt=['%d', '%d', '%.1f', '%.1f'])
                 
                     

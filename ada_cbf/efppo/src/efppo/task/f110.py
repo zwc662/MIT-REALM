@@ -513,7 +513,7 @@ class Planner:
         # If all points are the same, create a straight line from start to end
         
         if len(waypoint_ids) <= 2:
-            lookahead_points = jnp.linspace(waypoints[0], waypoints[-1], work.nlad)
+            lookahead_points = np.linspace(waypoints[0], waypoints[-1], work.nlad)
         else:
             lookahead_points = partition_line(points = waypoints, n = work.nlad) 
 
@@ -1064,7 +1064,7 @@ class F1TenthWayPoint(Task):
     
 
     def sample_x0_train(self, key: PRNGKey, num: int = 1) -> TaskState:
-        return jnp.asarray(np.random.normal(loc = np.zeros([num, self.nx]), scale = 0.7 * 1e-2 * np.ones([num, self.nx])))
+        return np.random.normal(loc = np.zeros([num, self.nx]), scale = 0.7 * 1e-2 * np.ones([num, self.nx]))
 
     def should_reset(self, state: Optional[State] = None) -> BoolScalar:
         # Reset the state if it is frozen.
@@ -1098,7 +1098,7 @@ class F1TenthWayPoint(Task):
     
     def cts_to_discr(self, control: Control) -> int:
         flattened_control = np.asarray(control).flatten()
-        coordinates = [jnp.searchsorted(discrete_actions, control_, side='right') for (discrete_actions, control_) in zip(self.discrete_actionss, flattened_control)] 
+        coordinates = [np.searchsorted(discrete_actions, control_, side='right') for (discrete_actions, control_) in zip(self.discrete_actionss, flattened_control)] 
         strides = np.cumprod(self.n_discrete_actionss[::-1][:-1])[::-1]  # Compute strides dynamically
         return np.dot(coordinates[:-1], strides) + coordinates[-1]
 
@@ -1143,7 +1143,7 @@ class F1TenthWayPoint(Task):
         b_xs = np.linspace(-0.1, 0.1, num=n_xs)
         b_ys = np.linspace(-0.1, 0.1, num=n_ys)
 
-        x0 = jnp.zeros([self.nx])
+        x0 = np.zeros([self.nx])
         bb_x0 = ei.repeat(x0, "nx -> b1 b2 nx", b1=n_ys, b2=n_xs)
 
         bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
