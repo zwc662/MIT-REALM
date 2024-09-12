@@ -45,11 +45,19 @@ __pypackages__/
 *.html
 *.pkl
 **/checkpoint
+ 
 
-runs
+!ada_cbf/efppo/runs
 # SB3 logs
 logs
 
 .envrc
 wandb
 *.mp4
+
+runs/**/default/
+runs/**/_CHECKPOINT_METADATA 
+runs/**/plots/*.jpg
+!runs/**/plots/*_value.jpg
+
+.DS_Store
