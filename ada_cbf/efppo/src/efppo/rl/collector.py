@@ -252,7 +252,7 @@ def collect_single_batch(
     disc_gamma: float,
     z_min: float,
     z_max: float,
-    rollout_T: int 
+    rollout_T: int,
 ):
     def _body(state: CollectorState, key):
         obs_pol = task.get_obs(state.state)
@@ -315,7 +315,7 @@ def collect_single_batch(
         Th_h.append(h)
         T_expert_u.append(expert_control)
 
-        if (task.cur_done > 0.).any() | task.should_reset(envstate_new):
+        if (task.cur_done > 0.).any() | (collect_state.steps >= self.cfg.max_T) | task.should_reset(envstate_new):
             collect_state = collect_state._replace(
                 steps = 0,
                 state = task.reset(mode = 'train'),
@@ -416,11 +416,16 @@ class Collector(struct.PyTreeNode):
     def _collect_single_batch(
         self, env_idx: int, key0: PRNGKey, colstate0: CollectorState, get_pol, disc_gamma: float, z_min: float, z_max: float, rollout_T: Optional[int] = None
     ) -> tuple[CollectorState, RolloutOutput]: 
-        return collect_single_batch(self.task, key0, colstate0, get_pol, disc_gamma, z_min, z_max, self.cfg.rollout_T if rollout_T is None else rollout_T)
+        if rollout_T is None:
+            if hasattr(self.cfg, 'rollout_T'):
+                rollout_T = self.cfg.rollout_T
+            else:
+                rollout_T = 1
+        return collect_single_batch(self.task, key0, colstate0, get_pol, disc_gamma, z_min, z_max, rollout_T)
 
 
     def collect_batch_iteratively(
-        self, get_pol, disc_gamma: float, z_min: float, z_max: float, rollout_T: Optional[int] = None
+        self, get_pol, disc_gamma: float, z_min: float, z_max: float, rollout_T: int = 1
     ) -> tuple["Collector", RolloutOutput]:
         key0 = jr.fold_in(self.key, self.collect_idx)
         key_pol, key_reset_bernoulli, key_reset = jr.split(key0, 3)
@@ -429,8 +434,7 @@ class Collector(struct.PyTreeNode):
         # Initialize lists to accumulate results
         bT_outputs = []
         # Use a for loop instead of jax.vmap
-
-        max_T = self.cfg.max_T
+ 
         p_reset = self.p_reset
         key_reset = key_reset
 
@@ -440,11 +444,11 @@ class Collector(struct.PyTreeNode):
             
             #print(f"Env {i} / {self.cfg.n_envs}")
             #shouldreset = jr.bernoulli(key_reset_bernoulli, p_reset)
-            shouldreset = jnp.logical_or(collect_state_i.steps == -1, collect_state_i.steps >= max_T).item()
+            #shouldreset = jnp.logical_or(shouldreset, collect_state_i.steps >= max_T).item()
             #shouldreset = (self.task.cur_done > 0.).any() | shouldreset | (
             #    i > 0 and self.task.should_reset(self.collect_state.state[i - 1])
             #    )
-            
+            shouldreset = (collect_state_i.steps == -1)
             if shouldreset:
                 random_map = False #jr.bernoulli(key_reset, p_reset)
                 # Randomly sample z0.
@@ -470,7 +474,7 @@ class Collector(struct.PyTreeNode):
                 disc_gamma=disc_gamma, 
                 z_min=z_min, 
                 z_max=z_max,
-                rollout_T = rollout_T
+                rollout_T = rollout_T 
                 )
             #print(f"Sampled control {np.mean(bT_output.T_logprob)=}")
             # Resample x0

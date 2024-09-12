@@ -146,7 +146,7 @@ class BaselineTrainer:
             t0 = time.time()
 
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Collecting ... ")
-            collector, rollout = alg.collect_iteratively(collector, trainer_cfg.train_every)
+            collector, rollout = alg.collect_iteratively(collector, rollout_T = trainer_cfg.train_every)
             replay_buffer.insert(rollout)
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Updating ... ")
             t1 = time.time()
