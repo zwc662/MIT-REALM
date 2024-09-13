@@ -69,6 +69,7 @@ class JAXRLTrainer:
        
         train_env = F1TenthWayPoint()
         eval_env = F1TenthWayPoint()
+        state_example = np.zeros([train_env.nx])
         obs_example = np.zeros([train_env.nobs])
         act_example = np.zeros([train_env.nu])
        

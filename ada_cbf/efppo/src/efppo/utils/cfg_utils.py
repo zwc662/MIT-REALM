@@ -36,8 +36,7 @@ class RecursiveNamespace(Namespace):
         super().__init__(**name_kwargs)
         
         for name in dict_kwargs:
-            setattr(self, name, RecursiveNamespace(**dict_kwargs[name]))
-            self.sub_spaces.append(name)
+            setattr(self, name, RecursiveNamespace(**dict_kwargs[name])) 
     
     def update(self, namespace):
         for name in namespace.name_lst:

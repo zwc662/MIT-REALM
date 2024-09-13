@@ -541,7 +541,7 @@ class F1TenthWayPoint(Task):
     PLOT_2D_INDXS = [STATE_X, STATE_Y]
 
 
-    def __init__(self, seed = 10, assets_location = None, n_actions = (10, 3), control_mode: Optional[str] = None):
+    def __init__(self, seed = 10, assets_location = None, n_actions = (3, 1), control_mode: Optional[str] = None):
        
         self.seed = seed
         self.dt = 0.05
@@ -575,7 +575,7 @@ class F1TenthWayPoint(Task):
         self.cur_waypoint_ids = None
         self.pre_waypoints_ids = None
  
-        self._lb = np.array([-np.pi/4., 3])
+        self._lb = np.array([-np.pi/4., 5])
         self._ub = np.array([np.pi/4., 5])
         
         self.render = False
@@ -647,16 +647,18 @@ class F1TenthWayPoint(Task):
                 file, 
                 Loader=yaml.FullLoader
                 )
-        self.conf = RecursiveNamespace(**conf_dict)
+            self.conf = RecursiveNamespace(**conf_dict)
 
         map_keys = list(filter(lambda key: 'map' in key, self.conf.sub_spaces))
 
-        if len(map_keys) == 1:
+        if True or len(map_keys) == 1:
             self.train_map_names = self.test_map_names =  map_keys 
         else:
-            #random.shuffle(map_keys)
+            random.shuffle(map_keys)
             self.train_map_names = map_keys[:int(np.ceil(len(map_keys) / 2))]
             self.test_map_names = map_keys[min(len(map_keys) - 1, len(self.train_map_names)):]
+         
+
 
     def pose_from_random_waypoint(self):
         init_pose_ind = np.random.choice(int(self.cur_planner.waypoints.shape[0]))
@@ -931,6 +933,7 @@ class F1TenthWayPoint(Task):
                 #print(f'Before projection {self.cur_action=}')
                 self.cur_action = self.cts_to_discr(control)
                 #print(f'After projection {self.cur_action=}')
+                #self.cur_control = np.asarray(control).reshape(1, self.nu)
             else:
                 assert control >= 0 and control < self.n_actions, f"{control=} is out of bounds for [0, {self.n_actions - 1}]"
                 self.cur_action = int(control)
@@ -1056,22 +1059,21 @@ class F1TenthWayPoint(Task):
             else:
                 raise NotImplementedError
 
-         
+        l = l_stability #  l_vel + l_bc
+        
        
         ## Avoidance: stay close to the nearest lookahead point
-        l_avoid = 0
-        if False:
-            if self.cur_waypoint_ids is not None:
+        if True:
+            if False and self.cur_waypoint_ids is not None:
                 ## Use deviation from nearest waypoint as cost
                 nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
-                l_avoid = np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
-            if False and np.any(self.cur_collision > 0):
+                l = np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
+            elif True and np.any(self.cur_collision > 0):
                 ## Guaranteed overwhelmed cost for collision
-                l_avoid = np.abs(self.cur_totl)
-        
-        l = l_stability #  l_vel + l_bc + l_avoid
-        self.cur_totl += l
-
+                l = np.abs(self.cur_totl)
+            else:
+                self.cur_totl += l
+         
         if self.render:
             print(f"{l_vel=} | {l_stability=} | {l_bc=} | {l=}")
         
@@ -1133,7 +1135,12 @@ class F1TenthWayPoint(Task):
     
     def cts_to_discr(self, control: Control) -> int:
         flattened_control = np.asarray(control).flatten()
-        coordinates = [np.searchsorted(discrete_actions, control_, side='right') for (discrete_actions, control_) in zip(self.discrete_actionss, flattened_control)] 
+        coordinates = []
+        for i, (discrete_actions, control_) in enumerate(zip(self.discrete_actionss, flattened_control)):
+            if self.n_discrete_actionss[i] == 1:
+                coordinates.append(discrete_actions[0])
+            else:   
+                coordinates.append(np.searchsorted(discrete_actions, control_, side='right'))
         strides = np.cumprod(self.n_discrete_actionss[::-1][:-1])[::-1]  # Compute strides dynamically
         return np.dot(coordinates[:-1], strides) + coordinates[-1]
 

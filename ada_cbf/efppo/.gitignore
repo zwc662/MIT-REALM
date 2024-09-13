@@ -61,7 +61,7 @@ runs/F1TenthWayPoint_inner
 !*_value.jpg
 !*.h5
 *.jpg
- 
+runs/**/*.txt
 !*_eval_value_*.jpg 
 
 .DS_Store
