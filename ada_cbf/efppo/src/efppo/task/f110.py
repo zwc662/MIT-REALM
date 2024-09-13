@@ -541,7 +541,7 @@ class F1TenthWayPoint(Task):
     PLOT_2D_INDXS = [STATE_X, STATE_Y]
 
 
-    def __init__(self, seed = 10, assets_location = None, n_actions = (3, 1), control_mode: Optional[str] = None):
+    def __init__(self, seed = 10, assets_location = None, n_actions = (5, 1), control_mode: Optional[str] = None):
        
         self.seed = seed
         self.dt = 0.05

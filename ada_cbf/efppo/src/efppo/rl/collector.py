@@ -258,8 +258,8 @@ def collect_single_batch(
 ):
     def _body(state: CollectorState, key):
         obs_pol = task.get_obs(state.state)
-        a_pol: tfd.Distribution = get_pol(obs_pol, state.z.squeeze())
-        control, logprob = a_pol.experimental_sample_and_log_prob(seed=key)
+        #a_pol: tfd.Distribution = get_pol(obs_pol, state.z.squeeze())
+        control, logprob = get_pol(obs_pol, state.z.squeeze())
         expert_control = task.get_expert(state.state, control)
         '''
         s = tfd.Sample(

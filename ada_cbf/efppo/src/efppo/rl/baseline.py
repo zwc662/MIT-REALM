@@ -473,7 +473,7 @@ class BaselineSAC(Baseline):
 
 
     def update_critic(self, batch: Baseline.Batch) -> tuple["BaselineSAC", dict]:
-        b_nxt_control, b_nxt_logprob =jax.vmap(lambda obs, z: self.policy.apply(obs, z).experimental_sample_and_log_prob(seed=self.key))(batch.b_nxt_obs, batch.b_nxt_z)
+        b_nxt_control, b_nxt_logprob =jax.vmap(self.sample_action)(batch.b_nxt_obs, batch.b_nxt_z)
 
         b_nxt_critics= jax.vmap(self.target_critic.apply)(batch.b_nxt_obs, batch.b_nxt_z, b_nxt_control).reshape(-1, self.cfg.net.n_critics)
          
@@ -501,14 +501,14 @@ class BaselineSAC(Baseline):
 
         if self.cfg.net.n_critics > 2:
             # Compute the kernel matrix and kernel gradients 
-            ensemble_critic_params = self.critic.params['EnsembleCotninuousCriticNet_0'] 
-            ensemble_critic_grads = critic_grads['EnsembleCotninuousCriticNet_0']
+            ensemble_critic_params = self.critic.params['EnsembleContinuousCriticNet_0'] 
+            ensemble_critic_grads = critic_grads['EnsembleContinuousCriticNet_0']
             kernel_matrix = compute_kernel_matrix(ensemble_critic_params)
             kernel_gradients = compute_kernel_gradient(ensemble_critic_params)
 
             # Compute SVGD updates
             ensemble_critic_grads = svgd_update(ensemble_critic_grads, kernel_matrix, kernel_gradients)
-            critic_grads['EnsembleCotninuousCriticNet_0'] = ensemble_critic_grads
+            critic_grads['EnsembleContinuousCriticNet_0'] = ensemble_critic_grads
 
             critic_grads, critic_info["Grad/critic"] = compute_norm_and_clip(critic_grads, self.train_cfg.clip_grad_V)
         
@@ -563,10 +563,20 @@ class BaselineSAC(Baseline):
         pol_info["temperature"] = new_temp
         return self.replace(key = key_self, policy=policy, temp = new_temp), pol_info
 
+    
+    def sample_action(self, obs_pol, z):
+        return rsample(self.key, self.policy.apply(obs_pol, z), self.control_lb, self.control_ub) 
 
     def get_target_critic(self, obs, z, control):
         h_target_critic = self.target_critic.apply(obs, z, control)
         return h_target_critic.max()
+
+
+    def collect_iteratively(self, collector: Collector, rollout_T: Optional[int] = None) -> tuple[Collector, Baseline.Batch]:
+        z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
+        collector, data = collector.collect_batch_iteratively(self.sample_action, self.disc_gamma, z_min, z_max, rollout_T)
+        return collector, data
+    
 
     def eval_single_z(self, task: Task, z: float, rollout_T: int):
         # --------------------------------------------
@@ -590,7 +600,7 @@ class BaselineSAC(Baseline):
         collect_fn = ft.partial(
             collect_single_mode,
             task,
-            get_pol=lambda obs_pol, z: rsample(self.key, self.policy.apply(obs_pol, z), self.control_lb, self.control_ub)[0],
+            get_pol=lambda obs_pol, z: self.sample_action(obs_pol, z)[0],
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
@@ -723,7 +733,7 @@ class BaselineSACDisc(Baseline):
     def create(cls, key: jr.PRNGKey, task: Task, cfg: BaselineCfg):
         key, key_critic = jr.split(key, 2)
 
-        baseline = super(BaselineSAC, cls).create(key, task, cfg)
+        baseline = super(BaselineSACDisc, cls).create(key, task, cfg)
         base_kwargs = {k: getattr(baseline, k) for k in baseline.__dataclass_fields__}
 
 
@@ -748,7 +758,7 @@ class BaselineSACDisc(Baseline):
         target_critic_tx = get_default_tx(as_schedule(cfg.net.val_lr).make())
         target_critic = TrainState.create_from_def(key_critic,  target_critic_def, (obs, z), target_critic_tx)
 
-        return BaselineSAC(critic = critic, target_critic = target_critic, **base_kwargs)
+        return BaselineSACDisc(critic = critic, target_critic = target_critic, **base_kwargs)
 
     
 

@@ -1,13 +1,13 @@
 from efppo.rl.collector import CollectorCfg
 from efppo.rl.efppo_inner import EFPPOCfg
-from efppo.rl.baseline import BaselineCfg, BaselineSAC, BaselineDQN
+from efppo.rl.baseline import BaselineCfg, BaselineSAC, BaselineSACDisc, BaselineDQN
 from efppo.utils.schedules import LinDecay
 
 from enum import Enum
 
 
 
-def get(alg: str = 'efppo'):
+def get(name: str = 'efppo'):
     zmin, zmax = -1.0, 2.5
     nz_enc = 8
     z_mean = 0.5
@@ -37,18 +37,30 @@ def get(alg: str = 'efppo'):
     eval_cfg = EFPPOCfg.EvalCfg()
     alg_cfg = EFPPOCfg(net_cfg, train_cfg, eval_cfg)
 
-    
-    if 'baseline' in alg:
-        if 'sac' in alg:
-            alg = BaselineSAC
-        elif 'dqn' in alg:
+    alg = None
+    if 'baseline' in name:
+        if 'sac' in name:
+            if 'disc' in name:
+                alg = BaselineSACDisc
+            else:
+                alg = BaselineSAC
+        elif 'dqn' in name:
             alg = BaselineDQN
-        n_critics = 30
+        
+        n_critics = 2
+        if 'ensemble' in name:
+            n_critics = 30
+    
         bc_ratio = 0.
+        if 'sac_bc' in name:
+            bc_ratio = 1. 
+ 
+
         train_cfg = BaselineCfg.TrainCfg(zmin, zmax, n_batches, batch_size, bc_ratio, 1.0, 1.0)
         net_cfg = BaselineCfg.NetCfg(pol_lr, val_lr, entropy_cf, disc_gamma, "tanh", pol_hids, val_hids, nz_enc, z_mean, z_scale, n_critics = n_critics)
         alg_cfg = BaselineCfg(alg, net_cfg, train_cfg, eval_cfg)
-        
+    assert alg is not None
+    
     n_envs = 1
     rollout_T = 128
     mean_age = 1024

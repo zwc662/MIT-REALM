@@ -40,7 +40,7 @@ def main(
         alg_cfg, collect_cfg = efppo.run_config.f110.get(name)
         alg_cfg.train.n_batches = 5
         alg_cfg.train.bc_ratio = 0.
-        alg_cfg.net.n_critics = 2
+        alg_cfg.net.n_critics = 30
         
         trainer = BaselineTrainer(task)
         #trainer = EFPPOInnerTrainer(task)
