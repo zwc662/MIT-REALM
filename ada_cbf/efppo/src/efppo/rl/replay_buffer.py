@@ -75,6 +75,8 @@ class ReplayBuffer:
         cur_dangling = self._dangling
 
         if self.experiences is None:
+
+            ### Note that rollout shape = (n_env, T, dim)
             self.experiences = Experience(
                 Tp1_state = jnp.zeros((0, rollout.Tp1_state.shape[-1]), dtype=rollout.Tp1_state.dtype), 
                 Tp1_nxt_state = jnp.zeros((0, rollout.Tp1_state.shape[-1]), dtype=rollout.Tp1_state.dtype), 
@@ -82,12 +84,12 @@ class ReplayBuffer:
                 Tp1_nxt_obs = jnp.zeros((0, rollout.Tp1_obs.shape[-1]), dtype=rollout.Tp1_obs.dtype), 
                 Tp1_z = jnp.zeros((0), dtype=rollout.Tp1_z.dtype), 
                 Tp1_nxt_z = jnp.zeros((0), dtype=rollout.Tp1_z.dtype), 
-                T_control = jnp.zeros((0), dtype=rollout.T_control.dtype),
+                T_control = jnp.zeros((0, *rollout.T_control.shape[2:]), dtype=rollout.T_control.dtype), 
                 T_logprob = jnp.zeros((0), dtype=rollout.T_logprob.dtype), 
-                T_l = jnp.zeros((0), dtype=rollout.T_l.dtype), 
-                Th_h = jnp.zeros((0, rollout.Th_h.shape[-1]), dtype=rollout.Th_h.dtype), 
+                T_l = jnp.zeros((0, *rollout.T_l.shape[2:]), dtype=rollout.T_l.dtype), 
+                Th_h = jnp.zeros((0, *rollout.Th_h.shape[2:]), dtype=rollout.Th_h.dtype), 
                 T_done = jnp.zeros((0), dtype=rollout.T_done.dtype),
-                T_expert_control = jnp.zeros((0), dtype=rollout.T_control.dtype)
+                T_expert_control = jnp.zeros((0, *rollout.T_control.shape[2:]), dtype=rollout.T_control.dtype)
                 )
             cur_offsets = jnp.zeros((0)) 
             cur_dangling = False

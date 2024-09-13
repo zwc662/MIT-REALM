@@ -380,7 +380,7 @@ class BaselineSAC(Baseline):
         
         # Define policy network.
         pol_base_cls = ft.partial(MLP, cfg.net.pol_hids, act, act_final=cfg.net.act_final, scale_final=1e-2)
-        pol_cls = ft.partial(ContinuousPolicyNet, pol_base_cls, task.n_actions)
+        pol_cls = ft.partial(ContinuousPolicyNet, pol_base_cls, 2)
         pol_def = EFWrapper(pol_cls, z_base_cls)
         pol_tx = get_default_tx(as_schedule(cfg.net.pol_lr).make())
         pol = TrainState.create_from_def(key_pol, pol_def, (obs, z), pol_tx)
@@ -475,7 +475,7 @@ class BaselineSAC(Baseline):
     def update_critic(self, batch: Baseline.Batch) -> tuple["BaselineSAC", dict]:
         b_nxt_control, b_nxt_logprob =jax.vmap(lambda obs, z: self.policy.apply(obs, z).experimental_sample_and_log_prob(seed=self.key))(batch.b_nxt_obs, batch.b_nxt_z)
 
-        b_nxt_critics= jax.vmap(self.target_critic.apply)(batch.b_nxt_obs, batch.b_nxt_z, b_nxt_control)
+        b_nxt_critics= jax.vmap(self.target_critic.apply)(batch.b_nxt_obs, batch.b_nxt_z, b_nxt_control).reshape(-1, self.cfg.net.n_critics)
          
         b_nxt_critic = jnp.min(b_nxt_critics, axis = -1)
  
@@ -483,7 +483,7 @@ class BaselineSAC(Baseline):
         b_target_critic -= self.disc_gamma * b_nxt_logprob 
         
         def get_critic_loss(params):
-            b_critics = jax.vmap(ft.partial(self.critic.apply_with, params=params))(batch.b_obs, batch.b_z, batch.b_control)
+            b_critics = jax.vmap(ft.partial(self.critic.apply_with, params=params))(batch.b_obs, batch.b_z, batch.b_control).reshape(-1, self.cfg.net.n_critics)
              
             assert b_target_critic.shape[0] == b_critics.shape[0] 
  
@@ -520,18 +520,19 @@ class BaselineSAC(Baseline):
      
 
     def update_policy(self, batch: Baseline.Batch) -> tuple["BaselineSAC", dict]:
+        key_self, key_pol = jr.split(self.key, 2)
         def get_pol_loss(pol_params):
             pol_apply = ft.partial(self.policy.apply_with, params=pol_params)
 
             def get_logprob_entropy(obs, z, expert_control):
                 dist = pol_apply(obs, z)
                 entropy = dist.entropy()
-                sampled_control, logprob = rsample(self.key_pol, dist, self.control_lb, self.control_ub)
+                sampled_control, logprob = rsample(key_pol, dist, self.control_lb, self.control_ub)
                 _, expert_logprob = anti_rsample(dist, expert_control, self.control_lb, self.control_ub)
                 return entropy, sampled_control, logprob, expert_logprob
             
             b_entropy, b_sampled_controls, b_logprobs, b_expert_logprob = jax.vmap(get_logprob_entropy)(batch.b_obs, batch.b_z, batch.b_expert_control)
-            b_critics = jax.vmap(self.critic.apply)(batch.b_obs, batch.b_z, b_sampled_controls)
+            b_critics = jax.vmap(self.critic.apply)(batch.b_obs, batch.b_z, b_sampled_controls).reshape(-1, self.cfg.net.n_critics)
             
             b_critic = jnp.min(b_critics, axis = -1)
 
@@ -560,7 +561,7 @@ class BaselineSAC(Baseline):
 
         new_temp = self.temp - ent_cf * (pol_info['loss_entropy'] - self.target_ent)
         pol_info["temperature"] = new_temp
-        return self.replace(policy=policy, temp = new_temp), pol_info
+        return self.replace(key = key_self, policy=policy, temp = new_temp), pol_info
 
 
     def get_target_critic(self, obs, z, control):
@@ -589,7 +590,7 @@ class BaselineSAC(Baseline):
         collect_fn = ft.partial(
             collect_single_mode,
             task,
-            get_pol=self.policy.apply,
+            get_pol=lambda obs_pol, z: rsample(self.key, self.policy.apply(obs_pol, z), self.control_lb, self.control_ub)[0],
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
@@ -812,7 +813,8 @@ class BaselineSACDisc(Baseline):
 
 
     def update_critic(self, batch: Baseline.Batch) -> tuple["BaselineSAC", dict]:
-        b_nxt_control, b_nxt_logprob =jax.vmap(lambda obs, z: self.policy.apply(obs, z).experimental_sample_and_log_prob(seed=self.key))(batch.b_nxt_obs, batch.b_nxt_z)
+        key_self, key_pol = jr.split(self.key, 2)
+        b_nxt_control, b_nxt_logprob =jax.vmap(lambda obs, z: self.policy.apply(obs, z).experimental_sample_and_log_prob(seed=key_pol))(batch.b_nxt_obs, batch.b_nxt_z)
 
         b_nxt_critic_all= jax.vmap(self.target_critic.apply)(batch.b_nxt_obs, batch.b_nxt_z)
         b_nxt_critics = jax.vmap(lambda nxt_critic, nxt_control: nxt_critic[:, nxt_control], in_axes = 0)(b_nxt_critic_all, b_nxt_control).reshape(-1, self.cfg.net.n_critics)
@@ -857,7 +859,7 @@ class BaselineSACDisc(Baseline):
         
         new_target_critic_params = jax.tree_map(lambda p, tp: p * 5e-3 + tp * (1 - 5e-3), self.critic.params, self.target_critic.params)
         target_critic = self.target_critic.replace(params=new_target_critic_params)
-        return self.replace(critic=critic, target_critic=target_critic), critic_info
+        return self.replace(key = key_self, critic=critic, target_critic=target_critic), critic_info
      
 
     def update_policy(self, batch: Baseline.Batch) -> tuple["BaselineSAC", dict]:

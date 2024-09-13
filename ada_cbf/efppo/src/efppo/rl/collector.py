@@ -64,8 +64,7 @@ def collect_single_mode(
 ):
     def _body(state: CollectorState, _):
         obs_pol = task.get_obs(state.state)
-        a_pol: tfd.Distribution = get_pol(obs_pol, state.z)
-        control = a_pol.mode() 
+        control = get_pol(obs_pol, state.z)
         expert_control = task.get_expert(state.state, control)
         envstate_new = task.step(state.state, control)
 
@@ -91,7 +90,7 @@ def collect_single_mode(
     Tp1_z = concat_at_front(z0, T_z)
     T_done = Tp1_z * 0.
     T_l = jax.vmap(task.l)(T_state_to, T_u)
-    Th_h = jax.vmap(task.h_components)(T_state_to)
+    Th_h = jax.vmap(task.h_components)(T_state_to) 
 
     return RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, None, T_l, Th_h, T_done, T_expert_u)
 

@@ -521,7 +521,7 @@ class Planner:
         speed = work.vgain * speed
 
  
-        return lookahead_points, waypoint_ids, np.asarray([[steer, speed]])
+        return lookahead_points, waypoint_ids, np.asarray([steer, speed])
 
 
 
