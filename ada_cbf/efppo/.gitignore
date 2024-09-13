@@ -46,8 +46,7 @@ __pypackages__/
 *.pkl
 **/checkpoint
  
-
-!ada_cbf/efppo/runs
+ 
 # SB3 logs
 logs
 
@@ -55,9 +54,14 @@ logs
 wandb
 *.mp4
 
+#runs/*
 runs/**/default/
-runs/**/_CHECKPOINT_METADATA 
-runs/**/plots/*.jpg
-!runs/**/plots/*_value.jpg
+runs/**/_CHECKPOINT_METADATA  
+runs/F1TenthWayPoint_inner
+!*_value.jpg
+!*.h5
+*.jpg
+ 
+!*_eval_value_*.jpg 
 
 .DS_Store
