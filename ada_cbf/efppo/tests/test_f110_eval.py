@@ -43,8 +43,8 @@ def test_eval():
         )
     )
     from eval_f110_wp import main as eval_main
-    ckpt_path = "/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/efppo/runs/F1TenthWayPoint_Baseline/0090-172c5_2024_09_12_baseline_sac_bc_ensemble_30_svgd/ckpts/00003900/default"
-    eval_main(None, ckpt_path = ckpt_path, render = False, pursuit=False) #pathlib.Path(os.path.dirname(__file__)))
+    ckpt_path = None #"/Users/weichaozhou/Workspace/MIT-REALM/ada_cbf/efppo/runs/F1TenthWayPoint_Baseline/0090-172c5_2024_09_12_baseline_sac_bc_ensemble_30_svgd/ckpts/00003900/default"
+    eval_main(None, ckpt_path = ckpt_path, render = False, control_mode = 'pursuit') #pathlib.Path(os.path.dirname(__file__)))
 
 if __name__ == "__main__":
     pytest.main()

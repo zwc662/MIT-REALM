@@ -521,7 +521,7 @@ class Planner:
         speed = work.vgain * speed
 
  
-        return lookahead_points, waypoint_ids, np.asarray([steer, speed])
+        return lookahead_points, waypoint_ids, np.asarray([[steer, speed]])
 
 
 
@@ -541,7 +541,7 @@ class F1TenthWayPoint(Task):
     PLOT_2D_INDXS = [STATE_X, STATE_Y]
 
 
-    def __init__(self, seed = 10, assets_location = None, n_actions = (5, 1), control_mode: Optional[str] = None):
+    def __init__(self, seed = 10, assets_location = None, n_actions = (10, 1), control_mode: Optional[str] = None):
        
         self.seed = seed
         self.dt = 0.05
@@ -575,8 +575,8 @@ class F1TenthWayPoint(Task):
         self.cur_waypoint_ids = None
         self.pre_waypoints_ids = None
  
-        self._lb = np.array([-np.pi/4., 5])
-        self._ub = np.array([np.pi/4., 5])
+        self._lb = np.array([-np.pi/6., 5])
+        self._ub = np.array([np.pi/6., 5])
         
         self.render = False
 
@@ -937,11 +937,12 @@ class F1TenthWayPoint(Task):
             else:
                 assert control >= 0 and control < self.n_actions, f"{control=} is out of bounds for [0, {self.n_actions - 1}]"
                 self.cur_action = int(control)
-            self.cur_control = self.discr_to_cts(self.cur_action)
+            #self.cur_control = self.discr_to_cts(self.cur_action)
         elif self.control_mode == 'random':
             ## If using random control
             self.cur_action = np.random.randint(self.n_actions)
-            self.cur_control = self.discr_to_cts(self.cur_action)
+        
+        self.cur_control = self.discr_to_cts(self.cur_action)
         
         if self.render:
             print(f'{control=}')
@@ -949,7 +950,7 @@ class F1TenthWayPoint(Task):
             print(f'{self.cur_action=}, {self.cur_control=}')
             input('Enter to proceed')
 
-        nxt_state_dict, step_reward, done, info = self.cur_env.step(self.cur_control)
+        nxt_state_dict, step_reward, done, info = self.cur_env.step(np.asarray(self.cur_control).reshape(1, -1))
         #print(self.cur_step, nxt_state_dict, action)
              
         if self.render:
@@ -1010,9 +1011,9 @@ class F1TenthWayPoint(Task):
     
     def get_expert(self, state: State, ref_control: Union[Control, Action]) -> Union[Control, Action]:
         if np.asarray([ref_control]).flatten().shape[0] > 1:
-            return self.get_expert_control()
+            return self.get_expert_control().reshape(ref_control.shape)
         else:
-            return self.get_expert_action()
+            return self.get_expert_action().item()
 
     def get_expert_control(self) -> Control:
         return self.cur_pursuit_control
@@ -1143,7 +1144,8 @@ class F1TenthWayPoint(Task):
             else:   
                 coordinates.append(np.searchsorted(discrete_actions, control_, side='right'))
         strides = np.cumprod(self.n_discrete_actionss[::-1][:-1])[::-1]  # Compute strides dynamically
-        return np.dot(coordinates[:-1], strides) + coordinates[-1]
+        idx = np.dot(coordinates[:-1], strides) + coordinates[-1]
+        return idx
 
     @property
     def n_actions(self) -> int:
