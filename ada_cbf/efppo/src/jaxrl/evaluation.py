@@ -21,7 +21,7 @@ def evaluate(agent, env: gym.Env, num_episodes: int) -> Dict[str, float]:
             state = env.step(state, action)
             observation = env.get_obs(state)
             cost = env.l(state, action)
-            expert_control = env.get_expert_control(state, action)
+            expert_control = env.get_expert(state, action)
             err = np.square(np.asarray(action).flatten() - np.asarray(expert_control).flatten()).sum()
             done = env.should_reset()
             tot_err += err

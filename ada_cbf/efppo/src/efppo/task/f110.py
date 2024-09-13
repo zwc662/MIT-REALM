@@ -1138,7 +1138,7 @@ class F1TenthWayPoint(Task):
         coordinates = []
         for i, (discrete_actions, control_) in enumerate(zip(self.discrete_actionss, flattened_control)):
             if self.n_discrete_actionss[i] == 1:
-                coordinates.append(discrete_actions[0])
+                coordinates.append(0)
             else:   
                 coordinates.append(np.searchsorted(discrete_actions, control_, side='right'))
         strides = np.cumprod(self.n_discrete_actionss[::-1][:-1])[::-1]  # Compute strides dynamically
