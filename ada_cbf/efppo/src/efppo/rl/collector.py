@@ -150,7 +150,8 @@ def collect_single_env_mode(
     z_min: float,
     z_max: float,
     rollout_T: int,
-    verbose: bool = False
+    verbose: bool = False,
+    soft_reset: bool = False
 ):
     def _body(state: CollectorState, _):
         obs_pol = task.get_obs(state.state)
@@ -204,7 +205,7 @@ def collect_single_env_mode(
             # Add done to the data collection used as mask
             collect_state = collect_state._replace(
                 steps = collect_state.steps,
-                state = task.reset(),
+                state = task.reset(mode='soft' if soft_reset else None),
                 z=collect_state.z
                 )
             T_envstate.append(collect_state.state)
