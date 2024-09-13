@@ -56,21 +56,22 @@ def main(
     set_logger_format()
 
     task = F1TenthWayPoint(control_mode = control_mode)
+      
+    # Plot.
+    rng = np.random.default_rng(seed=124122)
+    plotter = Plotter(task)
     
     plot_dir = mkdir(pathlib.Path(os.path.join(os.path.dirname(__file__), 'plots')))
 
-
-    steer_fn = lambda obs_pol: np.arctan(obs_pol[-1] / obs_pol[-2]) - obs_pol[task.OBS_YAW]
-    rootfind_pol = lambda obs_pol, z: tfd.Normal(
-        loc=(steer_fn (obs_pol), 3), 
-        scale=(np.pi * 0.5 * 0.7, 1)
-        ).mode() #[jnp.array([-2, -1])])
+ 
+    
     
     rollout_T = 1000
     disc_gamma=0.99
     z_min=0
     z_max=3
     
+    rootfind_pol = lambda obs_pol, z: 0
     if alg is not None:
         if isinstance(alg, EFPPOInner):
             rootfind = Rootfinder(alg.Vh.apply, alg.z_min, alg.z_max, h_tgt=-0.70)
@@ -122,7 +123,8 @@ def main(
     bb_X, bb_Y, bb_x0 = jax2np(task.grid_contour(n_xs=10, n_ys=10))
     b1, b2 = bb_X.shape
     bb_z0 = np.full((b1, b2), z_max)
-
+  
+    
     collect_fn = ft.partial(
         collect_single_env_mode,
         task,
@@ -148,49 +150,9 @@ def main(
         
         print("Done collecting rollouts.")
         bb_rollout = jtu.tree_map(lambda *x: jnp.stack(x), *bb_rollouts)
-        ###############################3
-        # Plot.
-        rng = np.random.default_rng(seed=124122)
-        plotter = Plotter(task)
-
-        bbTp1_state = bb_rollout.Tp1_state
-        bTp1_state = merge01(bbTp1_state)
         
-        bbT_l = bb_rollout.T_l
-        bT_l = merge01(bbT_l)
-
-        bbTh_h = bb_rollout.Th_h
-        bTh_h = merge01(bbTh_h)
-
-
-        figsize = np.array([2.8, 2.2])
-
-        ## 1. Draw first, last waypoints, and trajectories
-        for label in ['fst_wps', 'lst_wps', 'trajs']:
-            if label == 'fst_wps':
-                plotter.task.PLOT_2D_INDXS = [
-                    plotter.task.STATE_FST_LAD, 
-                    plotter.task.STATE_FST_LAD + 1
-                    ]
-            elif label == 'lst_wps':
-                plotter.task.PLOT_2D_INDXS = [
-                    plotter.task.STATE_FST_LAD + (plotter.task.conf.work.nlad - 1) * 2, 
-                    plotter.task.STATE_FST_LAD + 1 + (plotter.task.conf.work.nlad - 1) * 2
-                    ] 
-            elif label == 'trajs':
-                plotter.task.PLOT_2D_INDXS = [
-                    plotter.task.STATE_X, 
-                    plotter.task.STATE_Y
-                    ]
-            fig, ax = plt.subplots(figsize=figsize, dpi=500)
-            fig = plotter.plot_traj(bTp1_state, multicolor=True, ax=ax)
-            fig_path = plot_dir / f"{task.cur_map_name}_eval_{label}.jpg"
-            fig.savefig(fig_path, bbox_inches="tight")
-            print(f"Saved figure at {fig_path}")
-            plt.close(fig)
-
-        ## 2. Draw values along the trajectories
-        Tp1_state = merge01(bTp1_state[:, :-1])
+        ## 1. Draw values along the trajectories
+        Tp1_state = merge01(merge01(bb_rollout.Tp1_state)[:, :-1])
         Tp1_obs = merge01(merge01(bb_rollout.Tp1_obs)[:, :-1])
         Tp1_z = merge01(merge01(bb_rollout.Tp1_z)[:, :-1])
 
@@ -202,9 +164,9 @@ def main(
         states_path, critics_path = plot_dir / f"{value_file_name}_states.h5", plot_dir / f"{value_file_name}_critics.h5"
         
         with h5py.File(states_path, 'a' if os.path.exists(states_path) else 'w' ) as fp:
-            fp.create_dataset(f'{stamped_name}', data = Tp1_state)
+            fp.create_dataset(f'{value_file_name}_{stamped_name}_state_{i}', data = Tp1_state)
         with h5py.File(critics_path, 'a' if os.path.exists(critics_path) else 'w') as fp:
-            fp.create_dataset(f'{stamped_name}', data = T_target_critics)
+            fp.create_dataset(f'{value_file_name}_{stamped_name}_critics_{i}', data = T_target_critics)
 
 
         plotter.task.PLOT_2D_INDXS = [
@@ -225,40 +187,80 @@ def main(
             print(f"Saved figure at {fig_path}")
             plt.close(fig)
 
-        ## 3. Draw h and l values along safe and unsafe trajectories
-        b_h = merge01(np.max(bb_rollout.Th_h, axis=(2, 3)))
+    ## 2. Draw first, last waypoints, and trajectories
+    bb_rollout = jtu.tree_map(lambda *x: jnp.stack(x), *bb_rollouts)
+    ###############################3
+        
+    bbTp1_state = bb_rollout.Tp1_state
+    bTp1_state = merge01(bbTp1_state)
+    
+    bbT_l = bb_rollout.T_l
+    bT_l = merge01(bbT_l)
 
-        b_issafe = (b_h <= -1e-3).astype(float).reshape(-1).astype('float64')
-        if b_issafe.sum() >= 1.:
-            p = b_issafe / b_issafe.sum() 
-            safe_idxs = rng.choice(bTp1_state.shape[0], size=min(b_issafe.sum().astype(int).item(), 5), replace=False, p = p)
-            #b_issafe = bTh_h[safe_idxs] 
-            # -----------------------------------------------
-            # Plot safe trajectory in time.
-            bTp1_state_safe = bTp1_state[safe_idxs]
-            bT_l_safe = bT_l[safe_idxs]
-            bTh_h_safe = bTh_h[safe_idxs] 
-            fig = plotter.plot_traj3(bTp1_state_safe, bTh_h_safe, bT_l_safe)  
-            fig_path = plot_dir / f"{task.cur_map_name}_eval_safe_traj_time{('_' + kwargs['idx']) if 'idx' in kwargs else ''}.jpg"
-            fig.savefig(fig_path, bbox_inches="tight")
-            plt.close(fig)
+    bbTh_h = bb_rollout.Th_h
+    bTh_h = merge01(bbTh_h)
 
 
-        b_isunsafe = (b_h > 1e-3).astype(float).reshape(-1).astype('float64')
-        if b_isunsafe.sum() >= 1.:
-            p = b_isunsafe / b_isunsafe.sum() 
-            print(p)
-            unsafe_idxs = rng.choice(bTp1_state.shape[0], size=min(b_isunsafe.sum().astype(int).item(), 5), replace=False, p = p)
-            #b_isunsafe = bTh_h[unsafe_idxs] 
-            # -----------------------------------------------
-            # Plot unsafe trajectory in time.
-            bTp1_state_unsafe = bTp1_state[unsafe_idxs]
-            bT_l_unsafe = bT_l[unsafe_idxs]
-            bTh_h_unsafe = bTh_h[unsafe_idxs] 
-            fig= plotter.plot_traj3(bTp1_state_unsafe, bTh_h_unsafe, bT_l_unsafe)
-            fig_path = plot_dir / f"{task.cur_map_name}_eval_unsafe_traj_time{('_' + kwargs['idx']) if 'idx' in kwargs else ''}.jpg"
-            fig.savefig(fig_path, bbox_inches="tight")
-            plt.close(fig)
+    figsize = np.array([2.8, 2.2])
+
+    
+    for label in ['fst_wps', 'lst_wps', 'trajs']:
+        if label == 'fst_wps':
+            plotter.task.PLOT_2D_INDXS = [
+                plotter.task.STATE_FST_LAD, 
+                plotter.task.STATE_FST_LAD + 1
+                ]
+        elif label == 'lst_wps':
+            plotter.task.PLOT_2D_INDXS = [
+                plotter.task.STATE_FST_LAD + (plotter.task.conf.work.nlad - 1) * 2, 
+                plotter.task.STATE_FST_LAD + 1 + (plotter.task.conf.work.nlad - 1) * 2
+                ] 
+        elif label == 'trajs':
+            plotter.task.PLOT_2D_INDXS = [
+                plotter.task.STATE_X, 
+                plotter.task.STATE_Y
+                ]
+        fig, ax = plt.subplots(figsize=figsize, dpi=500)
+        fig = plotter.plot_traj(bTp1_state, multicolor=True, ax=ax)
+        fig_path = plot_dir / f"{task.cur_map_name}_eval_{label}.jpg"
+        fig.savefig(fig_path, bbox_inches="tight")
+        print(f"Saved figure at {fig_path}")
+        plt.close(fig)
+
+    ## 3. Draw h and l values along safe and unsafe trajectories
+    b_h = merge01(np.max(bb_rollout.Th_h, axis=(2, 3)))
+
+    b_issafe = (b_h <= -1e-3).astype(float).reshape(-1).astype('float64')
+    if b_issafe.sum() >= 1.:
+        p = b_issafe / b_issafe.sum() 
+        safe_idxs = rng.choice(bTp1_state.shape[0], size=min(b_issafe.sum().astype(int).item(), 5), replace=False, p = p)
+        #b_issafe = bTh_h[safe_idxs] 
+        # -----------------------------------------------
+        # Plot safe trajectory in time.
+        bTp1_state_safe = bTp1_state[safe_idxs]
+        bT_l_safe = bT_l[safe_idxs]
+        bTh_h_safe = bTh_h[safe_idxs] 
+        fig = plotter.plot_traj3(bTp1_state_safe, bTh_h_safe, bT_l_safe)  
+        fig_path = plot_dir / f"{task.cur_map_name}_eval_safe_traj_time{('_' + kwargs['idx']) if 'idx' in kwargs else ''}.jpg"
+        fig.savefig(fig_path, bbox_inches="tight")
+        plt.close(fig)
+
+
+    b_isunsafe = (b_h > 1e-3).astype(float).reshape(-1).astype('float64')
+    if b_isunsafe.sum() >= 1.:
+        p = b_isunsafe / b_isunsafe.sum() 
+        print(p)
+        unsafe_idxs = rng.choice(bTp1_state.shape[0], size=min(b_isunsafe.sum().astype(int).item(), 5), replace=False, p = p)
+        #b_isunsafe = bTh_h[unsafe_idxs] 
+        # -----------------------------------------------
+        # Plot unsafe trajectory in time.
+        bTp1_state_unsafe = bTp1_state[unsafe_idxs]
+        bT_l_unsafe = bT_l[unsafe_idxs]
+        bTh_h_unsafe = bTh_h[unsafe_idxs] 
+        fig= plotter.plot_traj3(bTp1_state_unsafe, bTh_h_unsafe, bT_l_unsafe)
+        fig_path = plot_dir / f"{task.cur_map_name}_eval_unsafe_traj_time{('_' + kwargs['idx']) if 'idx' in kwargs else ''}.jpg"
+        fig.savefig(fig_path, bbox_inches="tight")
+        plt.close(fig)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
