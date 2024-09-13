@@ -944,6 +944,7 @@ class F1TenthWayPoint(Task):
             self.cur_control = self.discr_to_cts(self.cur_action)
         
         if self.render:
+            print(f'{control=}')
             print(f'{self.cur_pursuit_action=}, {self.cur_pursuit_control=}')
             print(f'{self.cur_action=}, {self.cur_control=}')
             input('Enter to proceed')
