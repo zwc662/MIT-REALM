@@ -66,11 +66,12 @@ def collect_single_mode(
         obs_pol = task.get_obs(state.state)
         a_pol: tfd.Distribution = get_pol(obs_pol, state.z)
         control = a_pol.mode() 
+        expert_control = task.get_expert(state.state, control)
         envstate_new = task.step(state.state, control)
 
         # Z dynamics.
         l = task.l(envstate_new, control)
-        expert_control = task.get_expert(envstate_new, control)
+        
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
         if hasattr(task, 'l1_control_info'):
@@ -108,11 +109,11 @@ def collect_single(
         obs_pol = task.get_obs(state.state)
         a_pol: tfd.Distribution = get_pol(obs_pol, state.z)
         control, logprob = a_pol.experimental_sample_and_log_prob(seed=key)
+        expert_control = task.get_expert(state.state, control)
         envstate_new = task.step(state.state, control)
         
         # Z dynamics.
-        l = task.l(envstate_new, control)
-        expert_control = task.get_expert(envstate_new, control)
+        l = task.l(envstate_new, control) 
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
 
@@ -259,7 +260,7 @@ def collect_single_batch(
         obs_pol = task.get_obs(state.state)
         a_pol: tfd.Distribution = get_pol(obs_pol, state.z.squeeze())
         control, logprob = a_pol.experimental_sample_and_log_prob(seed=key)
-        expert_control = task.get_expert(envstate_new, control)
+        expert_control = task.get_expert(state.state, control)
         '''
         s = tfd.Sample(
             tfd.MultivariateNormalDiag(loc=[0., 0.], scale_diag=[1, 1.]), sample_shape=1

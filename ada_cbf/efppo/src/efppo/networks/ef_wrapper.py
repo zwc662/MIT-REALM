@@ -5,7 +5,7 @@ import jax.numpy as jnp
 from jaxtyping import Float
 
 from efppo.networks.network_utils import default_nn_init
-from efppo.task.dyn_types import Obs
+from efppo.task.dyn_types import Obs, Control
 from efppo.utils.jax_types import AnyFloat, BFloat, FloatScalar
 from efppo.utils.shape_utils import assert_shape
 from efppo.utils.jax_types import Arr
@@ -38,14 +38,13 @@ class EFWrapper(nn.Module, Generic[_WrappedModule]):
     z_encoder_cls: Type[nn.Module]
 
     @nn.compact
-    def __call__(self, obs: Obs, z: FloatScalar) -> AnyFloat:
+    def __call__(self, obs: Obs, z: FloatScalar, *args, **kwargs) -> AnyFloat:
         assert obs.ndim == (z.ndim + 1)
         z = z[..., None]
         enc_z = self.z_encoder_cls()(z)
-        feat = jnp.concatenate([obs, enc_z], axis=-1)
+        feat = jnp.concatenate([obs, enc_z, *args, *list(kwargs.values())], axis=-1)
         return self.base_cls()(feat)
-
-
+ 
 class BoltzmanPolicyWrapper(nn.Module, Generic[_WrappedModule]):
     net: _WrappedModule
    

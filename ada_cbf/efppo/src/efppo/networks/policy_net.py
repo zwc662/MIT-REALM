@@ -13,9 +13,8 @@ from efppo.utils.jax_types import Arr
 
 class ContinuousPolicyNet(nn.Module):
     base_cls: Type[nn.Module]
-    action_lbs: Tuple[Float]
-    action_ubs: Tuple[Float]
-
+    n_actions: int
+    
     @nn.compact
     def __call__(self, obs: Obs, *args, **kwargs) -> tfd.Distribution:
         x = self.base_cls()(obs, *args, **kwargs)

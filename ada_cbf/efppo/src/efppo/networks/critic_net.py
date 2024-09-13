@@ -42,12 +42,10 @@ class ContinuousCriticNet(nn.Module):
     net_cls: Type[nn.Module] 
 
     @nn.compact
-    def __call__(self, state: Float[Arr, "* nx"], action: Float[Arr, "* nu"], *args, **kwargs) -> Float[Arr, "*"]:
+    def __call__(self, state: Float[Arr, "* nx"], *args, **kwargs) -> Float[Arr, "*"]:
         batch_shape = state.shape[:-1]
-        assert batch_shape == action.shape[:-1]
         # Concatenate state and action into a single input
-        x = jnp.concatenate([state, action], axis=-1)
-        x = self.net_cls()(x, *args, **kwargs)
+        x = self.net_cls()(state, *args, **kwargs)
         critic = nn.Dense(1, kernel_init=default_nn_init())(x) 
         return assert_shape(critic, batch_shape + (1,))
  
@@ -56,7 +54,7 @@ class EnsembleContinuousCriticNet(nn.Module):
     n_critics: int = 2
 
     @nn.compact
-    def __call__(self, state: Float[Arr, "* nx"], action: Float[Arr, "* nu"], *args, **kwargs) -> Float[Arr, "*"]:
+    def __call__(self, state: Float[Arr, "* nx"], *args, **kwargs) -> Float[Arr, "*"]:
         ensemble_net = nn.vmap(
             ContinuousCriticNet, 
             variable_axes = {'params': 0},
@@ -64,4 +62,4 @@ class EnsembleContinuousCriticNet(nn.Module):
             in_axes = None,
             out_axes = 0,
             axis_size = self.n_critics)
-        return ensemble_net(self.net_cls)(state, action, *args, **kwargs)
+        return ensemble_net(self.net_cls)(state, *args, **kwargs)

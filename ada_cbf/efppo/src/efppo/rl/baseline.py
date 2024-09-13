@@ -1,5 +1,5 @@
 import functools as ft
-from typing import NamedTuple, TypeVar, Generic, Optional, Tuple, Float
+from typing import NamedTuple, TypeVar, Generic, Optional, Tuple
 from dataclasses import dataclass
 
 import jax
@@ -21,7 +21,7 @@ from efppo.networks.train_state import TrainState
 from efppo.networks.critic_net import DiscreteCriticNet, EnsembleDiscreteCriticNet, ContinuousCriticNet, EnsembleContinuousCriticNet
 from efppo.rl.collector import Collector, RolloutOutput, collect_single_mode, collect_single_env_mode
 from efppo.rl.gae_utils import compute_efocp_gae, compute_efocp_V
-from efppo.task.dyn_types import BControl, BHFloat, BObs, HFloat, LFloat, ZBBControl, ZBBFloat, ZBTState, ZFloat
+from efppo.task.dyn_types import Control, BControl, BHFloat, BObs, HFloat, LFloat, ZBBControl, ZBBFloat, ZBTState, ZFloat
 from efppo.task.task import Task
 from efppo.utils.cfg_utils import Cfg
 from efppo.utils.grad_utils import compute_norm_and_clip
@@ -349,8 +349,8 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
 class BaselineSAC(Baseline):
     critic: TrainState[LFloat]
     target_critic: TrainState[HFloat]
-    control_lb: Tuple[Float]
-    control_ub: Tuple[Float]
+    control_lb: Control
+    control_ub: Control
 
     class EvalData(NamedTuple):
         z_zs: ZFloat
@@ -370,6 +370,9 @@ class BaselineSAC(Baseline):
         key, key_pol, key_critic = jr.split(key, 3)
 
         obs, control, z = np.zeros(task.nobs), np.zeros(task.nu), np.array(0.0)
+        control_lb = jnp.asarray(task.lb).flatten()
+        control_ub = jnp.asarray(task.ub).flatten()
+
         act = get_act_from_str(cfg.net.act)
 
         # Encoder for z. Params not shared.
@@ -377,7 +380,7 @@ class BaselineSAC(Baseline):
         
         # Define policy network.
         pol_base_cls = ft.partial(MLP, cfg.net.pol_hids, act, act_final=cfg.net.act_final, scale_final=1e-2)
-        pol_cls = ft.partial(ContinuousPolicyNet, pol_base_cls)
+        pol_cls = ft.partial(ContinuousPolicyNet, pol_base_cls, task.n_actions)
         pol_def = EFWrapper(pol_cls, z_base_cls)
         pol_tx = get_default_tx(as_schedule(cfg.net.pol_lr).make())
         pol = TrainState.create_from_def(key_pol, pol_def, (obs, z), pol_tx)
@@ -396,16 +399,17 @@ class BaselineSAC(Baseline):
         critic_cls = ft.partial(EnsembleContinuousCriticNet, critic_base_cls, cfg.net.n_critics)
         critic_def = EFWrapper(critic_cls, z_base_cls)
         critic_tx = get_default_tx(as_schedule(cfg.net.val_lr).make())
-        critic = TrainState.create_from_def(key_critic, critic_def, (obs, control, z), critic_tx)
+        critic = TrainState.create_from_def(key_critic, critic_def, (obs, z, control), critic_tx)
 
         # Define target_critic network.
         target_critic_base_cls = ft.partial(MLP, cfg.net.val_hids, act)
         target_critic_cls = ft.partial(EnsembleContinuousCriticNet, target_critic_base_cls, cfg.net.n_critics)
         target_critic_def = EFWrapper(target_critic_cls, z_base_cls)
         target_critic_tx = get_default_tx(as_schedule(cfg.net.val_lr).make())
-        target_critic = TrainState.create_from_def(key_critic,  target_critic_def, (obs, control, z), target_critic_tx)
+        target_critic = TrainState.create_from_def(key_critic,  target_critic_def, (obs, z, control), target_critic_tx)
 
-        return BaselineSAC(0, key, 1, pol, disc_gamma, cfg, target_ent, ent_cf, disc_gamma_sched, critic = critic, target_critic = target_critic)
+        return BaselineSAC(0, key, 1, pol, disc_gamma, cfg, target_ent, ent_cf, disc_gamma_sched, 
+                           critic = critic, target_critic = target_critic, control_lb = control_lb, control_ub = control_ub)
     
 
     @ft.partial(jax.jit, donate_argnums=0)
