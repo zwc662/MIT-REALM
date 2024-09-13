@@ -15,7 +15,7 @@ from enum import Enum
 
 import wandb
 from efppo.rl.collector import Collector, CollectorCfg
-from efppo.utils.replay_buffer import ReplayBuffer
+from efppo.rl.replay_buffer import ReplayBuffer
 from efppo.rl.baseline import Baseline, BaselineSAC, BaselineDQN
 from efppo.task.plotter import Plotter
 from efppo.task.task import Task

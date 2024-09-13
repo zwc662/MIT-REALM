@@ -13,7 +13,7 @@ from efppo.rl.collector import CollectorCfg, Collector
 from efppo.utils.tfp import tfd
 from test_f110_collector import task, collect_cfg, collector, get_pol
 
-from efppo.utils.replay_buffer import Experience, ReplayBuffer
+from efppo.rl.replay_buffer import Experience, ReplayBuffer
 
 @pytest.fixture
 def get_pol(task):

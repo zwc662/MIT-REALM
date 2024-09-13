@@ -59,22 +59,47 @@ def get_default_tx(
 
    
         
-def rsample(logits, key, tau = 0.5):
+def rsample_categorical(logprobs, key, tau = 0.5):
     """Differentiable sampling from a categorical distribution using Gumbel-Softmax."""
-    u = jrd.uniform(key, shape=logits.shape, minval=1e-6, maxval=1.0)
+    u = jrd.uniform(key, shape=logprobs.shape, minval=1e-6, maxval=1.0)
     gumbel_noise = -jnp.log(-jnp.log(u))
-    y = logits + gumbel_noise
+    y = logprobs + gumbel_noise
     softmax_output = jax.nn.softmax(y / tau, axis=-1)
     # Create a hard sample by taking the argmax, but keep gradients from soft_sample
-    hardmax_output = jax.lax.stop_gradient(jax.nn.one_hot(jnp.argmax(softmax_output, axis=-1), num_classes=logits.shape[-1]))
+    hardmax_output = jax.lax.stop_gradient(jax.nn.one_hot(jnp.argmax(softmax_output, axis=-1), num_classes=logprobs.shape[-1]))
     
     # Return the hard sample for the forward pass, but allow gradients from soft_sample
     sample = hardmax_output + jax.lax.stop_gradient(softmax_output - hardmax_output)
 
     # Compute log-softmax to get log-probabilities of the softmax distribution
-    log_probabilities = jax.nn.log_softmax(logits, axis=-1)
+    log_probabilities = jax.nn.log_softmax(logprobs, axis=-1)
     
     # Select the log-probability corresponding to the sampled category
     log_prob = jnp.sum(log_probabilities * sample, axis=-1)
     
     return sample, log_prob
+
+def rsample(key, dist, lb, ub, squash = 'tanh'):
+    """Differentiable sampling from a categorical distribution using Gumbel-Softmax."""
+    # Sample epsilon from a standard normal distribution
+    epsilon = jrd.normal(key, shape=dist.loc.shape)
+    z = dist.loc + jnp.dot(dist.scale, epsilon)
+    log_prob = dist.log_prob(z)
+
+    squashed_z = z
+    if squash == 'tanh':
+        squashed_z = (jnp.tanh(z) + 1) * (jnp.asarray(ub).flatten() - jnp.asarray(lb).flatten()) + jnp.asarray(lb).flatten()
+    elif squash == 'sigmoid':
+        squashed_z = jax.nn.sigmoid(z) * (jnp.asarray(ub).flatten() - jnp.asarray(lb).flatten()) + jnp.asarray(lb).flatten()
+      
+     
+    return squashed_z, log_prob
+
+def anti_rsample(dist, squashed_z, lb, ub, squash = 'tanh'):
+    z = squashed_z
+    if squash == 'tanh':
+        z = jnp.atanh((squashed_z -  jnp.asarray(lb).flatten()) / (jnp.asarray(ub).flatten() - jnp.asarray(lb).flatten()) - 1)
+    elif squash == 'sigmoid':
+        z = jnp.log(squashed_z / (1 - squashed_z))
+    log_prob = dist.log_prob(z)
+    return z, log_prob

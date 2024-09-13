@@ -13,14 +13,15 @@ from efppo.utils.jax_types import Arr
 
 class ContinuousPolicyNet(nn.Module):
     base_cls: Type[nn.Module]
-    n_actions: int
+    action_lbs: Tuple[Float]
+    action_ubs: Tuple[Float]
 
     @nn.compact
     def __call__(self, obs: Obs, *args, **kwargs) -> tfd.Distribution:
         x = self.base_cls()(obs, *args, **kwargs)
         # Output the mean and log-standard deviation for the 2D Gaussian
         mean_dense = nn.Dense(self.n_actions, kernel_init=default_nn_init(), name="MeanDense")(x)
-        mean = 3.0 * nn.sigmoid(mean_dense)
+        mean = nn.tanh(mean_dense)
         
         log_std = nn.Dense(self.n_actions, kernel_init=default_nn_init(), name="LogStd")(x)
         std = jnp.exp(log_std)
@@ -30,8 +31,7 @@ class ContinuousPolicyNet(nn.Module):
         dist = tfd.MultivariateNormalDiag(loc=mean, scale_diag=std)
 
         return dist
-        #return tfd.Categorical(logits=logits)
-
+      
 class DiscretePolicyNet(nn.Module):
     base_cls: Type[nn.Module]
     n_actions: int
