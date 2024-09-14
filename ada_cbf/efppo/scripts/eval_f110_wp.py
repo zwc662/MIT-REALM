@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import efppo.run_config.f110 as f110_config
 from efppo.rl.collector import RolloutOutput, collect_single_env_mode
 from efppo.rl.efppo_inner import EFPPOInner
-from efppo.rl.baseline import Baseline, BaselineSAC, BaselineDQN
+from efppo.rl.baseline import Baseline, BaselineSAC, BaselineSACDisc, BaselineDQN
 from efppo.rl.rootfind_policy import Rootfinder, RootfindPolicy
 from efppo.task.f110 import F1TenthWayPoint
 from efppo.task.plotter import Plotter
@@ -95,7 +95,10 @@ def main(
                 alg_cfg = cfg["alg_cfg"]
                 collect_cfg = cfg['collect_cfg']
                 if 'sac' in ckpt_path:
-                    alg: Baseline = BaselineSAC.create(jr.PRNGKey(0), task, alg_cfg) 
+                    if 'disc' in ckpt_path:
+                        alg: Baseline = BaselineSACDisc.create(jr.PRNGKey(0), task, alg_cfg) 
+                    else:
+                        alg: Baseline = BaselineSAC.create(jr.PRNGKey(0), task, alg_cfg) 
                 elif 'dqn' in ckpt_path:
                     alg: Baseline = BaselineDQN.create(jr.PRNGKey(0), task, alg_cfg) 
             print(f'Load from {ckpt_path}')
