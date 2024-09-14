@@ -918,7 +918,16 @@ class BaselineSACDisc(Baseline):
         new_temp = self.temp - ent_cf * (pol_info['loss_entropy'] - self.target_ent)
         pol_info["temperature"] = new_temp
         return self.replace(policy=policy, temp = new_temp), pol_info
-
+    
+    def sample_action(self, obs_pol, z):
+        a_pol = self.policy.apply(obs_pol, z)
+        control, logprob = a_pol.experimental_sample_and_log_prob(seed=self.key)
+        return control, logprob
+    
+    def collect_iteratively(self, collector: Collector, rollout_T: Optional[int] = None) -> tuple[Collector, Baseline.Batch]:
+        z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
+        collector, data = collector.collect_batch_iteratively(self.sample_action, self.disc_gamma, z_min, z_max, rollout_T)
+        return collector, data
 
     def get_target_critic(self, obs, z):
         h_target_critic = self.target_critic.apply(obs, z)
