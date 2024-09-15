@@ -118,6 +118,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         b_l: BLFloat
         b_h: BHFloat
         b_expert_control: BControl
+        b_done: BFloat
         
         
         @property
@@ -204,7 +205,8 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
             b_logprob = batch_data.T_logprob,
             b_l = batch_data.T_l,
             b_h = batch_data.Th_h,
-            b_expert_control = batch_data.T_expert_control
+            b_expert_control = batch_data.T_expert_control,
+            b_done = batch_data.T_done,
         )
         return b_batch
 
@@ -490,10 +492,10 @@ class BaselineSAC(Baseline):
          
         b_nxt_critic = jnp.min(b_nxt_critics, axis = -1)
  
-        b_target_critic = (- batch.b_l) + self.disc_gamma * b_nxt_critic
+        b_target_critic = self.disc_gamma * b_nxt_critic
         b_target_critic -= self.disc_gamma * b_nxt_logprob 
-        b_target_critic -= jax.nn.relu(b_target_critic) * (batch.b_h.reshape(b_target_critic.shape[0], -1) > 0).any(axis = -1)
-        
+        b_target_critic -= jax.nn.relu(b_target_critic) * batch.b_done 
+        b_target_critic -= batch.b_l
         
         def get_critic_loss(params):
             b_critics = jax.vmap(ft.partial(self.critic.apply_with, params=params))(batch.b_obs, batch.b_z, batch.b_control).reshape(-1, self.cfg.net.n_critics)
@@ -844,10 +846,12 @@ class BaselineSACDisc(Baseline):
         
         b_nxt_critic = jnp.min(b_nxt_critics, axis = 1)
  
-        b_target_critic = (- batch.b_l) + self.disc_gamma * b_nxt_critic
-        b_target_critic -= self.disc_gamma * b_nxt_logprob 
-        b_target_critic -= jax.nn.relu(b_target_critic) * (batch.b_h.reshape(b_target_critic.shape[0], -1) > 0).any(axis = -1)
+ 
         
+        b_target_critic = self.disc_gamma * b_nxt_critic
+        b_target_critic -= self.disc_gamma * b_nxt_logprob 
+        b_target_critic -= jax.nn.relu(b_target_critic) * batch.b_done 
+        b_target_critic -= batch.b_l
         
         def get_critic_loss(params):
             b_critic_all = jax.vmap(ft.partial(self.critic.apply_with, params=params))(batch.b_obs, batch.b_z)
@@ -1023,7 +1027,7 @@ class BaselineSACDisc(Baseline):
                 
                 critic_all = self.critic.apply(bb_obs[i][j], bb_z[i][j])
                 critics = jax.vmap(lambda critic: critic.flatten()[pol], in_axes = 0)(critic_all).reshape(-1, self.cfg.net.n_critics)
-                critic = jnp.min(critics, axis = 1).item()
+                critic = jnp.min(critics, axis = -1).item()
                 #logger.info(f"{i=}, {j=}, {critic=}")
                 bb_critic[-1].append(critic)
 
@@ -1327,8 +1331,9 @@ class BaselineDQN(Baseline):
         b_nxt_critics = jax.vmap(lambda nxt_critic: jnp.max(nxt_critic, axis = -1), in_axes = 0)(b_nxt_critic_all).reshape(-1, self.cfg.net.n_critics)
         b_nxt_critic = jnp.min(b_nxt_critics, axis = 1)
  
-        b_target_critic = - batch.b_l + self.disc_gamma * b_nxt_critic
-        b_target_critic -= jax.nn.relu(b_target_critic) * (batch.b_h.reshape(b_target_critic.shape[0], -1) > 0).any(axis = -1)
+        b_target_critic = self.disc_gamma * b_nxt_critic 
+        b_target_critic -= jax.nn.relu(b_target_critic) * batch.b_done 
+        b_target_critic -= batch.b_l
         
 
         def get_critic_loss(params):

@@ -108,9 +108,9 @@ class Plotter:
         self.task.setup_traj2_plot(axes)
         return fig
 
-    def plot_dots(self, states: BState, colors: BLFloat, ax: plt.Axes = None):
+    def plot_dots(self, states: BState, values: BLFloat, ax: plt.Axes = None):
         xs, ys = self.task.get2d(states)
-        colors = (colors - np.min(colors)) / (1e-2 + np.max(colors) - np.min(colors))
+        colors = values #(values - np.min(values)) / (1e-2 + np.max(values) - np.min(values))
         if ax is None:
             fig, ax = plt.subplots(dpi=self.dpi)
         else:
@@ -121,9 +121,11 @@ class Plotter:
         #line_col = LineCollection(bT_line, lw=1.0, zorder=5, colors=colors)
         #ax.add_collection(line_col)
 
-        scatters = ax.scatter(xs, ys, c = colors, cmap='viridis', zorder=5, s=0.8**2)
+        scatters = ax.scatter(xs, ys, c = colors, cmap='seismic', zorder=5, s=0.8**2)
+         
         # Add a colorbar to show the heatmap scale
-        plt.colorbar(scatters, ax=ax)
+        cbar = plt.colorbar(scatters, ax=ax)
+        cbar.set_label('Normalized Value Intensity')  # Label for the colorbar
 
         ax.autoscale_view()
         return fig

@@ -184,7 +184,7 @@ def main(
         
         
         for func in [jnp.min, jnp.max, jnp.mean]:
-            fig = plotter.plot_dots(states = Tp1_state, colors = func(T_target_critics, axis = -1))
+            fig = plotter.plot_dots(states = Tp1_state, values = func(T_target_critics, axis = -1))
             fig_path = plot_dir / f"{value_file_name}_eval_value_{func.__name__}.jpg"
             fig.savefig(fig_path, bbox_inches="tight")
             print(f"Saved figure at {fig_path}")

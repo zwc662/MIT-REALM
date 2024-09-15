@@ -26,6 +26,7 @@ Batch = collections.namedtuple(
     ['observations', 'actions', 'rewards', 'masks', 'next_observations'])
 
 
+      
 
 @dataclass
 class ReplayBuffer:
@@ -45,8 +46,6 @@ class ReplayBuffer:
  
     _key: PRNGKey
     _capacity: int = 10240 
-    _offsets: IntScalar = jnp.zeros((0), dtype=jnp.int32)
-    _dangling: bool = False
     experiences: Optional[Experience] = None
     
     
@@ -58,7 +57,95 @@ class ReplayBuffer:
 
     @property
     def size(self):
-        return self._offsets.sum()
+        return self.experiences.Tp1_state.shape[0] 
+     
+    def truncate_from_left(self):
+        if self.size < self._capacity:
+            # Nothing to truncate
+            return
+        
+        done_ts = jnp.where(self.experiences.T_done > 0)[0]
+        if done_ts.shape[0] == 0:
+            self.experiences = jtu.tree_map(
+                    lambda x: lax.dynamic_slice_in_dim(x, self.size - self._capacity, x.shape[0]), 
+                    self.experiences
+                )
+        else:
+            self.experiences = jtu.tree_map(
+                lambda x: lax.dynamic_slice_in_dim(x, done_ts[0] + 1, x.shape[0]), 
+                self.experiences
+            )
+            self.truncate_from_left()
+
+        
+ 
+
+    def insert(self, rollout):        
+        if self.experiences is None:
+            ### Note that rollout shape = (n_env, T, dim)
+            self.experiences = ReplayBuffer.Experience(
+                Tp1_state = jnp.zeros((0, rollout.Tp1_state.shape[-1]), dtype=rollout.Tp1_state.dtype), 
+                Tp1_nxt_state = jnp.zeros((0, rollout.Tp1_state.shape[-1]), dtype=rollout.Tp1_state.dtype), 
+                Tp1_obs = jnp.zeros((0, rollout.Tp1_obs.shape[-1]), dtype=rollout.Tp1_obs.dtype), 
+                Tp1_nxt_obs = jnp.zeros((0, rollout.Tp1_obs.shape[-1]), dtype=rollout.Tp1_obs.dtype), 
+                Tp1_z = jnp.zeros((0), dtype=rollout.Tp1_z.dtype), 
+                Tp1_nxt_z = jnp.zeros((0), dtype=rollout.Tp1_z.dtype), 
+                T_control = jnp.zeros((0, *rollout.T_control.shape[2:]), dtype=rollout.T_control.dtype), 
+                T_logprob = jnp.zeros((0), dtype=rollout.T_logprob.dtype), 
+                T_l = jnp.zeros((0, *rollout.T_l.shape[2:]), dtype=rollout.T_l.dtype), 
+                Th_h = jnp.zeros((0, *rollout.Th_h.shape[2:]), dtype=rollout.Th_h.dtype), 
+                T_done = jnp.zeros((0), dtype=rollout.T_done.dtype),
+                T_expert_control = jnp.zeros((0, *rollout.T_control.shape[2:]), dtype=rollout.T_control.dtype)
+                )
+     
+        new_experiences = ReplayBuffer.Experience(
+            Tp1_state = merge01(rollout.Tp1_state[:,:-1]), 
+            Tp1_nxt_state = merge01(rollout.Tp1_state[:,1:]), 
+            Tp1_obs = merge01(rollout.Tp1_obs[:,:-1]), 
+            Tp1_nxt_obs = merge01(rollout.Tp1_obs[:,1:]), 
+            Tp1_z = merge01(rollout.Tp1_z[:,:-1]), 
+            Tp1_nxt_z = merge01(rollout.Tp1_z[:,1:]), 
+            T_control = merge01(rollout.T_control),
+            T_logprob = merge01(rollout.T_logprob), 
+            T_l = merge01(rollout.T_l), 
+            Th_h = merge01(rollout.Th_h), 
+            T_done = merge01(rollout.T_done),
+            T_expert_control = merge01(rollout.T_expert_control)
+            )
+        
+        self.experiences = jtu.tree_map(lambda x, y: jnp.concatenate((x, y), axis = 0), self.experiences, new_experiences)
+
+        self.truncate_from_left()
+         
+    def sample(self, num_batches: int, batch_size: int) -> Experience:
+        experiences = self.experiences
+        replace = batch_size >= self.size
+        def sample_one_batch(_):
+            return jtu.tree_map(lambda x: jrd.choice(self._key, x, (batch_size,), axis = 0, replace = replace), experiences)
+        b_experiences = jax.vmap(sample_one_batch)(jnp.arange(num_batches))
+        return b_experiences
+ 
+    def truncate_from_right(self):
+        return
+         
+        
+        
+@dataclass
+class ReplayBuffer_v1(ReplayBuffer):
+    _offsets: IntScalar = jnp.zeros((0), dtype=jnp.int32)
+    _dangling: bool = False
+     
+    
+    
+    @classmethod
+    def create(cls, key: PRNGKey, capacity: Optional[int] = None):
+        cls._key = key
+        cls._capacity = capacity
+        return cls(_key = key, _capacity = capacity)
+
+    @property
+    def size(self):
+        return len(self._offsets)
     
      
     def truncate_from_left(self):
@@ -151,7 +238,7 @@ class ReplayBuffer:
 
         self.truncate_from_left()
          
-    def sample(self, num_batches: int, batch_size: int) -> Experience:
+    def sample(self, num_batches: int, batch_size: int) -> ReplayBuffer.Experience:
         experiences = self.experiences
         replace = batch_size >= self.size
         def sample_one_batch(_):
@@ -169,4 +256,4 @@ class ReplayBuffer:
             self._dangling = False
          
         
-        
+  

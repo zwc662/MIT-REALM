@@ -71,7 +71,7 @@ class BaselineTrainer:
         Tp1_state, T_l = data.Tp1_state, data.T_l
         fig, ax = plt.subplots(figsize=figsize, dpi=500)
         figsize = 1.5 * np.array([8, 6])
-        fig = self.plotter.plot_dots(states = Tp1_state, colors = T_l)
+        fig = self.plotter.plot_dots(states = Tp1_state, values = T_l)
         fig_path = mkdir(plot_dir / "phase") / "phase_{:08}_replaybuffer.jpg".format(idx)
         fig.savefig(fig_path, bbox_inches="tight")
         plt.close(fig)
@@ -184,8 +184,6 @@ class BaselineTrainer:
 
             eval_rollout_T = collect_cfg.rollout_T
             if should_eval:
-                self.plot_train(idx, plot_dir, replay_buffer.experiences)
-                
                 if iteratively:
                     data = alg.eval_iteratively(self.task, eval_rollout_T)
                     data = jtu.tree_map(np.array, data)
@@ -202,7 +200,10 @@ class BaselineTrainer:
                 # Remove the last trajectory in case it is dangling
                 replay_buffer.truncate_from_right()
                 # Reset the collector so that it samples from training maps
-                collector: Collector = Collector.create(key1, self.task, collect_cfg)
+                collector = collector.reset()
+                self.plot_train(idx, plot_dir, replay_buffer.experiences)
+                
+                
 
             if should_ckpt:
                 ckpt_manager.save_ez(idx, {"alg": alg}) #, "alg_cfg": alg_cfg, "collect_cfg": collect_cfg})

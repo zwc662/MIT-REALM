@@ -372,7 +372,14 @@ class Collector(struct.PyTreeNode):
         b_z0 = jnp.zeros(cfg.n_envs)
         collector_state = CollectorState(b_steps, b_state, b_z0) 
         return Collector(0, key, collector_state, task, cfg)
-
+    
+    def reset(self):
+        b_state = jnp.asarray(self.task.sample_x0_train(self.key, self.cfg.n_envs))
+        b_steps = jnp.zeros(self.cfg.n_envs, dtype=jnp.int32)
+        b_z0 = jnp.zeros(self.cfg.n_envs)
+        collect_state = CollectorState(b_steps, b_state, b_z0) 
+        return self.replace(collect_idx=self.collect_idx + 1, collect_state=collect_state)
+    
     def _collect_single(
         self, key0: PRNGKey, colstate0: CollectorState, get_pol, disc_gamma: float, z_min: float, z_max: float
     ) -> tuple[CollectorState, RolloutOutput]:

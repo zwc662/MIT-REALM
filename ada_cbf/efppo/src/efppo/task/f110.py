@@ -771,7 +771,7 @@ class F1TenthWayPoint(Task):
                     self.cur_map_name is not None and \
                         self.cur_planner is not None \
                             and self.cur_env is not None:
-                init_pose = self.pose_from_nearest_waypoint()
+                init_pose = self.pose_from_nearest_waypoint() 
         else:
             self.pre_reset(mode, random_map)
 
@@ -1045,7 +1045,7 @@ class F1TenthWayPoint(Task):
             previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
             l_stability = np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum() - \
                 np.square(np.asarray(self.get2d(self.pre_state)).reshape(2) - previous_lookahead_point.reshape(2)).sum()
-            
+            l_stability = - (np.exp( - l_stability) - 1)
         ## Compare agent control w/ expert control
         l_bc = 0
         if False:
@@ -1064,22 +1064,21 @@ class F1TenthWayPoint(Task):
                 raise NotImplementedError
 
         
-
-        
-       
+         
         ## Avoidance: stay close to the nearest lookahead point
         l_dist = 0
         if self.cur_waypoint_ids is not None:
             ## Use deviation from nearest waypoint as cost
             nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
             l_dist = np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
+            l_dist = np.exp(l_dist) - 1.
 
         l_avoid = 0
         if np.any(self.cur_collision > 0):
             ## Guaranteed overwhelmed cost for collision
             l_avoid = np.abs(self.cur_totl)
-       
-        l = l_stability #  l_vel + l_bc
+      
+        l = l_stability + l_dist #  l_vel + l_bc
         self.cur_totl += l
 
         if self.render:

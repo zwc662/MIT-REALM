@@ -48,13 +48,8 @@ def get(name: str = 'efppo'):
             alg = BaselineDQN
         
         n_critics = 2
-        if 'ensemble' in name:
-            n_critics = 30
-    
         bc_ratio = 0.
-        if 'sac_bc' in name:
-            bc_ratio = 1. 
- 
+         
 
         train_cfg = BaselineCfg.TrainCfg(zmin, zmax, n_batches, batch_size, bc_ratio, 1.0, 1.0)
         net_cfg = BaselineCfg.NetCfg(pol_lr, val_lr, entropy_cf, disc_gamma, "tanh", pol_hids, val_hids, nz_enc, z_mean, z_scale, n_critics = n_critics)
