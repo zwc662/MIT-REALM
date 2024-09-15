@@ -1063,23 +1063,27 @@ class F1TenthWayPoint(Task):
             else:
                 raise NotImplementedError
 
-        l = l_stability #  l_vel + l_bc
+        
+
         
        
         ## Avoidance: stay close to the nearest lookahead point
-        if True:
-            if False and self.cur_waypoint_ids is not None:
-                ## Use deviation from nearest waypoint as cost
-                nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
-                l = np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
-            elif True and np.any(self.cur_collision > 0):
-                ## Guaranteed overwhelmed cost for collision
-                l = np.abs(self.cur_totl)
-            else:
-                self.cur_totl += l
-         
+        l_dist = 0
+        if self.cur_waypoint_ids is not None:
+            ## Use deviation from nearest waypoint as cost
+            nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
+            l_dist = np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
+
+        l_avoid = 0
+        if np.any(self.cur_collision > 0):
+            ## Guaranteed overwhelmed cost for collision
+            l_avoid = np.abs(self.cur_totl)
+       
+        l = l_stability #  l_vel + l_bc
+        self.cur_totl += l
+
         if self.render:
-            print(f"{l_vel=} | {l_stability=} | {l_bc=} | {l=}")
+            print(f"{l_vel=} | {l_stability=} | {l_bc=} | {l_dist=} | {l_avoid=} | {l=}")
         
         return l
 
@@ -1109,9 +1113,13 @@ class F1TenthWayPoint(Task):
 
     def should_reset(self, state: Optional[State] = None) -> BoolScalar:
         # Reset the state if it is frozen.
-        #if (self.cur_done > 0).any() or (self.cur_collision > 0.).any():
-        #    print("should reset")
-        return np.any(np.logical_or(self.cur_done > 0, self.cur_collision > 0))
+        l_dist = 0
+        if self.cur_waypoint_ids is not None:
+            ## Use deviation from nearest waypoint as cost
+            nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
+            l_dist = np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
+ 
+        return np.any(np.logical_or(self.cur_done > 0, self.cur_collision > 0)) or l_dist >= 2.5
 
 
         # Reset the state only if it is overflowing
