@@ -200,7 +200,7 @@ def collect_single_env_mode(
         T_expert_u.append(expert_control)
         
 
-        if (task.cur_done > 0.).any() | task.should_reset(envstate_new):
+        if task.should_reset(envstate_new):
             # Add done to the data collection used as mask
             collect_state = collect_state._replace(
                 steps = collect_state.steps,
@@ -318,18 +318,20 @@ def collect_single_batch(
         Th_h.append(h)
         T_expert_u.append(expert_control)
 
-        shouldreset = (task.cur_done > 0.).any() | task.should_reset(envstate_new) | collect_state.steps >= max_T
+        shouldreset = task.should_reset(envstate_new) or (collect_state.steps >= max_T)
         if shouldreset:
+            #print("Did reset")
             collect_state = collect_state._replace(
                 steps = 0,
                 state = task.reset(mode = 'train'),
-                z=collect_state.z
+                z=colstate0.z
                 )
             T_done.append(1.0)
             T_envstate.append(collect_state.state)
         else:
-            T_envstate.append(envstate_new)
             T_done.append(0.0)
+            T_envstate.append(envstate_new)
+            
     #print(f"Single batch sampled control {len(T_u)=}, {len(T_logprob)=}, {np.mean(T_logprob)=}")
     # Convert lists to jnp arrays
     T_envstate = jnp.stack(T_envstate)

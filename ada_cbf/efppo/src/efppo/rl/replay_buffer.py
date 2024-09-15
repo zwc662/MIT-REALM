@@ -45,7 +45,7 @@ class ReplayBuffer:
  
     _key: PRNGKey
     _capacity: int = 10240 
-    _offsets: IntScalar = jnp.asarray([0])
+    _offsets: IntScalar = jnp.zeros((0), dtype=jnp.int32)
     _dangling: bool = False
     experiences: Optional[Experience] = None
     
@@ -61,7 +61,7 @@ class ReplayBuffer:
         return self._offsets.sum()
     
      
-    def truncate(self):
+    def truncate_from_left(self):
         while self.size > self._capacity and (self._offsets.shape[0] > 1 or self._dangling):
             self.experiences = jtu.tree_map(
                     lambda x: lax.dynamic_slice_in_dim(x, self._offsets[1], x.shape[0]), 
@@ -94,11 +94,8 @@ class ReplayBuffer:
                 )
             cur_offsets = jnp.zeros((0)) 
             cur_dangling = False
-    
-
-        cur_experiences = self.experiences
- 
-        new_experiences = Experience(
+     
+        new_experiences = ReplayBuffer.Experience(
             Tp1_state = merge01(rollout.Tp1_state[:,:-1]), 
             Tp1_nxt_state = merge01(rollout.Tp1_state[:,1:]), 
             Tp1_obs = merge01(rollout.Tp1_obs[:,:-1]), 
@@ -112,17 +109,23 @@ class ReplayBuffer:
             T_done = merge01(rollout.T_done),
             T_expert_control = merge01(rollout.T_expert_control)
             )
-        # Add the last experience time + 1 as if it is an initial step for the nxt
+        # Add the last experience time + 1 as if it is an initial step for a new trajectory
         init_ts = jnp.asarray([new_experiences.T_done.shape[0]]).astype(int)
         if jnp.any(new_experiences.T_done[:-1]) > 0: 
             # Get the time step where done == 1 and add 1 to the time step to get the initial step for the next state
+            # Exempt the last experience no matter if it is done or not, 
+            #   because the init_ts alreadly consider the next step of the last experience as a pseudo initial step
             init_ts = jnp.concatenate((jnp.where(new_experiences.T_done[:-1] > 0)[0] + 1, init_ts), axis= 0).astype(int)
          
     
         def extract_experience_from_init_ts(init_t, nxt_init_ts, pre_experiences):
             traj_lens = []
             for nxt_init_t in nxt_init_ts:
+                # Traverse all the initial step
                 traj_len = nxt_init_t - 1 - init_t
+                # The trajectory lenghth is one step shorter than its true length
+                # Because we cut off the last state before done since it is already the 'next state' of the 2nd last state
+                # Also note that the done is also cut-off, now all done's are gone in the returned experiences
                 nxt_experiences = jtu.tree_map(
                     lambda x,y: jnp.concatenate((x, lax.dynamic_slice_in_dim(y, init_t, traj_len)), axis = 0), 
                     pre_experiences, new_experiences
@@ -133,24 +136,37 @@ class ReplayBuffer:
             return nxt_experiences, jnp.asarray(traj_lens)
           
 
-        new_experiences, new_offsets = extract_experience_from_init_ts(0, init_ts, cur_experiences)
+        self.experiences, new_offsets = extract_experience_from_init_ts(0, init_ts, self.experiences)
         if cur_dangling:               
             new_offsets = jnp.concatenate((cur_offsets.at[-1].set(cur_offsets[-1] + new_offsets[0]), new_offsets[1:]), axis = 0)
         elif cur_offsets.shape[0] > 0:
             new_offsets = jnp.concatenate((cur_offsets, new_offsets))
-        new_dangling = new_experiences.T_done[-1] > 0
+        
+        # cur_experience has no 'done' now. Need to check the input new_experiences whether the last step is done
+        new_dangling = (new_experiences.T_done[-1] < 1)
+        assert (self.experiences.T_done == 0).all()
 
-        self.experiences = new_experiences
         self._dangling = new_dangling
         self._offsets = new_offsets
 
-        self.truncate()
-   
+        self.truncate_from_left()
          
-    def sample(self, num_batches: int, batch_size: int) -> ReplayBuffer.Experience:
+    def sample(self, num_batches: int, batch_size: int) -> Experience:
         experiences = self.experiences
         replace = batch_size >= self.size
         def sample_one_batch(_):
             return jtu.tree_map(lambda x: jrd.choice(self._key, x, (batch_size,), axis = 0, replace = replace), experiences)
         b_experiences = jax.vmap(sample_one_batch)(jnp.arange(num_batches))
         return b_experiences
+ 
+    def truncate_from_right(self):
+        if self._dangling:
+            self.experiences = jtu.tree_map(
+                    lambda x: lax.dynamic_slice_in_dim(x, 0, x.shape[0] - self._offsets[-1]), 
+                    self.experiences
+                )
+            self._offsets = self._offsets[:-1]
+            self._dangling = False
+         
+        
+        

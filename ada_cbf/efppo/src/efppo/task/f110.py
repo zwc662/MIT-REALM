@@ -962,6 +962,8 @@ class F1TenthWayPoint(Task):
         
         
         self.cur_collision = nxt_state_dict['collisions']
+        #if (self.cur_collision > 0.).any():
+        #    print("Collision")
 
         nxt_state = np.empty(self.nx)
         #if np.all(self.cur_collision <= 0):
@@ -1101,12 +1103,14 @@ class F1TenthWayPoint(Task):
     
 
     def sample_x0_train(self, key: PRNGKey, num: int = 1) -> TaskState:
-        states = [self.reset(mode='train')]
-        return states
+        state = self.reset(mode='train')
+        return state.reshape(1, *state.shape)
         #return np.random.normal(loc = np.zeros([num, self.nx]), scale = 0.7 * 1e-2 * np.ones([num, self.nx]))
 
     def should_reset(self, state: Optional[State] = None) -> BoolScalar:
         # Reset the state if it is frozen.
+        #if (self.cur_done > 0).any() or (self.cur_collision > 0.).any():
+        #    print("should reset")
         return np.any(np.logical_or(self.cur_done > 0, self.cur_collision > 0))
 
 

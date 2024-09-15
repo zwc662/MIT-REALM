@@ -38,7 +38,7 @@ def main(
     elif 'baseline' in name:
         task = F1TenthWayPoint()
         alg_cfg, collect_cfg = efppo.run_config.f110.get(name)
-        alg_cfg.train.n_batches = 5
+        alg_cfg.train.n_batches = 1
 
         alg_cfg.train.bc_ratio = 0.
         if 'sac_bc' in name:
@@ -48,7 +48,7 @@ def main(
         
         trainer = BaselineTrainer(task)
         #trainer = EFPPOInnerTrainer(task)
-        trainer_cfg = BaselineTrainerCfg(n_iters=10_000_000, train_every= 10, log_every=10, eval_every=100, ckpt_every=100)
+        trainer_cfg = BaselineTrainerCfg(n_iters=10_000_000, train_after = 1_000, train_every= 5, log_every=10, eval_every=100, ckpt_every=100)
         trainer_cfg.train_every = 5
         trainer_cfg.log_every = 100
         trainer_cfg.eval_every = 100
