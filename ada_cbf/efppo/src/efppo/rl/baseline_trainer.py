@@ -15,7 +15,7 @@ from enum import Enum
 
 import wandb
 from efppo.rl.collector import Collector, CollectorCfg
-from efppo.rl.replay_buffer import ReplayBuffer
+from efppo.rl.replay_buffer import ReplayBuffer 
 from efppo.rl.baseline import Baseline, BaselineSAC, BaselineDQN
 from efppo.task.plotter import Plotter
 from efppo.task.task import Task
@@ -62,7 +62,20 @@ class BaselineTrainer:
         self.plotter = Plotter(task)
         register_cmaps()
 
-    def plot(self, idx: int, plot_dir: pathlib.Path, data: Baseline.EvalData):
+    def plot_train(self, idx: int, plot_dir: pathlib.Path, data: ReplayBuffer.Experience):
+        
+        # --------------------------------------------
+        # Plot the trajectories.
+        Tp1_state, T_l = data.Tp1_state, data.T_l
+        fig, ax = plt.subplots(figsize=figsize, dpi=500)
+        figsize = 1.5 * np.array([8, 6])
+        fig = plotter.plot_dots(states = Tp1_state, colors = T_l)
+        fig_path = mkdir(plot_dir / "phase") / "phase_{:08}_replaybuffer.jpg".format(idx)
+        fig.savefig(fig_path, bbox_inches="tight")
+        plt.close(fig)
+
+
+    def plot_eval(self, idx: int, plot_dir: pathlib.Path, data: Baseline.EvalData):
         fig_opt = dict(layout="constrained", dpi=200)
 
         bb_X, bb_Y, _ = self.task.grid_contour()
@@ -119,7 +132,7 @@ class BaselineTrainer:
         '''
 
     def train(
-        self, key: PRNGKey, alg_cfg: Baseline.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: BaselineTrainerCfg, iteratively: bool = False, 
+        self, key: PRNGKey, alg_cfg: Baseline.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: BaselineTrainerCfg, iteratively: bool = True, 
     ):
         key0, key1, key2 = jr.split(key, 3)
         alg: Baseline = alg_cfg.alg.create(key0, self.task, alg_cfg) 
@@ -174,8 +187,8 @@ class BaselineTrainer:
                     data = jax2np(alg.eval(eval_rollout_T))
                 logger.info(f"[{idx:8}]   {data.info}")
 
-                self.plot(idx, plot_dir, data)
-
+                self.plot_eval(idx, plot_dir, data)
+                self.plot_train(idx, plot_dir, replay_buffer.experiences)
                 log_dict = {f"eval/{k}": v for k, v in data.info.items()}
                 wandb.log(log_dict, step=idx)
 

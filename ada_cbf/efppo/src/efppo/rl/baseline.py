@@ -38,7 +38,7 @@ from efppo.utils.jax_utils import jax_vmap, merge01, tree_split_dims, tree_stack
 from efppo.utils.rng import PRNGKey
 from efppo.utils.schedules import Schedule, as_schedule
 from efppo.utils.tfp import tfd 
-from efppo.rl.replay_buffer import Experience, ReplayBuffer
+from efppo.rl.replay_buffer import ReplayBuffer 
 from efppo.utils.svgd import compute_kernel_gradient, compute_kernel_matrix, svgd_update
 
 
@@ -1305,6 +1305,17 @@ class BaselineDQN(Baseline):
         new_critic= self.critic.replace(params=new_critic_params)
 
         return self.replace(policy=new_policy, critic=new_critic), pol_info
+
+    def sample_action(self, obs_pol, z):
+        a_pol = self.policy.apply(obs_pol, z)
+        control, logprob = a_pol.experimental_sample_and_log_prob(seed=self.key)
+        return control, logprob
+    
+    def collect_iteratively(self, collector: Collector, rollout_T: Optional[int] = None) -> tuple[Collector, Baseline.Batch]:
+        z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
+        collector, data = collector.collect_batch_iteratively(self.sample_action, self.disc_gamma, z_min, z_max, rollout_T)
+        return collector, data
+
 
     def update_target_critic(self):
         new_target_critic_params = jax.tree_map(lambda p, tp: p * 5e-3 + tp * (1 - 5e-3), self.critic.params, self.target_critic.params)

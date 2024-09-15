@@ -13,7 +13,7 @@ from jax import lax
 from flax import struct
 
 from efppo.task.task import TaskState
-from efppo.task.dyn_types import TControl, THFloat, TObs, TDone
+from efppo.task.dyn_types import TState, TControl, THFloat, TObs, TDone
 from efppo.utils.jax_types import IntScalar, TFloat
 from efppo.utils.rng import PRNGKey 
 from efppo.utils.jax_utils import merge01
@@ -26,22 +26,23 @@ Batch = collections.namedtuple(
     ['observations', 'actions', 'rewards', 'masks', 'next_observations'])
 
 
-class Experience(NamedTuple):
-    Tp1_state: TaskState
-    Tp1_nxt_state: TaskState
-    Tp1_obs: TObs
-    Tp1_nxt_obs: TObs
-    Tp1_z: TFloat
-    Tp1_nxt_z: TFloat
-    T_control: TControl
-    T_logprob: TFloat
-    T_l: TFloat
-    Th_h: THFloat
-    T_done: TDone
-    T_expert_control: TControl
- 
+
 @dataclass
 class ReplayBuffer:
+    class Experience(NamedTuple):
+        Tp1_state: TState
+        Tp1_nxt_state: TState
+        Tp1_obs: TObs
+        Tp1_nxt_obs: TObs
+        Tp1_z: TFloat
+        Tp1_nxt_z: TFloat
+        T_control: TControl
+        T_logprob: TFloat
+        T_l: TFloat
+        Th_h: THFloat
+        T_done: TDone
+        T_expert_control: TControl
+ 
     _key: PRNGKey
     _capacity: int = 10240 
     _offsets: IntScalar = jnp.asarray([0])
@@ -77,7 +78,7 @@ class ReplayBuffer:
         if self.experiences is None:
 
             ### Note that rollout shape = (n_env, T, dim)
-            self.experiences = Experience(
+            self.experiences = ReplayBuffer.Experience(
                 Tp1_state = jnp.zeros((0, rollout.Tp1_state.shape[-1]), dtype=rollout.Tp1_state.dtype), 
                 Tp1_nxt_state = jnp.zeros((0, rollout.Tp1_state.shape[-1]), dtype=rollout.Tp1_state.dtype), 
                 Tp1_obs = jnp.zeros((0, rollout.Tp1_obs.shape[-1]), dtype=rollout.Tp1_obs.dtype), 
@@ -146,7 +147,7 @@ class ReplayBuffer:
         self.truncate()
    
          
-    def sample(self, num_batches: int, batch_size: int) -> Experience:
+    def sample(self, num_batches: int, batch_size: int) -> ReplayBuffer.Experience:
         experiences = self.experiences
         replace = batch_size >= self.size
         def sample_one_batch(_):
