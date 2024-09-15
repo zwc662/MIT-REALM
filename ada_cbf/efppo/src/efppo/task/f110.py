@@ -1153,7 +1153,7 @@ class F1TenthWayPoint(Task):
     
     @property
     def h_labels(self) -> int:
-        return ["pose", "theta"]
+        return ["collision", "overflow"]
      
     def get2d_idxs(self):
         #return [self.STATE_FST_LAD, self.STATE_FST_LAD + 1] 

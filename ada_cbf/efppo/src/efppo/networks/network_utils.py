@@ -79,12 +79,12 @@ def rsample_categorical(logprobs, key, tau = 0.5):
     
     return sample, log_prob
 
-def rsample(key, dist, lb, ub, squash = 'tanh'):
+def rsample(key, dist, lb, ub, squash = 'tanh', return_logprob = True):
     """Differentiable sampling from a categorical distribution using Gumbel-Softmax."""
     # Sample epsilon from a standard normal distribution
     epsilon = jrd.normal(key, shape=dist.loc.shape)
     z = dist.loc + jnp.dot(dist._scale_diag, epsilon)
-    log_prob = dist.log_prob(z)
+    
 
     squashed_z = z
     if squash == 'tanh':
@@ -92,14 +92,20 @@ def rsample(key, dist, lb, ub, squash = 'tanh'):
     elif squash == 'sigmoid':
         squashed_z = jax.nn.sigmoid(z) * (jnp.asarray(ub).flatten() - jnp.asarray(lb).flatten()) + jnp.asarray(lb).flatten()
       
-     
-    return squashed_z, log_prob
+    if return_logprob:
+        log_prob = dist.log_prob(z)
+        return squashed_z, log_prob
+    else:
+        return squashed_z
 
-def anti_rsample(dist, squashed_z, lb, ub, squash = 'tanh'):
+def anti_rsample(dist, squashed_z, lb, ub, squash = 'tanh', return_logprob = True):
     z = squashed_z
     if squash == 'tanh':
         z = jnp.atanh((squashed_z -  jnp.asarray(lb).flatten()) / (jnp.asarray(ub).flatten() - jnp.asarray(lb).flatten()) - 1)
     elif squash == 'sigmoid':
         z = jnp.log(squashed_z / (1 - squashed_z))
-    logprob = dist.log_prob(z)
-    return z, logprob
+    if return_logprob:
+        log_prob = dist.log_prob(z)
+        return z, log_prob
+    else:
+        return z
