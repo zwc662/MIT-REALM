@@ -675,15 +675,15 @@ class F1TenthWayPoint(Task):
         
         init_angle = np.random.normal(
             loc = np.zeros([1]),
-            scale = 0.1 * np.pi
-        )
+            scale = np.pi / 4.
+        ).clip(- np.pi / 4, np.pi / 4)
         nxt_pose = self.cur_planner.waypoints[(init_pose_ind + 1) % len(self.cur_planner.waypoints)][np.array(
             [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
             )]
         pose_diff = (nxt_pose-init_pose)[np.array(
             [self.cur_planner.conf.wpt_yind, self.cur_planner.conf.wpt_xind]
             )]
-        init_angle = np.clip(np.arctan2(*pose_diff).reshape(1) + init_angle, - np.pi / 3, np.pi / 3)
+        init_angle = np.arctan2(*pose_diff).reshape(1) + init_angle 
         init_pose = np.concatenate((init_pose, init_angle))
         return init_pose
 
