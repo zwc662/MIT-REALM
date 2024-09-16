@@ -1136,8 +1136,11 @@ class F1TenthWayPoint(Task):
         if self.cur_waypoint_ids is not None:
             ## Use deviation from nearest waypoint as cost
             nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
-            l_dist = np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
- 
+            if state is not None:
+                l_dist = np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
+            else:
+                l_dist = np.square(np.asarray(self.get2d(self.cur_state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
+            
         return np.any(np.logical_or(self.cur_done > 0, self.cur_collision > 0)) or l_dist >= 2.5
 
 
