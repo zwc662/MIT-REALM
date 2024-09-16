@@ -5,7 +5,7 @@ import time
 import numpy as np
 import tqdm 
 
-
+from typing import Optional, Union
 from efppo.utils.ckpt_utils import get_ckpt_manager_sync
 from efppo.utils.jax_utils import jax2np, move_tree_to_cpu
 from efppo.utils.path_utils import get_runs_dir, mkdir
@@ -41,7 +41,7 @@ class JAXRLTrainer:
     start_training: int = int(1e4)      #'Number of training steps to start training.')
     tqdm: bool = True
     replay_buffer_size: int = int(1e6)
-   
+    agent: Optional[Union[AWACLearner, DDPGLearner, REDQLearner, SACLearner, SACV1Learner]] = None
 
     def train(self):
         kwargs = asdict(self)
@@ -74,8 +74,9 @@ class JAXRLTrainer:
         act_example = np.zeros([train_env.nu])
        
         seed = kwargs.pop('seed')
-    
-        agent = algo(seed, str(ckpt_dir), obs_example, act_example, **kwargs) 
+
+        if self.agent is None:
+            self.agent = algo(seed, str(ckpt_dir), obs_example, act_example, **kwargs) 
 
         replay_buffer = ReplayBuffer(obs_example, act_example, self.replay_buffer_size)
 
@@ -89,7 +90,7 @@ class JAXRLTrainer:
             if i >= self.start_training:
                 action = train_env.get_expert_control()
             else:
-                action = agent.sample_actions(observation)
+                action = self.agent.sample_actions(observation)
             next_state = train_env.step(state, action)
             next_observation = train_env.get_obs(next_state)
             reward = - train_env.l(next_state, action)
@@ -115,7 +116,7 @@ class JAXRLTrainer:
             if i >= self.start_training:
                 for _ in range(self.updates_per_step):
                     batch = replay_buffer.sample(self.batch_size)
-                    update_info = agent.update(batch)
+                    update_info = self.agent.update(batch)
 
                 if i % self.log_interval == 0:
                     for k, v in update_info.items():
@@ -123,7 +124,7 @@ class JAXRLTrainer:
                     
 
                 if i % self.eval_interval == 0:
-                    eval_stats = evaluate(agent, eval_env, self.eval_episodes)
+                    eval_stats = evaluate(self.agent, eval_env, self.eval_episodes)
 
                     for k, v in eval_stats.items():
                         wandb.log({f'evaluation/average_{k}s': v}, i)
@@ -132,7 +133,7 @@ class JAXRLTrainer:
                     print(eval_stats)
                     eval_returns.append((i, eval_stats['length'], eval_stats['cost'], eval_stats['err']))
     
-                    agent.save(i)
+                    self.agent.save(i)
                     np.savetxt(os.path.join(ckpt_dir, f'{self.seed}.txt'), eval_returns, fmt=['%d', '%d', '%.1f', '%.1f'])
                 
                     

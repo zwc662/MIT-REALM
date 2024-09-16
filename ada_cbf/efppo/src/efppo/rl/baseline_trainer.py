@@ -136,14 +136,18 @@ class BaselineTrainer:
     def train(
         self, key: PRNGKey, alg_cfg: Baseline.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: BaselineTrainerCfg, iteratively: bool = True, 
     ):
-        key0, key1, key2 = jr.split(key, 3)
+        key0, key1 = jr.split(key, 3)
         alg: Baseline = alg_cfg.alg.create(key0, self.task, alg_cfg) 
+        self.run(alg, key1, alg, collect_cfg, wandb_name, trainer_cfg)
+        
+    def run(self, key: PRNGKey, alg: Baseline, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: BaselineTrainerCfg, iteratively: bool = True):    
+        key1, key2 = jr.split(key, 2)
+
         collector: Collector = Collector.create(key1, self.task, collect_cfg)
         replay_buffer = ReplayBuffer.create(key=key2, capacity = 1e5)
 
-        
         task_name = self.task.name
-        wandb_config = {"alg": alg_cfg.asdict(), "collect": collect_cfg.asdict(), "trainer": trainer_cfg.asdict()}
+        wandb_config = {"alg": alg.cfg.asdict(), "collect": collect_cfg.asdict(), "trainer": trainer_cfg.asdict()}
         wandb.init(project=f"baseline_{task_name}_inner", config=wandb_config, entity = 'zwc662') #, mode="disabled")
         wandb_run_name = reorder_wandb_name(wandb_name=wandb_name)
 
@@ -211,12 +215,12 @@ class BaselineTrainer:
                 logger.info(f"Saved ckpt at {ckpt_dir}/{idx:08}/default/ !")
 
                 with open(f'{ckpt_dir}/{idx:08}/cfg.pt', 'wb') as fp:
-                    pickle.dump({"alg_cfg": alg_cfg, "collect_cfg": collect_cfg}, fp)
+                    pickle.dump({"alg_cfg": alg.cfg, "collect_cfg": collect_cfg}, fp)
 
  
         # Save at the end.
         ckpt_manager.save_ez(idx, {"alg": alg})
         logger.info(f"Saved ckpt at {ckpt_dir}/{idx:8}/default/ !")
         with open(f'{ckpt_dir}/{idx:08}/cfg.pt', 'wb') as fp:
-            pickle.dump({"alg_cfg": alg_cfg, "collect_cfg": collect_cfg}, fp)
+            pickle.dump({"alg_cfg": alg.cfg, "collect_cfg": collect_cfg}, fp)
         
