@@ -25,7 +25,8 @@ from efppo.rl.baseline_trainer import BaselineTrainer, BaselineTrainerCfg
 from efppo.task.f110 import F1TenthWayPoint
 from efppo.utils.logging import set_logger_format
 from efppo.utils.ckpt_utils import load_ckpt_ez
- 
+from efppo.rl.replay_buffer import ReplayBuffer 
+
 from jaxrl.jaxrl_trainer import JAXRLTrainer
 
 def main(
@@ -65,8 +66,14 @@ def main(
                 elif 'dqn' in name:
                     alg: Baseline = BaselineDQN.create(jr.PRNGKey(0), task, alg_cfg) 
                 ckpt_dict = load_ckpt_ez(name, {"alg": alg})
+                key1, key2 = jr.split(jr.PRNGKey(seed))
                 alg = ckpt_dict["alg"]
-                trainer.run(jr.PRNGKey(seed), alg, collect_cfg, stamped_name, trainer_cfg)
+
+                replay_buffer = ReplayBuffer.create(key=key1, capacity = 1e5)
+                replay_buffer_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(name))), 'replay_buffer.h5')
+                if os.path.exists(replay_buffer_path):
+                    replay_buffer.load(replay_buffer_path)
+                trainer.run(key2, alg, replay_buffer, collect_cfg, stamped_name, trainer_cfg)
         else:
             stamped_name = '_'.join([current_timestamp, str(sha)[-5:], name])
             alg_cfg, collect_cfg = efppo.run_config.f110.get(name)

@@ -144,9 +144,9 @@ def main(
     for i in range(bb_x0.shape[0]):
         bb_rollouts.append([])
         for j in range(bb_x0.shape[1]): 
-            state_0 = task.reset(mode=f"eval{'+render' if render else ''}", init_dist = np.random.normal(loc = 0, scale = 0.1, size = (3)))
+            state_0, hist_0 = task.reset(mode=f"eval{'+render' if render else ''}", init_dist = np.random.normal(loc = 0, scale = 0.1, size = (3)))
             print('Initialization state coord', (i, j), f'from map {task.cur_map_name}')
-            rollout = collect_fn(state_0, bb_z0[i][j])
+            rollout = collect_fn(state_0.flatten(), bb_z0[i][j])
             #print(rollout.Tp1_state.shape, rollout.Tp1_obs.shape, rollout.Tp1_z.shape, rollout.T_control.shape, rollout.T_l.shape, rollout.Th_h.shape)
             bb_rollouts[-1].append(rollout) 
         bb_rollouts[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_rollouts[-1])

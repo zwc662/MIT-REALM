@@ -22,7 +22,7 @@ import warnings
 
 from typing_extensions import override
 
-from typing import List, Dict, Any, Union, Optional
+from typing import List, Dict, Any, Union, Optional, Tuple
 
 from f110_gym.envs.f110_env import F110Env
 from f110_gym.envs.base_classes import Integrator 
@@ -540,8 +540,9 @@ class F1TenthWayPoint(Task):
 
     PLOT_2D_INDXS = [STATE_X, STATE_Y]
 
+     
 
-    def __init__(self, seed = 10, assets_location = None, n_actions = (10, 1), control_mode: Optional[str] = None):
+    def __init__(self, seed = 10, assets_location: str = None, n_actions: Tuple[int] = (10, 1), n_history: int = 1, control_mode: Optional[str] = None):
        
         self.seed = seed
         self.dt = 0.05
@@ -560,6 +561,7 @@ class F1TenthWayPoint(Task):
         self.cur_env = None
         self.pre_state = None
         self.cur_state = None
+        self.cur_history = None
         self.cur_action = None
         self.cur_control = None
         self.cur_pursuit_control = None
@@ -574,6 +576,8 @@ class F1TenthWayPoint(Task):
 
         self.cur_waypoint_ids = None
         self.pre_waypoints_ids = None
+
+        
  
         self._lb = np.array([-np.pi/6., 5])
         self._ub = np.array([np.pi/6., 5])
@@ -594,6 +598,9 @@ class F1TenthWayPoint(Task):
             (discrete_actions.shape[0] + int(discrete_actions.shape[0] > 1)) for discrete_actions in self.discrete_actionss
             ])
         assert (self.n_discrete_actionss == n_actions).all()
+
+
+        self.n_history = n_history
     
 
     @property
@@ -606,11 +613,12 @@ class F1TenthWayPoint(Task):
 
     @property
     def nobs(self):
-        return 3 + 2 * self.conf.work.nlad
+        return (3 + 2 * self.conf.work.nlad) * (self.n_history + 1)
     
     @property
     def nu(self):
         return 2
+     
         
     @property
     def lb(self):
@@ -724,7 +732,8 @@ class F1TenthWayPoint(Task):
 
         self.cur_totl = 0
 
-         
+        self.cur_history = None
+
         self.cur_waypoint_ids = None
         self.pre_waypoints_ids = None
 
@@ -787,7 +796,7 @@ class F1TenthWayPoint(Task):
         
         cur_state = self.post_reset(state_dict)
 
-        return cur_state
+        return cur_state 
 
     def post_reset(self, state_dict: Dict[str, Any]):
         self.cur_collision = state_dict['collisions']
@@ -805,6 +814,8 @@ class F1TenthWayPoint(Task):
             self.cur_lookahead_points = lookahead_points[:]
 
         self.cur_state = self.get_state(state_dict, lookahead_points)
+        self.cur_history = [self.cur_state] * self.n_history
+
         self.cur_step = 0
  
         if self.render:  
@@ -813,7 +824,7 @@ class F1TenthWayPoint(Task):
             self.cur_env.render(mode='human')
              
              
-        return self.cur_state #, 0, done, info
+        return self.cur_state
  
 
     
@@ -889,14 +900,20 @@ class F1TenthWayPoint(Task):
     @override
     def get_obs(self, state: State) -> Obs:
 
-        assert state.shape[-1] == self.nx, f"{state.shape=}"
-         
-        pose = state[np.array([self.STATE_X, self.STATE_Y])]
-        lookahead_points = state[self.STATE_FST_LAD:].reshape(-1, 2)
-        lookahead_fts = (lookahead_points - pose).reshape(-1)
-        other_fts = state[self.STATE_Y + 1:self.STATE_FST_LAD]
-        return np.concatenate((other_fts, lookahead_fts))
-    
+        def get_one_obs(state: State) -> Obs:
+            assert state.shape[-1] == self.nx, f"{state.shape=}"
+            
+            pose = state[np.array([self.STATE_X, self.STATE_Y])]
+            lookahead_points = state[self.STATE_FST_LAD:].reshape(-1, 2)
+            lookahead_fts = (lookahead_points - pose).reshape(-1)
+            other_fts = state[self.STATE_Y + 1:self.STATE_FST_LAD]
+            return np.concatenate((other_fts, lookahead_fts))
+
+        obss = jax.vmap(get_one_obs, in_axes = 0)(self.cur_history) 
+        obss = jnp.stack((get_one_obs(state), *obss)) 
+        
+        return obss.flatten()
+
     def efppo_control_transform(self, control):
         ## For Continuous Control
         ### The control policy's output mean is constrained to be within (0, 3) using sigmoid scaling (check original /efppo/src/efppo/networks/poly_net.py)
@@ -922,7 +939,7 @@ class F1TenthWayPoint(Task):
 
         #assert control.shape[-1] == 2 or control.shape == (2,), f"{control}"
         #assert control.shape[-1] == 1
-        assert state.shape[-1] == self.nx
+        assert state.shape[-1] == self.nx * self.num_history
 
         ## Initialized as pursuit planner
         self.cur_action = self.cur_pursuit_action
@@ -1008,7 +1025,10 @@ class F1TenthWayPoint(Task):
             self.cur_state_dict = {k: v for k, v in nxt_state_dict.items()}
             self.pre_state = self.cur_state
             self.cur_state = nxt_state
+            if self.n_history > 0 and len(self.cur_history) > 0:
+                self.cur_history = np.concatenate(([self.cur_state], self.cur_history[:-1]), axis = 0)
             self.cur_step += 1
+
         return self.cur_state #, step_reward, done, info
     
     def get_expert(self, state: State, ref_control: Union[Control, Action]) -> Union[Control, Action]:
@@ -1078,7 +1098,7 @@ class F1TenthWayPoint(Task):
             ## Guaranteed overwhelmed cost for collision
             l_avoid = np.abs(self.cur_totl)
       
-        l = l_stability + l_dist #  l_vel + l_bc
+        l = l_stability #+ l_dist #  l_vel + l_bc
         self.cur_totl += l
 
         if self.render:

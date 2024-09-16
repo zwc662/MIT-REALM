@@ -2,6 +2,8 @@ import functools as ft
 import collections
 from typing import Tuple, Union, List, NamedTuple, Optional
 
+import os
+import h5py
 import numpy as np
 from dataclasses import dataclass
 
@@ -51,14 +53,30 @@ class ReplayBuffer:
     
     @classmethod
     def create(cls, key: PRNGKey, capacity: Optional[int] = None):
-        cls._key = key
-        cls._capacity = capacity
         return cls(_key = key, _capacity = capacity)
+         
 
     @property
     def size(self):
         return self.experiences.Tp1_state.shape[0] 
-     
+    
+    def save(self, path: str):
+        if self.experiences is None:
+            return
+        with h5py.File(path, 'a' if os.path.exists(path) else 'w' ) as fp:
+            for field_name in self.experiences._fields:
+                if f"{field_name}" in fp:
+                    # Delete the existing dataset
+                    del fp[f"{field_name}"]
+                fp.create_dataset(f'{field_name}', data = getattr(self.experiences, field_name))
+
+    
+    def load(self, path: str):
+        with h5py.File(path, 'r') as fp:
+            self.experiences = ReplayBuffer.Experience(
+                **{field_name: fp[field_name] for field_name in list(fp.keys())}
+            )
+      
     def truncate_from_left(self):
         if self.size < self._capacity:
             # Nothing to truncate

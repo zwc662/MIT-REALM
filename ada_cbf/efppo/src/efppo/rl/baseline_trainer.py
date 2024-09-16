@@ -136,16 +136,12 @@ class BaselineTrainer:
     def train(
         self, key: PRNGKey, alg_cfg: Baseline.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: BaselineTrainerCfg, iteratively: bool = True, 
     ):
-        key0, key1 = jr.split(key, 3)
+        key0, key1, key2 = jr.split(key, 3)
         alg: Baseline = alg_cfg.alg.create(key0, self.task, alg_cfg) 
-        self.run(alg, key1, alg, collect_cfg, wandb_name, trainer_cfg)
+        replay_buffer = ReplayBuffer.create(key=key1, capacity = 1e5)
+        self.run(alg, key2, alg, replay_buffer, collect_cfg, wandb_name, trainer_cfg)
         
-    def run(self, key: PRNGKey, alg: Baseline, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: BaselineTrainerCfg, iteratively: bool = True):    
-        key1, key2 = jr.split(key, 2)
-
-        collector: Collector = Collector.create(key1, self.task, collect_cfg)
-        replay_buffer = ReplayBuffer.create(key=key2, capacity = 1e5)
-
+    def run(self, key: PRNGKey, alg: Baseline, replay_buffer: ReplayBuffer, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: BaselineTrainerCfg, iteratively: bool = True):    
         task_name = self.task.name
         wandb_config = {"alg": alg.cfg.asdict(), "collect": collect_cfg.asdict(), "trainer": trainer_cfg.asdict()}
         wandb.init(project=f"baseline_{task_name}_inner", config=wandb_config, entity = 'zwc662') #, mode="disabled")
@@ -157,6 +153,7 @@ class BaselineTrainer:
         ckpt_manager = get_ckpt_manager_sync(ckpt_dir, max_to_keep=trainer_cfg.ckpt_max_keep)
  
         print(f"Initial data collection for {trainer_cfg.train_after} steps")
+        collector: Collector = Collector.create(key, self.task, collect_cfg)
         collector, rollout = alg.collect_iteratively(collector, rollout_T = trainer_cfg.train_after)
         replay_buffer.insert(rollout)
         idx = 0
@@ -216,6 +213,9 @@ class BaselineTrainer:
 
                 with open(f'{ckpt_dir}/{idx:08}/cfg.pt', 'wb') as fp:
                     pickle.dump({"alg_cfg": alg.cfg, "collect_cfg": collect_cfg}, fp)
+                
+                replay_buffer.save(f'{os.path.dirname(ckpt_dir)}/replay_buffer.h5')
+                replay_buffer.truncate_from_right()
 
  
         # Save at the end.
