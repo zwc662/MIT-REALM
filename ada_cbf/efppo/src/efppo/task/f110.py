@@ -675,7 +675,7 @@ class F1TenthWayPoint(Task):
         
         init_angle = np.random.normal(
             loc = np.zeros([1]),
-            scale = 0.01 * np.pi
+            scale = 0.1 * np.pi
         )
         nxt_pose = self.cur_planner.waypoints[(init_pose_ind + 1) % len(self.cur_planner.waypoints)][np.array(
             [self.cur_planner.conf.wpt_xind, self.cur_planner.conf.wpt_yind]
@@ -683,7 +683,7 @@ class F1TenthWayPoint(Task):
         pose_diff = (nxt_pose-init_pose)[np.array(
             [self.cur_planner.conf.wpt_yind, self.cur_planner.conf.wpt_xind]
             )]
-        init_angle += np.arctan2(*pose_diff).reshape(1)
+        init_angle = np.clip(np.arctan2(*pose_diff).reshape(1) + init_angle, - np.pi / 3, np.pi / 3)
         init_pose = np.concatenate((init_pose, init_angle))
         return init_pose
 
@@ -1071,7 +1071,7 @@ class F1TenthWayPoint(Task):
             ## Use deviation from nearest waypoint as cost
             nearest_lookahead_point = np.asarray(self.cur_planner.waypoints[self.cur_waypoint_ids[0]])
             l_dist = np.square(np.asarray(self.get2d(state)).reshape(2) - nearest_lookahead_point.reshape(2)).sum()
-            l_dist = np.exp(l_dist) - 1.
+            l_dist = np.exp(l_dist - 2.) - 1.
 
         l_avoid = 0
         if np.any(self.cur_collision > 0):
