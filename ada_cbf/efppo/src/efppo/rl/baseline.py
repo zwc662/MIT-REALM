@@ -90,8 +90,11 @@ class BaselineCfg(Cfg):
     net: NetCfg
     train: TrainCfg
     eval: EvalCfg
-
-
+    
+class ObsStats(NamedTuple):
+        mean: Obs
+        var: Obs
+  
 class Baseline(Generic[_Algo], struct.PyTreeNode):
     update_idx: int
     key: PRNGKey 
@@ -99,7 +102,9 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
     policy: TrainState[tfd.Distribution]
 
     disc_gamma: FloatScalar
-
+ 
+    obs_stats: ObsStats
+         
     #task: Task = struct.field(pytree_node=False)
     cfg: BaselineCfg = struct.field(pytree_node=False)
     target_ent: float = struct.field(pytree_node=False)
@@ -161,8 +166,10 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         disc_gamma_sched = as_schedule(cfg.net.disc_gamma).make()
         disc_gamma = disc_gamma_sched(0)
         target_ent =  -task.n_actions / (task.n_actions + 1) * np.log(1/(task.n_actions+1))
- 
-        return Baseline(0, key, 1, pol, disc_gamma, cfg, target_ent, ent_cf, disc_gamma_sched)
+
+        obs_stats = ObsStats(obs, obs)
+
+        return Baseline(0, key, 1, pol, disc_gamma, obs_stats, cfg, target_ent, ent_cf, disc_gamma_sched)
 
        
     @property
@@ -197,8 +204,8 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         batch_size =  self.train_cfg.batch_size
         batch_data = replay_buffer.sample(num_batches, batch_size)
         b_batch = self.Batch(
-            b_obs = batch_data.Tp1_obs,
-            b_nxt_obs = batch_data.Tp1_nxt_obs,
+            b_obs = replay_buffer.obs_stats.standardize(batch_data.Tp1_obs),
+            b_nxt_obs = replay_buffer.obs_stats.standardize(batch_data.Tp1_nxt_obs),
             b_z = batch_data.Tp1_z,
             b_nxt_z = batch_data.Tp1_nxt_z,
             b_control = batch_data.T_control,
@@ -386,6 +393,9 @@ class BaselineSAC(Baseline):
         control_lb = jnp.asarray(task.lb).flatten()
         control_ub = jnp.asarray(task.ub).flatten()
 
+
+        obs_stats = ObsStats(obs, obs)
+        
         act = get_act_from_str(cfg.net.act)
 
         # Encoder for z. Params not shared.
@@ -421,14 +431,14 @@ class BaselineSAC(Baseline):
         target_critic_tx = get_default_tx(as_schedule(cfg.net.val_lr).make())
         target_critic = TrainState.create_from_def(key_critic,  target_critic_def, (obs, z, control), target_critic_tx)
 
-        return BaselineSAC(0, key, 1, pol, disc_gamma, cfg, target_ent, ent_cf, disc_gamma_sched, 
+        return BaselineSAC(0, key, 1, pol, disc_gamma, obs_stats, cfg, target_ent, ent_cf, disc_gamma_sched, 
                            critic = critic, target_critic = target_critic, control_lb = control_lb, control_ub = control_ub)
     
 
     @ft.partial(jax.jit, donate_argnums=0)
     def update(self, replay_buffer: ReplayBuffer) -> tuple["BaselineSAC", dict]:
         batch = self.make_dset(replay_buffer)
- 
+
         def update_one_batch(obj, batch_idx):
             key_shuffle, key_self = jr.split(obj.key, 2)
             rand_idxs = jr.permutation(key_shuffle, jnp.arange(batch.batch_size))
@@ -452,7 +462,7 @@ class BaselineSAC(Baseline):
         
         new_self, new_info = lax.scan(update_one_batch, self, jnp.arange(batch.num_batches))
  
-        return new_self, jtu.tree_map(jnp.mean, new_info)
+        return new_self.replace(obs_stats = replay_buffer.obs_stats), jtu.tree_map(jnp.mean, new_info)
     
 
     def update_iteratively(self, replay_buffer: ReplayBuffer) -> tuple["BaselineSAC", dict]:
@@ -695,7 +705,7 @@ class BaselineSAC(Baseline):
         collect_fn = ft.partial(
             collect_single_env_mode,
             task,
-            get_pol=lambda obs, z: self.policy.apply(obs, z).mode(),
+            get_pol=lambda obs, z: self.policy.apply(self.standardize(obs), z).mode(),
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
@@ -780,7 +790,8 @@ class BaselineSACDisc(Baseline):
     @ft.partial(jax.jit, donate_argnums=0)
     def update(self, replay_buffer: ReplayBuffer) -> tuple["BaselineSACDisc", dict]:
         batch = self.make_dset(replay_buffer)
- 
+        obs_stats = ObsStats(mean=replay_buffer.obs_stats.mean, var=replay_buffer.obs_stats.var)
+
         def update_one_batch(obj, batch_idx):
             key_shuffle, key_self = jr.split(obj.key, 2)
             rand_idxs = jr.permutation(key_shuffle, jnp.arange(batch.batch_size))
@@ -803,8 +814,8 @@ class BaselineSACDisc(Baseline):
             return new_obj.replace(key=key_self, update_idx=obj.update_idx + 1), info
         
         new_self, new_info = lax.scan(update_one_batch, self, jnp.arange(batch.num_batches))
- 
-        return new_self, jtu.tree_map(jnp.mean, new_info)
+
+        return new_self.replace(obs_stats = obs_stats), jtu.tree_map(jnp.mean, new_info)
     
 
     def update_iteratively(self, replay_buffer: ReplayBuffer) -> tuple["BaselineSACDisc", dict]:
@@ -938,8 +949,11 @@ class BaselineSACDisc(Baseline):
         pol_info["temperature"] = new_temp
         return self.replace(policy=policy, temp = new_temp), pol_info
     
+    def standardize(self, obs):
+        return (obs - self.obs_stats.mean) / (np.sqrt(self.obs_stats.var) + 1e-8)
+            
     def sample_action(self, obs_pol, z):
-        a_pol = self.policy.apply(obs_pol, z)
+        a_pol = self.policy.apply(self.standardize(obs_pol), z)
         control, logprob = a_pol.experimental_sample_and_log_prob(seed=self.key)
         return control, logprob
     

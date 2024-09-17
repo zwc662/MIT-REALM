@@ -15,28 +15,27 @@ from jax import lax
 from flax import struct
 
 from efppo.task.task import TaskState
-from efppo.task.dyn_types import TState, TControl, THFloat, TObs, TDone
+from efppo.task.dyn_types import Obs, TState, TControl, THFloat, TObs, TDone
 from efppo.utils.jax_types import IntScalar, TFloat
 from efppo.utils.rng import PRNGKey 
 from efppo.utils.jax_utils import merge01
 
- 
 
 
-Batch = collections.namedtuple(
-    'Batch',
-    ['observations', 'actions', 'rewards', 'masks', 'next_observations'])
-
+@dataclass
 class RunningStats:
-    def __init__(self, shape):
-        self.mean = np.zeros(shape)
-        self.var = np.zeros(shape)
-        self.count = 1e-10  # To avoid division by zero initially
+    mean:  Obs
+    var: Obs
+    count: int
 
-    def update(self, x):
-        batch_mean = np.mean(x, axis=0)
-        batch_var = np.var(x, axis=0)
-        batch_count = x.shape[0]
+    @classmethod
+    def create(cls, obs_shape):
+        return cls(np.zeros(obs_shape), np.zeros(obs_shape), 0)
+    
+    def add(self, b_obs):
+        batch_mean = jnp.mean(b_obs, axis=0)
+        batch_var = jnp.var(b_obs, axis=0)
+        batch_count = b_obs.shape[0]
 
         # Update running mean and variance using Welford’s method
         delta = batch_mean - self.mean
@@ -46,11 +45,28 @@ class RunningStats:
         self.var = (self.count * self.var + batch_count * batch_var +
                     delta**2 * self.count * batch_count / new_count) / new_count
         self.count = new_count
+    
+    def remove(self, b_obs):
+        """ Update running mean and variance when data is removed """
+        if self.count > 1e-10:
+            batch_mean = np.mean(x, axis=0)
+            batch_var = np.var(x, axis=0)
+            batch_count = x.shape[0]
 
+            delta = batch_mean - self.mean
+            new_count = self.count - batch_count
+
+            self.mean -= delta * batch_count / self.count
+            self.var = (self.count * self.var - batch_count * batch_var -
+                        delta**2 * self.count * batch_count / new_count) / new_count
+            self.count = new_count if new_count > 1e-10 else 1e-10  # Prevent div by zero
+
+ 
     def standardize(self, x):
         return (x - self.mean) / (np.sqrt(self.var) + 1e-8)
-      
+                          # Update running statistics for standardization
 
+    
 @dataclass
 class ReplayBuffer:
     class Experience(NamedTuple):
@@ -70,9 +86,9 @@ class ReplayBuffer:
     _key: PRNGKey
     _capacity: int = 10240 
     experiences: Optional[Experience] = None
-    # Running statistics to standardize states
+    # Running statistics to standardize states 
     obs_stats: Optional[RunningStats] = None
-    
+
     @classmethod
     def create(cls, key: PRNGKey, capacity: Optional[int] = None):
         return cls(_key = key, _capacity = capacity)
@@ -106,11 +122,13 @@ class ReplayBuffer:
         
         done_ts = jnp.where(self.experiences.T_done > 0)[0]
         if done_ts.shape[0] == 0:
+            self.obs_stats.remove(lax.dynamic_slice_in_dim(self.experiences.Tp1_obs, 0, self.size - self._capacity))
             self.experiences = jtu.tree_map(
                     lambda x: lax.dynamic_slice_in_dim(x, self.size - self._capacity, x.shape[0]), 
                     self.experiences
                 )
         else:
+            self.obs_stats.remove(lax.dynamic_slice_in_dim(self.experiences.Tp1_obs, 0, done_ts[0] + 1))
             self.experiences = jtu.tree_map(
                 lambda x: lax.dynamic_slice_in_dim(x, done_ts[0] + 1, x.shape[0]), 
                 self.experiences
@@ -154,17 +172,18 @@ class ReplayBuffer:
             T_expert_control = merge01(rollout.T_expert_control)
             )
         
+        self.obs_stats.add(new_experiences.Tp1_obs)
+
         self.experiences = jtu.tree_map(lambda x, y: jnp.concatenate((x, y), axis = 0), self.experiences, new_experiences)
-        # Update running statistics for standardization
-        self.obs_stats.update(rollout.Tp1_obs[:,:-1])
+         
         self.truncate_from_left()
          
     def sample(self, num_batches: int, batch_size: int) -> Experience:
         experiences = self.experiences
         replace = batch_size >= self.size
         def sample_one_batch(_):
-            b_experiences = jtu.tree_map(lambda x: jrd.choice(self._key, x, (batch_size,), axis = 0, replace = replace), experiences)
-            return b_experiences.replace(Tp1_obs = self.obs_stats.standardize(b_experiences.Tp1_obs), Tp1_nxt_obs = self.obs_stats.standardize(b_experiences.Tp1_nxt_obs))
+            return jtu.tree_map(lambda x: jrd.choice(self._key, x, (batch_size,), axis = 0, replace = replace), experiences)
+
         b_experiences = jax.vmap(sample_one_batch)(jnp.arange(num_batches))
         return b_experiences
  
