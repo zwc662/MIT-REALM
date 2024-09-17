@@ -27,7 +27,28 @@ Batch = collections.namedtuple(
     'Batch',
     ['observations', 'actions', 'rewards', 'masks', 'next_observations'])
 
+class RunningStats:
+    def __init__(self, shape):
+        self.mean = np.zeros(shape)
+        self.var = np.zeros(shape)
+        self.count = 1e-10  # To avoid division by zero initially
 
+    def update(self, x):
+        batch_mean = np.mean(x, axis=0)
+        batch_var = np.var(x, axis=0)
+        batch_count = x.shape[0]
+
+        # Update running mean and variance using Welford’s method
+        delta = batch_mean - self.mean
+        new_count = self.count + batch_count
+
+        self.mean += delta * batch_count / new_count
+        self.var = (self.count * self.var + batch_count * batch_var +
+                    delta**2 * self.count * batch_count / new_count) / new_count
+        self.count = new_count
+
+    def standardize(self, x):
+        return (x - self.mean) / (np.sqrt(self.var) + 1e-8)
       
 
 @dataclass
@@ -49,7 +70,8 @@ class ReplayBuffer:
     _key: PRNGKey
     _capacity: int = 10240 
     experiences: Optional[Experience] = None
-    
+    # Running statistics to standardize states
+    obs_stats: Optional[RunningStats] = None
     
     @classmethod
     def create(cls, key: PRNGKey, capacity: Optional[int] = None):
@@ -115,6 +137,7 @@ class ReplayBuffer:
                 T_done = jnp.zeros((0), dtype=rollout.T_done.dtype),
                 T_expert_control = jnp.zeros((0, *rollout.T_control.shape[2:]), dtype=rollout.T_control.dtype)
                 )
+            self.obs_stats = RunningStats(rollout.Tp1_state.shape[-1])
      
         new_experiences = ReplayBuffer.Experience(
             Tp1_state = merge01(rollout.Tp1_state[:,:-1]), 
@@ -132,14 +155,16 @@ class ReplayBuffer:
             )
         
         self.experiences = jtu.tree_map(lambda x, y: jnp.concatenate((x, y), axis = 0), self.experiences, new_experiences)
-
+        # Update running statistics for standardization
+        self.obs_stats.update(rollout.Tp1_obs[:,:-1])
         self.truncate_from_left()
          
     def sample(self, num_batches: int, batch_size: int) -> Experience:
         experiences = self.experiences
         replace = batch_size >= self.size
         def sample_one_batch(_):
-            return jtu.tree_map(lambda x: jrd.choice(self._key, x, (batch_size,), axis = 0, replace = replace), experiences)
+            b_experiences = jtu.tree_map(lambda x: jrd.choice(self._key, x, (batch_size,), axis = 0, replace = replace), experiences)
+            return b_experiences.replace(Tp1_obs = self.obs_stats.standardize(b_experiences.Tp1_obs), Tp1_nxt_obs = self.obs_stats.standardize(b_experiences.Tp1_nxt_obs))
         b_experiences = jax.vmap(sample_one_batch)(jnp.arange(num_batches))
         return b_experiences
  

@@ -14,6 +14,7 @@ import jax.lax as lax
 import jax.tree_util as jtu
 import pickle
 import h5py
+import re 
 
 from efppo.utils.tfp import tfd
  
@@ -54,8 +55,10 @@ def main(
         control_mode: Optional[str] = None,
         **kwargs):
     set_logger_format()
-
-    task = F1TenthWayPoint(control_mode = control_mode)
+    n_history = 0
+    if ckpt_path is not None and 'hist' in str(ckpt_path):
+        n_history = int(re.search(r"(\d+)hist",str(ckpt_path)).group(1))
+    task = F1TenthWayPoint(control_mode = control_mode, n_history = n_history)
       
     # Plot.
     rng = np.random.default_rng(seed=124122)
