@@ -49,9 +49,9 @@ class RunningStats:
     def remove(self, b_obs):
         """ Update running mean and variance when data is removed """
         if self.count > 1e-10:
-            batch_mean = np.mean(x, axis=0)
-            batch_var = np.var(x, axis=0)
-            batch_count = x.shape[0]
+            batch_mean = np.mean(b_obs, axis=0)
+            batch_var = np.var(b_obs, axis=0)
+            batch_count = b_obs.shape[0]
 
             delta = batch_mean - self.mean
             new_count = self.count - batch_count
@@ -60,12 +60,7 @@ class RunningStats:
             self.var = (self.count * self.var - batch_count * batch_var -
                         delta**2 * self.count * batch_count / new_count) / new_count
             self.count = new_count if new_count > 1e-10 else 1e-10  # Prevent div by zero
-
  
-    def standardize(self, x):
-        return (x - self.mean) / (np.sqrt(self.var) + 1e-8)
-                          # Update running statistics for standardization
-
     
 @dataclass
 class ReplayBuffer:
@@ -155,7 +150,7 @@ class ReplayBuffer:
                 T_done = jnp.zeros((0), dtype=rollout.T_done.dtype),
                 T_expert_control = jnp.zeros((0, *rollout.T_control.shape[2:]), dtype=rollout.T_control.dtype)
                 )
-            self.obs_stats = RunningStats(rollout.Tp1_state.shape[-1])
+            self.obs_stats = RunningStats.create(rollout.Tp1_obs.shape[-1])
      
         new_experiences = ReplayBuffer.Experience(
             Tp1_state = merge01(rollout.Tp1_state[:,:-1]), 
