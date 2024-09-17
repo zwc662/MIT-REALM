@@ -46,7 +46,6 @@ __pypackages__/
 *.pkl
 **/checkpoint
  
- 
 # SB3 logs
 logs
 
@@ -59,7 +58,7 @@ runs/**/default/
 runs/**/_CHECKPOINT_METADATA  
 runs/F1TenthWayPoint_inner
 !*_value.jpg
-!*.h5
+*.h5
 *.jpg
 runs/**/*.txt
 !*_eval_value_*.jpg 

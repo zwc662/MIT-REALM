@@ -542,7 +542,7 @@ class F1TenthWayPoint(Task):
 
      
 
-    def __init__(self, seed = 10, assets_location: str = None, n_actions: Tuple[int] = (10, 1), n_history: int = 10, control_mode: Optional[str] = None):
+    def __init__(self, seed = 10, assets_location: str = None, n_actions: Tuple[int] = (10, 1), n_history: int = 0, control_mode: Optional[str] = None):
        
         self.seed = seed
         self.dt = 0.05

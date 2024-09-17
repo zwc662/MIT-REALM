@@ -6,6 +6,8 @@ from typing_extensions import Annotated
 import sys
 import os
 
+import re
+
 import git
 repo = git.Repo(search_parent_directories=True)
 sha = repo.head.object.hexsha
@@ -41,7 +43,11 @@ def main(
         trainer = JAXRLTrainer(name = stamped_name, seed = seed)     
         trainer.train()
     elif 'baseline' in name:
-        task = F1TenthWayPoint()
+        n_history = 0
+        if 'hist' in name:
+            n_history = int(re.search(r"(\d+)hist", name).group(1))
+        
+        task = F1TenthWayPoint(n_history=n_history)
         trainer = BaselineTrainer(task) 
         trainer_cfg = BaselineTrainerCfg(n_iters=10_000_000, train_after = 1_000, train_every= 3, log_every=100, eval_every=100, ckpt_every=100)
          

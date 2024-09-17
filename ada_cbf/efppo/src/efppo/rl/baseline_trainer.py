@@ -139,7 +139,7 @@ class BaselineTrainer:
         key0, key1, key2 = jr.split(key, 3)
         alg: Baseline = alg_cfg.alg.create(key0, self.task, alg_cfg) 
         replay_buffer = ReplayBuffer.create(key=key1, capacity = 1e5)
-        self.run(alg, key2, alg, replay_buffer, collect_cfg, wandb_name, trainer_cfg)
+        self.run(key2, alg, replay_buffer, collect_cfg, wandb_name, trainer_cfg)
         
     def run(self, key: PRNGKey, alg: Baseline, replay_buffer: ReplayBuffer, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: BaselineTrainerCfg, iteratively: bool = True):    
         task_name = self.task.name
