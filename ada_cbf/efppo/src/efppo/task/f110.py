@@ -542,7 +542,7 @@ class F1TenthWayPoint(Task):
 
      
 
-    def __init__(self, seed = 10, assets_location: str = None, n_actions: Tuple[int] = (10, 1), n_history: int = 1, control_mode: Optional[str] = None):
+    def __init__(self, seed = 10, assets_location: str = None, n_actions: Tuple[int] = (10, 1), n_history: int = 10, control_mode: Optional[str] = None):
        
         self.seed = seed
         self.dt = 0.05
@@ -814,7 +814,7 @@ class F1TenthWayPoint(Task):
             self.cur_lookahead_points = lookahead_points[:]
 
         self.cur_state = self.get_state(state_dict, lookahead_points)
-        self.cur_history = [self.cur_state] * self.n_history
+        self.cur_history = np.asarray([self.cur_state] * self.n_history)
 
         self.cur_step = 0
  
@@ -909,10 +909,12 @@ class F1TenthWayPoint(Task):
             other_fts = state[self.STATE_Y + 1:self.STATE_FST_LAD]
             return np.concatenate((other_fts, lookahead_fts))
 
-        obss = jax.vmap(get_one_obs, in_axes = 0)(self.cur_history) 
-        obss = jnp.stack((get_one_obs(state), *obss)) 
+        obss = []
+        for pre_state in self.cur_history:
+            obss.append(get_one_obs(pre_state))
+        obss.append(get_one_obs(state))
         
-        return obss.flatten()
+        return np.asarray(obss).flatten()
 
     def efppo_control_transform(self, control):
         ## For Continuous Control
@@ -939,7 +941,7 @@ class F1TenthWayPoint(Task):
 
         #assert control.shape[-1] == 2 or control.shape == (2,), f"{control}"
         #assert control.shape[-1] == 1
-        assert state.shape[-1] == self.nx * self.num_history
+        assert state.shape[-1] == self.nx
 
         ## Initialized as pursuit planner
         self.cur_action = self.cur_pursuit_action
@@ -1098,7 +1100,7 @@ class F1TenthWayPoint(Task):
             ## Guaranteed overwhelmed cost for collision
             l_avoid = np.abs(self.cur_totl)
       
-        l = l_stability #+ l_dist #  l_vel + l_bc
+        l = l_stability + l_dist #  l_vel + l_bc
         self.cur_totl += l
 
         if self.render:

@@ -22,7 +22,7 @@ def test_train():
         )
     )
     from train_f110_wp import main as train_main
-    train_main(name = 'test_f110_train_baseline_disc_sac_ensemble_30')
+    train_main(name = 'test_f110_train_jaxrl_sac')
 
 ''' 
 def test_vmap():
