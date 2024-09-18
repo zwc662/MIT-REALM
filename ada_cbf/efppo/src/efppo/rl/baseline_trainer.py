@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from attrs import define
 from loguru import logger
-from matplotlib.colors import CenteredNorm
+from matplotlib.colors import BoundaryNorm 
+
 from enum import Enum
 
 import wandb
@@ -122,7 +123,10 @@ class BaselineTrainer:
  
         # --------------------------------------------
         # Contour of policy.
-        cmap = 'bwr'
+        # Use 'bwr' colormap and discretize it into task.n_actions colors (one for each integer action)
+        cmap = plt.get_cmap('bwr', self.task.n_actions)  # discrete colors from the 'bwr' colormap
+        # Create a norm to map values to the integers 0 to 10
+        norm = BoundaryNorm(boundaries=np.arange(self.task.n_actions), ncolors=cmap.N)
         x_idx, y_idx = self.task.get2d_idxs()
         xlabel, ylabel = self.task.x_labels[x_idx], self.task.x_labels[y_idx]
 
@@ -130,10 +134,9 @@ class BaselineTrainer:
         axes = axes.ravel().tolist()
         for grididx, ax in enumerate(axes[:nz]):
             z = data.z_zs[grididx]
-            cm = ax.contourf(bb_X, bb_Y, data.zbb_pol[grididx], levels=32, cmap=cmap, vmin=0., vmax=self.task.n_actions)
+            cm = ax.contourf(bb_X, bb_Y, data.zbb_pol[grididx], levels=32, cmap=cmap, norm=norm)
             #self.task.setup_traj_plot(ax)
-            fig.colorbar(cm, ax=ax)
-            cm.set_clim(0, self.task.n_actions)
+            fig.colorbar(cm, ax=ax, ticks=np.arange(self.task.n_actions))
             ax.set(xlabel=xlabel, ylabel=ylabel, title=f"z={z:.1f}")
         fig_path = mkdir(plot_dir / "policy") / "mode_{:08}.jpg".format(idx)
         fig.savefig(fig_path, bbox_inches="tight")
