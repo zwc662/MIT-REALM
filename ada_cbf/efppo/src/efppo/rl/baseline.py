@@ -59,6 +59,8 @@ class BaselineCfg(Cfg):
         clip_grad_pol: float
         clip_grad_V: float
 
+        obs_stats_decay: float
+
          
 
     @define
@@ -93,7 +95,7 @@ class BaselineCfg(Cfg):
     
 class ObsStats(NamedTuple):
         mean: Obs
-        var: Obs
+        var: Obs 
   
 class Baseline(Generic[_Algo], struct.PyTreeNode):
     update_idx: int
@@ -103,7 +105,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
 
     disc_gamma: FloatScalar
  
-    obs_stats: ObsStats
+    obs_stats: ObsStats #= struct.field(pytree_node=False)
          
     #task: Task = struct.field(pytree_node=False)
     cfg: BaselineCfg = struct.field(pytree_node=False)
@@ -129,7 +131,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         @property
         def batch_size(self) -> int:
             assert self.b_logprob.ndim == 2
-            return self.b_logprob.shape[1]
+            return self.b_logprob.shape[-1]
         
         @property
         def num_batches(self) -> int:
@@ -152,7 +154,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         obs, z = np.zeros(task.nobs), np.array(0.0)
         act = get_act_from_str(cfg.net.act)
 
-        obs_stats = ObsStats(obs, np.ones(task.nobs))
+        
 
         # Encoder for z. Params not shared.
         z_base_cls = ft.partial(ZEncoder, nz=cfg.net.nz_enc, z_mean=cfg.net.z_mean, z_scale=cfg.net.z_scale)
@@ -169,7 +171,8 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         disc_gamma = disc_gamma_sched(0)
         target_ent =  -task.n_actions / (task.n_actions + 1) * np.log(1/(task.n_actions+1))
 
-        
+        obs_stats = ObsStats(mean = np.zeros(task.nobs), var = np.ones(task.nobs))
+
         return Baseline(0, key, 1, pol, disc_gamma, obs_stats, cfg, target_ent, ent_cf, disc_gamma_sched)
 
        
@@ -200,6 +203,11 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         collector, data = collector.collect_batch_iteratively(lambda obs, z: self.sample_actions(self.standardize(obs), z), self.disc_gamma, z_min, z_max, rollout_T)
         return collector, data
     
+    def update_stats(self, mean: Obs, var: Obs):
+        new_mean = self.obs_stats.mean * self.train_cfg.obs_stats_decay + (1 - self.train_cfg.obs_stats_decay) * mean
+        new_var = self.obs_stats.var * self.train_cfg.obs_stats_decay + (1 - self.train_cfg.obs_stats_decay) * var
+        return ObsStats(mean = new_mean, var = new_var)
+    
     def make_dset(self, replay_buffer: ReplayBuffer) -> Batch:
         num_batches = self.train_cfg.n_batches
         batch_size =  self.train_cfg.batch_size
@@ -222,9 +230,9 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         return (obs - self.obs_stats.mean[jnp.newaxis, :].reshape(obs.shape)) / (np.sqrt(self.obs_stats.var[jnp.newaxis, :].reshape(obs.shape)) + 1e-8)
     
 
-    def sample_action(self, obs_pol, z):
+    def sample_action(self, obs_pol, z, key):
         a_pol = self.policy.apply(self.standardize(obs_pol), z)
-        control, logprob = a_pol.experimental_sample_and_log_prob(seed=self.key)
+        control, logprob = a_pol.experimental_sample_and_log_prob(seed=key)
         return control, logprob
     
 
@@ -285,7 +293,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         collect_fn = ft.partial(
             collect_single_mode,
             task,
-            get_pol=self.get_mode_and_prob,
+            get_pol=lambda obs, z: self.get_mode_and_prob(obs, z)[0],
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
@@ -350,7 +358,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         collect_fn = ft.partial(
             collect_single_env_mode,
             task,
-            get_pol=lambda obs, z: self.policy.apply(self.standardize(obs), z).mode(),
+            get_pol=lambda obs, z: self.get_mode_and_prob(obs, z)[0],
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
@@ -406,7 +414,8 @@ class BaselineSAC(Baseline):
         control_ub = jnp.asarray(task.ub).flatten()
 
 
-        obs_stats = ObsStats(obs, np.ones(task.nobs))
+        obs_stats = ObsStats(mean = np.zeros(task.nobs), var = np.ones(task.nobs))
+
         
         act = get_act_from_str(cfg.net.act)
 
@@ -452,9 +461,7 @@ class BaselineSAC(Baseline):
         batch = self.make_dset(replay_buffer)
 
         def update_one_batch(obj, batch_idx):
-            key_shuffle, key_self = jr.split(obj.key, 2)
-            rand_idxs = jr.permutation(key_shuffle, jnp.arange(batch.batch_size))
-            mb_dset = jax.tree_map(lambda x: x[batch_idx][rand_idxs], batch)
+            mb_dset = jax.tree_map(lambda x: x[batch_idx], batch)
             
             # 3: Perform value function and policy updates.
             def updates_body(alg_: BaselineSAC, b_batch: BaselineSAC.Batch):
@@ -470,24 +477,22 @@ class BaselineSAC(Baseline):
             info["steps/critic"] = obj.critic.step
             info["anneal/ent_cf"] = obj.ent_cf
 
-            return new_obj.replace(key=key_self, update_idx=obj.update_idx + 1), info
+            return new_obj.replace(update_idx=obj.update_idx + 1), info
         
-        new_self, new_info = lax.scan(update_one_batch, self, jnp.arange(batch.num_batches))
-        new_obs_stats = ObsStats(mean = replay_buffer.obs_stats.mean, var = replay_buffer.obs_stats.var)
+        self, new_info = lax.scan(update_one_batch, self, jnp.arange(batch.num_batches))
+        self = self.replace(obs_stats = self.update_stats(mean = replay_buffer.obs_stats.mean, var = replay_buffer.obs_stats.var))
 
-        return new_self.replace(obs_stats = new_obs_stats), jtu.tree_map(jnp.mean, new_info)
+        return self, jtu.tree_map(jnp.mean, new_info)
     
 
     def update_iteratively(self, replay_buffer: ReplayBuffer) -> tuple["BaselineSAC", dict]:
         batch = self.make_dset(replay_buffer)
  
         info = {}
- 
+         
+        
         for batch_idx in range(batch.num_batches):
-            key_shuffle, key_self = jr.split(self.key, 2)
-            self = self.replace(key = key_self)
-            rand_idxs = jr.permutation(key_shuffle, jnp.arange(batch.batch_size))
-            mb_dset = jax.tree_map(lambda x: x[batch_idx][rand_idxs], batch)
+            mb_dset = jax.tree_map(lambda x: x[batch_idx], batch)
             
             # 3: Perform value function and policy updates.
             def updates_body(alg_: BaselineSAC, b_batch: BaselineSAC.Batch):
@@ -503,13 +508,17 @@ class BaselineSAC(Baseline):
             info["steps/policy"] = self.policy.step
             info["steps/critic"] = self.critic.step
             info["anneal/ent_cf"] = self.ent_cf
-          
+
+        self = self.replace(obs_stats = self.update_stats(replay_buffer.obs_stats.mean, replay_buffer.obs_stats.var))
+        
         return self, info
 
 
 
     def update_critic(self, batch: Baseline.Batch) -> tuple["BaselineSAC", dict]:
-        b_nxt_control, b_nxt_logprob =jax.vmap(self.sample_action)(batch.b_nxt_obs, batch.b_nxt_z)
+        key_self, key_pol = jr.split(self.key, 2)
+        keys = jr.split(key_pol, self.train_cfg.batch_size)
+        b_nxt_control, b_nxt_logprob =jax.vmap(self.sample_action)(batch.b_nxt_obs, batch.b_nxt_z, keys)
 
         b_nxt_critics= jax.vmap(self.target_critic.apply)(self.standardize(batch.b_nxt_obs), batch.b_nxt_z, b_nxt_control).reshape(-1, self.cfg.net.n_critics)
          
@@ -554,22 +563,23 @@ class BaselineSAC(Baseline):
         
         new_target_critic_params = jax.tree_map(lambda p, tp: p * 5e-3 + tp * (1 - 5e-3), self.critic.params, self.target_critic.params)
         target_critic = self.target_critic.replace(params=new_target_critic_params)
-        return self.replace(critic=critic, target_critic=target_critic), critic_info
+        return self.replace(key = key_self, critic=critic, target_critic=target_critic), critic_info
      
 
     def update_policy(self, batch: Baseline.Batch) -> tuple["BaselineSAC", dict]:
         key_self, key_pol = jr.split(self.key, 2)
+        keys = jr.split(key_pol, self.train_cfg.batch_size)
         def get_pol_loss(pol_params):
             pol_apply = ft.partial(self.policy.apply_with, params=pol_params)
 
-            def get_logprob_entropy(obs, z, expert_control):
+            def get_logprob_entropy(obs, z, expert_control, key):
                 dist = pol_apply(self.standardize(obs), z)
                 entropy = dist.entropy()
-                sampled_control, logprob = rsample(key_pol, dist, self.control_lb, self.control_ub)
+                sampled_control, logprob = rsample(key, dist, self.control_lb, self.control_ub)
                 _, expert_logprob = anti_rsample(dist, expert_control, self.control_lb, self.control_ub)
                 return entropy, sampled_control, logprob, expert_logprob
             
-            b_entropy, b_sampled_controls, b_logprobs, b_expert_logprob = jax.vmap(get_logprob_entropy)(batch.b_obs, batch.b_z, batch.b_expert_control)
+            b_entropy, b_sampled_controls, b_logprobs, b_expert_logprob = jax.vmap(get_logprob_entropy)(batch.b_obs, batch.b_z, batch.b_expert_control, keys)
             b_critics = jax.vmap(self.critic.apply)(self.standardize(batch.b_obs), batch.b_z, b_sampled_controls).reshape(-1, self.cfg.net.n_critics)
             
             b_critic = jnp.min(b_critics, axis = -1)
@@ -602,9 +612,9 @@ class BaselineSAC(Baseline):
         return self.replace(key = key_self, policy=policy, temp = new_temp), pol_info
 
     
-    def sample_action(self, obs_pol, z):
+    def sample_action(self, obs_pol, z, key):
         a_pol = self.policy.apply(self.standardize(obs_pol), z)
-        return rsample(self.key, a_pol, self.control_lb, self.control_ub) 
+        return rsample(key, a_pol, self.control_lb, self.control_ub) 
 
     def get_target_critic(self, obs, z, control):
         h_target_critic = self.target_critic.apply(self.standardize(obs), z, control)
@@ -639,7 +649,7 @@ class BaselineSAC(Baseline):
         collect_fn = ft.partial(
             collect_single_mode,
             task,
-            get_pol=lambda obs_pol, z: self.sample_action(obs_pol, z)[0],
+            get_pol=lambda obs_pol, z: self.get_mode_and_prob(obs_pol, z)[0],
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
@@ -719,7 +729,7 @@ class BaselineSAC(Baseline):
         collect_fn = ft.partial(
             collect_single_env_mode,
             task,
-            get_pol=lambda obs, z: self.policy.apply(self.standardize(obs), z).mode(),
+            get_pol=lambda obs, z: self.get_mode_and_prob(obs, z)[0], 
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
@@ -806,9 +816,7 @@ class BaselineSACDisc(Baseline):
         batch = self.make_dset(replay_buffer)
         
         def update_one_batch(obj, batch_idx):
-            key_shuffle, key_self = jr.split(obj.key, 2)
-            rand_idxs = jr.permutation(key_shuffle, jnp.arange(batch.batch_size))
-            mb_dset = jax.tree_map(lambda x: x[batch_idx][rand_idxs], batch)
+            mb_dset = jax.tree_map(lambda x: x[batch_idx], batch)
             
             # 3: Perform value function and policy updates.
             def updates_body(alg_: BaselineSACDisc, b_batch: BaselineSACDisc.Batch):
@@ -824,62 +832,62 @@ class BaselineSACDisc(Baseline):
             info["steps/critic"] = obj.critic.step
             info["anneal/ent_cf"] = obj.ent_cf
 
-            return new_obj.replace(key=key_self, update_idx=obj.update_idx + 1), info
+            return new_obj.replace(update_idx=obj.update_idx + 1), info
         
-        new_self, new_info = lax.scan(update_one_batch, self, jnp.arange(batch.num_batches))
-        new_obs_stats = ObsStats(mean=replay_buffer.obs_stats.mean, var=replay_buffer.obs_stats.var)
+        self, new_info = lax.scan(update_one_batch, self, jnp.arange(batch.num_batches))
+        new_obs_stats = self.update_stats(mean=replay_buffer.obs_stats.mean, var=replay_buffer.obs_stats.var)
 
-        return new_self.replace(obs_stats = new_obs_stats), jtu.tree_map(jnp.mean, new_info)
+        return self.replace(obs_stats = new_obs_stats, ), jtu.tree_map(jnp.mean, new_info)
     
 
     def update_iteratively(self, replay_buffer: ReplayBuffer) -> tuple["BaselineSACDisc", dict]:
         batch = self.make_dset(replay_buffer)
- 
+         
         info = {}
- 
-        for batch_idx in range(batch.num_batches):
-            key_shuffle, key_self = jr.split(self.key, 2)
-            self = self.replace(key = key_self)
-            rand_idxs = jr.permutation(key_shuffle, jnp.arange(batch.batch_size))
-            mb_dset = jax.tree_map(lambda x: x[batch_idx][rand_idxs], batch)
+        
+        policy = self.policy
+        temp = self.temp
+        critic = self.critic
+        target_critic = self.target_critic
+        for batch_idx in range(batch.num_batches): 
+            mb_dset = jax.tree_map(lambda x: x[batch_idx], batch)
             
             # 3: Perform value function and policy updates.
-            def updates_body(alg_: BaselineSACDisc, b_batch: BaselineSACDisc.Batch):
-                alg_, critic_info = alg_.update_critic(b_batch)
-                alg_, pol_info = alg_.update_policy(b_batch)
-                return alg_, critic_info | pol_info
-
-            self, info = updates_body(self, mb_dset)
+            critic, target_critic, critic_info = self.update_critic(mb_dset, critic, target_critic)
+            policy, temp, pol_info = self.update_policy(mb_dset, policy, temp, critic)
+            
             # Take the mean.
             
-            info = jax.tree_map(jnp.mean, info)
+            info = jax.tree_map(jnp.mean, critic_info | pol_info)
 
             info["steps/policy"] = self.policy.step
             info["steps/critic"] = self.critic.step
             info["anneal/ent_cf"] = self.ent_cf
-          
-        return self, info
+        
 
+        new_obs_stats = self.update_stats(replay_buffer.obs_stats.mean, replay_buffer.obs_stats.var)
+        
+        return self.replace(obs_stats = new_obs_stats, policy = policy, temp = temp, critic = critic, target_critic = target_critic), info
+         
+        
+        
 
+    def update_critic(self, key: PRNGKey, critic: TrainState, target_critic: TrainState, batch: Baseline.Batch) -> tuple["TrainState", "TrainState", dict]:
+        keys = jr.split(key, self.train_cfg.batch_size)
+        b_nxt_control, b_nxt_logprob =jax.vmap(self.sample_action)(batch.b_nxt_obs, batch.b_nxt_z, keys)
 
-    def update_critic(self, batch: Baseline.Batch) -> tuple["BaselineSACDisc", dict]:
-        key_self, key_pol = jr.split(self.key, 2)
-        b_nxt_control, b_nxt_logprob =jax.vmap(lambda obs, z: self.policy.apply(obs, z).experimental_sample_and_log_prob(seed=key_pol))(batch.b_nxt_obs, batch.b_nxt_z)
-
-        b_nxt_critic_all= jax.vmap(self.target_critic.apply)(batch.b_nxt_obs, batch.b_nxt_z)
+        b_nxt_critic_all= jax.vmap(target_critic.apply)(batch.b_nxt_obs, batch.b_nxt_z)
         b_nxt_critics = jax.vmap(lambda nxt_critic, nxt_control: nxt_critic[:, nxt_control], in_axes = 0)(b_nxt_critic_all, b_nxt_control).reshape(-1, self.cfg.net.n_critics)
         
         b_nxt_critic = jnp.min(b_nxt_critics, axis = 1)
- 
- 
-        
+  
         b_target_critic = self.disc_gamma * b_nxt_critic
         b_target_critic -= self.disc_gamma * b_nxt_logprob 
         b_target_critic -= jax.nn.relu(b_target_critic) * batch.b_done 
         b_target_critic -= batch.b_l
         
         def get_critic_loss(params):
-            b_critic_all = jax.vmap(ft.partial(self.critic.apply_with, params=params))(batch.b_obs, batch.b_z)
+            b_critic_all = jax.vmap(ft.partial(critic.apply_with, params=params))(batch.b_obs, batch.b_z)
             b_critics = jax.vmap(lambda critic_1_2, control: critic_1_2[:, control], in_axes = 0)(b_critic_all, batch.b_control).reshape(-1, self.cfg.net.n_critics) 
             
             assert b_target_critic.shape[0] == b_critics.shape[0] 
@@ -893,12 +901,12 @@ class BaselineSACDisc(Baseline):
 
             return loss_critic, info
 
-        critic_grads, critic_info = jax.grad(get_critic_loss, has_aux=True)(self.critic.params)
+        critic_grads, critic_info = jax.grad(get_critic_loss, has_aux=True)(critic.params)
         critic_grads, critic_info["Grad/critic"] = compute_norm_and_clip(critic_grads, self.train_cfg.clip_grad_V)
 
         if self.cfg.net.n_critics > 2:
             # Compute the kernel matrix and kernel gradients 
-            ensemble_critic_params = self.critic.params['EnsembleDiscreteCriticNet_0'] 
+            ensemble_critic_params = critic.params['EnsembleDiscreteCriticNet_0'] 
             ensemble_critic_grads = critic_grads['EnsembleDiscreteCriticNet_0']
             kernel_matrix = compute_kernel_matrix(ensemble_critic_params)
             kernel_gradients = compute_kernel_gradient(ensemble_critic_params)
@@ -909,16 +917,17 @@ class BaselineSACDisc(Baseline):
 
             critic_grads, critic_info["Grad/critic"] = compute_norm_and_clip(critic_grads, self.train_cfg.clip_grad_V)
         
-        critic = self.critic.apply_gradients(grads=critic_grads)
+        new_critic = critic.apply_gradients(grads=critic_grads)
         
-        new_target_critic_params = jax.tree_map(lambda p, tp: p * 5e-3 + tp * (1 - 5e-3), self.critic.params, self.target_critic.params)
-        target_critic = self.target_critic.replace(params=new_target_critic_params)
-        return self.replace(key = key_self, critic=critic, target_critic=target_critic), critic_info
+        target_critic_params = jax.tree_map(lambda p, tp: p * 5e-3 + tp * (1 - 5e-3), critic.params, target_critic.params)
+        new_target_critic = target_critic.replace(params=target_critic_params)
+        
+        return new_critic, new_target_critic, critic_info
      
 
-    def update_policy(self, batch: Baseline.Batch) -> tuple["BaselineSACDisc", dict]:
+    def update_policy(self, policy: TrainState, temp: FloatScalar, critic: TrainState, batch: Baseline.Batch) -> tuple["TrainState", FloatScalar, dict]:
         def get_pol_loss(pol_params):
-            pol_apply = ft.partial(self.policy.apply_with, params=pol_params)
+            pol_apply = ft.partial(policy.apply_with, params=pol_params)
 
             def get_logprob_entropy(obs, z):
                 dist = pol_apply(obs, z)
@@ -929,14 +938,14 @@ class BaselineSACDisc(Baseline):
             b_entropy, b_logprobs = jax.vmap(get_logprob_entropy)(batch.b_obs, batch.b_z)
             b_expert_logprob = jax.vmap(lambda logprobs, expert_control: logprobs[expert_control], in_axes = 0)(
                 b_logprobs, batch.b_expert_control)
-            b_critic_all = jax.vmap(self.critic.apply)(batch.b_obs, batch.b_z)
+            b_critic_all = jax.vmap(critic.apply)(batch.b_obs, batch.b_z)
             b_critics = jax.vmap(
                 lambda critics_all, logprobs: jax.vmap(lambda critics: critics @ jnp.exp(logprobs), in_axes = 0)(critics_all), in_axes = 0)(
                     b_critic_all, b_logprobs).reshape(-1, self.cfg.net.n_critics)
            
             b_critic = jnp.min(b_critics, axis = 1)
 
-            sac_loss = jnp.mean(- b_entropy * self.temp - b_critic) 
+            sac_loss = jnp.mean(- b_entropy * temp - b_critic) 
 
             bc_loss = - jnp.mean(b_expert_logprob)
 
@@ -954,14 +963,14 @@ class BaselineSACDisc(Baseline):
 
         ent_cf = self.ent_cf
         bc_ratio = self.train_cfg.bc_ratio
-        grads, pol_info = jax.grad(get_pol_loss, has_aux=True)(self.policy.params)
+        grads, pol_info = jax.grad(get_pol_loss, has_aux=True)(policy.params)
         
         grads, pol_info["Grad/pol"] = compute_norm_and_clip(grads, self.train_cfg.clip_grad_pol)
-        policy = self.policy.apply_gradients(grads=grads)
+        new_policy = policy.apply_gradients(grads=grads)
 
-        new_temp = self.temp - ent_cf * (pol_info['loss_entropy'] - self.target_ent)
+        new_temp = temp - ent_cf * (pol_info['loss_entropy'] - self.target_ent)
         pol_info["temperature"] = new_temp
-        return self.replace(policy=policy, temp = new_temp), pol_info
+        return new_policy, new_temp, pol_info
     
     
     def collect_iteratively(self, collector: Collector, rollout_T: Optional[int] = None) -> tuple[Collector, Baseline.Batch]:
@@ -1077,7 +1086,7 @@ class BaselineSACDisc(Baseline):
         collect_fn = ft.partial(
             collect_single_env_mode,
             task,
-            get_pol=lambda obs, z: self.policy.apply(self.standardize(obs), z).mode(),
+            get_pol=lambda obs, z: self.get_mode_and_prob(obs, z)[0],
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
@@ -1423,7 +1432,7 @@ class BaselineDQN(Baseline):
         collect_fn = ft.partial(
             collect_single_mode,
             task,
-            get_pol=self.policy.apply,
+            get_pol=lambda obs, z: self.get_mode_and_prob(obs, z)[0],
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,

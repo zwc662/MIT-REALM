@@ -76,7 +76,7 @@ def main(
                 alg = ckpt_dict["alg"]
 
                 replay_buffer = ReplayBuffer.create(key=key1, capacity = 1e5)
-                replay_buffer_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(name))), 'replay_buffer.h5')
+                replay_buffer_path = os.path.dirname(os.path.dirname(os.path.dirname(name)))
                 if os.path.exists(replay_buffer_path):
                     replay_buffer.load(replay_buffer_path)
                 trainer.run(key2, alg, replay_buffer, collect_cfg, stamped_name, trainer_cfg)
@@ -89,6 +89,8 @@ def main(
                 alg_cfg.train.bc_ratio = 1.
             if 'ensemble' in name:
                 alg_cfg.net.n_critics = 30
+            if 'normalize' in name:
+                alg_cfg.train.obs_stats_decay = 0.0
             trainer.train(jr.PRNGKey(seed), alg_cfg, collect_cfg, stamped_name, trainer_cfg, iteratively = True)
     
 

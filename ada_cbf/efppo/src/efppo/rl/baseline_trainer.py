@@ -15,7 +15,7 @@ from enum import Enum
 
 import wandb
 from efppo.rl.collector import Collector, CollectorCfg
-from efppo.rl.replay_buffer import ReplayBuffer
+from efppo.rl.replay_buffer import ReplayBuffer, Experience
 from efppo.rl.baseline import Baseline, BaselineSAC, BaselineDQN
 from efppo.task.plotter import Plotter
 from efppo.task.task import Task
@@ -64,7 +64,7 @@ class BaselineTrainer:
         self.plotter = Plotter(task)
         register_cmaps()
 
-    def plot_train(self, idx: int, plot_dir: pathlib.Path, data: ReplayBuffer.Experience):
+    def plot_train(self, idx: int, plot_dir: pathlib.Path, data: Experience):
         
         # --------------------------------------------
         # Plot the trajectories.
@@ -215,7 +215,7 @@ class BaselineTrainer:
                 with open(f'{ckpt_dir}/{idx:08}/cfg.pt', 'wb') as fp:
                     pickle.dump({"alg_cfg": alg.cfg, "collect_cfg": collect_cfg}, fp)
                 
-                replay_buffer.save(f'{os.path.dirname(ckpt_dir)}/replay_buffer.h5')
+                replay_buffer.save(os.path.dirname(ckpt_dir))
                 replay_buffer.truncate_from_right()
 
  
