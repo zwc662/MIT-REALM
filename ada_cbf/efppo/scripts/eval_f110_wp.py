@@ -282,9 +282,9 @@ if __name__ == "__main__":
     control_mode = None
     if args.pursuit and args.random:
         control_mode = 'random+pursuit'
-    if args.pursuit:
+    elif args.pursuit:
         control_mode = 'pursuit'
-    if args.random:
+    elif args.random:
         control_mode = 'random'
     
 
