@@ -223,6 +223,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
             b_l = batch_data.T_l,
             b_h = batch_data.Th_h,
             b_expert_control = batch_data.T_expert_control,
+            b_agent_control = batch_data.T_agent_control,
             b_done = batch_data.T_done,
         )
         return b_batch
