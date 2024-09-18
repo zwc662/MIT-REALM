@@ -961,7 +961,7 @@ class F1TenthWayPoint(Task):
             ## If using random control
             self.cur_action = np.random.randint(self.n_actions)
         elif control_mode == 'random+pursuit':
-            if np.random.random([1]).item() > 0.7:  
+            if np.random.random([1]).item() > 0.5:  
                 self.cur_action = np.random.randint(self.n_actions)
         
         self.cur_control = self.discr_to_cts(self.cur_action)
