@@ -132,7 +132,7 @@ class BaselineTrainer:
             z = data.z_zs[grididx]
             cm = ax.contourf(bb_X, bb_Y, data.zbb_pol[grididx], levels=32, cmap=cmap, vmin=0., vmax=self.task.n_actions)
             #self.task.setup_traj_plot(ax)
-            fig.colorbar(cm, ax=ax)
+            fig.colorbar(cm, ax=ax).set_clim(0, self.task.n_actions)
             ax.set(xlabel=xlabel, ylabel=ylabel, title=f"z={z:.1f}")
         fig_path = mkdir(plot_dir / "policy") / "mode_{:08}.jpg".format(idx)
         fig.savefig(fig_path, bbox_inches="tight")
