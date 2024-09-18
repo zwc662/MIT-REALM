@@ -243,13 +243,13 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         return mode_sample, mode_prob
  
 
-    def eval_iteratively(self, task: Task, rollout_T: int) -> EvalData:
+    def eval_iteratively(self, task: Task, rollout_T: int, contour_size: Tuple[int]) -> EvalData:
         # Evaluate for a range of zs.
         val_zs = np.linspace(self.train_cfg.z_min, self.train_cfg.z_max, num=8)
 
         Z_datas = []
         for z in val_zs:
-            data = self.eval_single_z_iteratively(task, z, rollout_T)
+            data = self.eval_single_z_iteratively(task, z, rollout_T, contour_size)
             Z_datas.append(data)
         Z_data = tree_stack(Z_datas)
 
@@ -317,10 +317,10 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}#
         return self.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info)
      
-    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int):
+    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_size: Tuple[int]):
         # --------------------------------------------
         # Plot value functions.
-        bb_X, bb_Y, bb_state = jax2np(task.grid_contour())
+        bb_X, bb_Y, bb_state = jax2np(task.grid_contour(*contour_size))
         bb_obs = []
         for i in range(bb_state.shape[0]):
             bb_obs.append([])
@@ -627,10 +627,10 @@ class BaselineSAC(Baseline):
         return collector, data
     
 
-    def eval_single_z(self, task: Task, z: float, rollout_T: int):
+    def eval_single_z(self, task: Task, z: float, rollout_T: int, contour_size: Tuple[int]):
         # --------------------------------------------
         # Plot value functions.
-        bb_X, bb_Y, bb_state = task.grid_contour()
+        bb_X, bb_Y, bb_state = task.grid_contour(*contour_size)
         bb_obs = jax_vmap(task.get_obs, rep=2)(bb_state)
         bb_z = jnp.full(bb_X.shape, z)
 
@@ -673,10 +673,10 @@ class BaselineSAC(Baseline):
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}#
         return self.EvalData(z, bb_control, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic)
      
-    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int):
+    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_size: Tuple[int]):
         # --------------------------------------------
         # Plot value functions.
-        bb_X, bb_Y, bb_state = jax2np(task.grid_contour())
+        bb_X, bb_Y, bb_state = jax2np(task.grid_contour(*contour_size))
         bb_obs = []
         for i in range(bb_state.shape[0]):
             bb_obs.append([])
@@ -1029,10 +1029,10 @@ class BaselineSACDisc(Baseline):
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}#
         return self.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic)
      
-    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int):
+    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_size: Tuple[int]):
         # --------------------------------------------
         # Plot value functions.
-        bb_X, bb_Y, bb_state = jax2np(task.grid_contour(n_xs = 10, n_ys = 10))
+        bb_X, bb_Y, bb_state = jax2np(task.grid_contour(*contour_size))
         bb_obs = []
         for i in range(bb_state.shape[0]):
             bb_obs.append([])
@@ -1460,10 +1460,10 @@ class BaselineDQN(Baseline):
         info = {"avg_len": avg_len, "p_unsafe": p_unsafe, "h_mean": h_mean, "l_mean": l_mean}
         return BaselineDQN.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic)
      
-    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int):
+    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_size: Tuple[int]):
         # --------------------------------------------
         # Plot value functions.
-        bb_X, bb_Y, bb_state = jax2np(task.grid_contour())
+        bb_X, bb_Y, bb_state = jax2np(task.grid_contour(*contour_size))
         bb_obs = []
         for i in range(bb_state.shape[0]):
             bb_obs.append([])

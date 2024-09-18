@@ -1,6 +1,8 @@
 import pathlib
 import time
 
+from typing import Tuple
+
 import sys, os
 
 import jax.random as jr
@@ -56,6 +58,8 @@ class BaselineTrainerCfg(Cfg):
 
     ckpt_max_keep: int = 100
 
+    contour_size: Tuple[int] = (10, 10)
+
     
 
 class BaselineTrainer:
@@ -78,10 +82,10 @@ class BaselineTrainer:
         plt.close(fig)
 
 
-    def plot_eval(self, idx: int, plot_dir: pathlib.Path, data: Baseline.EvalData):
+    def plot_eval(self, idx: int, plot_dir: pathlib.Path, data: Baseline.EvalData, trainer_cfg: BaselineTrainerCfg):
         fig_opt = dict(layout="constrained", dpi=200)
 
-        bb_X, bb_Y, _ = self.task.grid_contour()
+        bb_X, bb_Y, _ = self.task.grid_contour(*trainer_cfg.contour_size)
 
         # --------------------------------------------
         # Plot the trajectories.
@@ -187,13 +191,13 @@ class BaselineTrainer:
             eval_rollout_T = collect_cfg.rollout_T
             if should_eval:
                 if iteratively:
-                    data = alg.eval_iteratively(self.task, eval_rollout_T)
+                    data = alg.eval_iteratively(self.task, eval_rollout_T, trainer_cfg.contour_size)
                     data = jtu.tree_map(np.array, data)
                 else:
                     data = jax2np(alg.eval(eval_rollout_T))
                 logger.info(f"[{idx:8}]   {data.info}")
 
-                self.plot_eval(idx, plot_dir, data)
+                self.plot_eval(idx, plot_dir, data, trainer_cfg)
                 log_dict = {f"eval/{k}": v for k, v in data.info.items()}
                 wandb.log(log_dict, step=idx)
 
