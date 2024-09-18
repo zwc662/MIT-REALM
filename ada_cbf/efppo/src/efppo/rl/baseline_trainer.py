@@ -122,6 +122,26 @@ class BaselineTrainer:
         fig.savefig(fig_path, bbox_inches="tight")
         plt.close(fig)
 
+        # --------------------------------------------
+        # Contour of policy.
+        cmap = "rocket"
+        cmap_Vh = "RdBu_r"
+
+        x_idx, y_idx = self.task.get2d_idxs()
+        xlabel, ylabel = self.task.x_labels[x_idx], self.task.x_labels[y_idx]
+
+        fig, axes = plt.subplots(3, 3, figsize=figsize, **fig_opt)
+        axes = axes.ravel().tolist()
+        for grididx, ax in enumerate(axes[:nz]):
+            z = data.z_zs[grididx]
+            cm = ax.contourf(bb_X, bb_Y, data.zbb_pol[grididx], levels=32, cmap=cmap)
+            #self.task.setup_traj_plot(ax)
+            fig.colorbar(cm, ax=ax)
+            ax.set(xlabel=xlabel, ylabel=ylabel, title=f"z={z:.1f}")
+        fig_path = mkdir(plot_dir / "policy") / "policy_{:08}.jpg".format(idx)
+        fig.savefig(fig_path, bbox_inches="tight")
+        plt.close(fig)
+
         '''
         # --------------------------------------------
         # Contour of Vh.
