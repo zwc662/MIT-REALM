@@ -22,7 +22,7 @@ def get(name: str = 'efppo'):
     entropy_cf = LinDecay(1e-2, 5e2, warmup_steps=200_000, trans_steps=1_000_000)
     disc_gamma = 0.98
     
-    n_batches = 8
+    n_batches = 3
 
     batch_size = 256
     
