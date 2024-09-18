@@ -1062,10 +1062,9 @@ class F1TenthWayPoint(Task):
        
         ## High velocity => low cost
         l_vel = 0
-        if False:
-            max_speed = 1**2
-            l_vel = - min(1, np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum() / max_speed)
-      
+        max_speed = 1**2
+        l_vel = - min(1, np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum() / max_speed)
+    
         ## Stability: greater dist to previous lookahead dist => high cost
         l_stability = 0
         if self.pre_waypoint_ids is not None and self.pre_state is not None:
@@ -1222,7 +1221,7 @@ class F1TenthWayPoint(Task):
             )
         
             
-    def grid_contour(self, n_xs = 10, n_ys = 10) -> tuple[BBFloat, BBFloat, TaskState]:
+    def grid_contour(self, n_xs = 10, n_ys = 10, mode: str = 'velocity') -> tuple[BBFloat, BBFloat, TaskState]:
         # Contour with ( x axis=θ, y axis=H )
         b_xs = np.linspace(-5, 5, num=n_xs)
         b_ys = np.linspace(-5, 5, num=n_ys)
@@ -1230,17 +1229,25 @@ class F1TenthWayPoint(Task):
         x0 = jnp.zeros([self.nx])
         bb_x0 = jnp.asarray(ei.repeat(x0, "nx -> b1 b2 nx", b1=n_ys, b2=n_xs))
 
-        bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
-        for i in range(int((self.nx - self.STATE_FST_LAD) / 2)):
-            bb_LAD = self.conf.work.tlad / self.conf.work.nlad * i  
-            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + i * 2].set(bb_LAD)
+        if mode == 'velocity':
+            bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
+            for i in range(int((self.nx - self.STATE_FST_LAD) / 2)):
+                bb_LAD = self.conf.work.tlad / self.conf.work.nlad * i  
+                bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + i * 2].set(bb_LAD)
 
-        bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_X)
-        bb_x0 = bb_x0.at[:, :, self.STATE_VEL_Y].set(bb_Y)
+            bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_X)
+            bb_x0 = bb_x0.at[:, :, self.STATE_VEL_Y].set(bb_Y)
 
 
-        return bb_X, bb_Y, bb_x0
-    
-        state = self.reset()
-        return state.reshape(1, *state.shape)
+            return bb_X, bb_Y, bb_x0
+
+        elif mode == 'lookahead':
+            bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
+            for i in range(int((self.nx - self.STATE_FST_LAD) / 2)):
+                bb_LAD = self.conf.work.tlad / self.conf.work.nlad * i  
+                bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + i * 2].set(bb_LAD)
+
+            bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_X)
+            bb_x0 = bb_x0.at[:, :, self.STATE_VEL_Y].set(bb_Y)
+
 
