@@ -909,11 +909,12 @@ class F1TenthWayPoint(Task):
             other_fts = state[self.STATE_Y + 1:self.STATE_FST_LAD]
             return np.concatenate((other_fts, lookahead_fts))
 
-        obss = []
-        for pre_state in self.cur_history:
-            obss.append(get_one_obs(pre_state))
-        obss.append(get_one_obs(state))
-        
+        obss = [get_one_obs(state)]
+        if self.cur_history is None:
+            obss *= self.n_history + 1
+        else:
+            obss += [get_one_obs(pre_state) for _ in range(self.n_history)]
+         
         return np.asarray(obss).flatten()
 
     def efppo_control_transform(self, control):

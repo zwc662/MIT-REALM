@@ -122,7 +122,7 @@ class BaselineTrainer:
  
         # --------------------------------------------
         # Contour of policy.
-        cmap = 'binary'
+        cmap = 'bwr'
         x_idx, y_idx = self.task.get2d_idxs()
         xlabel, ylabel = self.task.x_labels[x_idx], self.task.x_labels[y_idx]
 
