@@ -49,7 +49,7 @@ def main(
         
         control_mode = None
         if 'offpolicy' in name:
-            control_mode = 'mix'
+            control_mode = 'random+pursuit'
 
         task = F1TenthWayPoint(n_history=n_history, control_mode = control_mode)
         trainer = BaselineTrainer(task) 

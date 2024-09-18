@@ -929,7 +929,7 @@ class F1TenthWayPoint(Task):
 
 
     @override
-    def step(self, state: State, control: Union[Control, Action]) -> State:
+    def step(self, state: State, control: Union[Control, Action], control_mode: Optional[str] = None) -> State:
         ## Ensure pausing the simulator when the agent is already out of bound (out of lane boundary or inf/nan in states)
         if False and np.any(self.cur_done > 0.): 
             print(f'Simulation fronzen @ {self.cur_step}: {self.cur_state_dict}')
@@ -937,7 +937,7 @@ class F1TenthWayPoint(Task):
                 input(f'Simulation fronzen @ {self.cur_step}: {self.cur_state_dict}. Say something ??')
             return self.cur_state
         
-       
+        control_mode = self.control_mode if control_mode is None else control_mode
 
         #assert control.shape[-1] == 2 or control.shape == (2,), f"{control}"
         #assert control.shape[-1] == 1
@@ -946,7 +946,7 @@ class F1TenthWayPoint(Task):
         ## Initialized as pursuit planner
         self.cur_action = self.cur_pursuit_action
         self.cur_control = self.cur_pursuit_control
-        if self.control_mode is None:
+        if control_mode is None:
             ## If using external control
             if np.asarray([control]).flatten().shape[0] > 1:
                 #print(f'Before projection {self.cur_action=}')
@@ -957,10 +957,10 @@ class F1TenthWayPoint(Task):
                 assert control >= 0 and control < self.n_actions, f"{control=} is out of bounds for [0, {self.n_actions - 1}]"
                 self.cur_action = int(control)
             #self.cur_control = self.discr_to_cts(self.cur_action)
-        elif self.control_mode == 'random':
+        elif control_mode == 'random':
             ## If using random control
             self.cur_action = np.random.randint(self.n_actions)
-        elif self.control_mode == 'mix':
+        elif control_mode == 'random+pursuit':
             if np.random.random([1]) > 0.8:  
                 self.cur_action = np.random.randint(self.n_actions)
         

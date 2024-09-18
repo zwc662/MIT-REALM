@@ -280,10 +280,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     control_mode = None
+    if args.pursuit and args.random:
+        control_mode = 'random+pursuit'
     if args.pursuit:
         control_mode = 'pursuit'
     if args.random:
         control_mode = 'random'
+    
 
     main(alg = args.alg, ckpt_path = args.ckpt, render = args.render, control_mode = control_mode)
     #with ipdb.launch_ipdb_on_exception():
