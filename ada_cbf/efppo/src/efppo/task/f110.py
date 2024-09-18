@@ -1230,8 +1230,8 @@ class F1TenthWayPoint(Task):
 
         bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
         for i in range(int((self.nx - self.STATE_FST_LAD) / 2)):
-            bb_x0 = jnp.asarray(bb_x0).at[:, :, self.STATE_FST_LAD + i * 2].set(bb_X * i)
-            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + 1 + i * 2].set(bb_Y * i)
+            bb_x0 = jnp.asarray(bb_x0).at[:, :, self.STATE_FST_LAD + i * 2].set(bb_X * i + bb_x0[:, :, self.STATE_X])
+            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + 1 + i * 2].set(bb_Y * i + bb_x0[:, :, self.STATE_Y])
 
         return bb_X, bb_Y, bb_x0
     
