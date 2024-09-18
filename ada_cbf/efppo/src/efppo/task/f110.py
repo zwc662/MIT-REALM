@@ -964,7 +964,7 @@ class F1TenthWayPoint(Task):
         elif control_mode == 'random+pursuit':
             if np.random.random([1]).item() > 0.5:  
                 self.cur_action = np.random.randint(self.n_actions)
-        
+            
         self.cur_control = self.discr_to_cts(self.cur_action)
         
         if self.render:
@@ -1035,7 +1035,8 @@ class F1TenthWayPoint(Task):
                 self.cur_history = np.concatenate(([self.cur_state], self.cur_history[:-1]), axis = 0)
             self.cur_step += 1
 
-        return self.cur_state #, step_reward, done, info
+        return self.cur_state, \
+            (self.cur_control.reshape(control.shape) if np.asarray([control]).flatten().shape[0] > 1 else self.cur_action) #, step_reward, done, info
     
     def get_expert(self, state: State, ref_control: Union[Control, Action]) -> Union[Control, Action]:
         if np.asarray([ref_control]).flatten().shape[0] > 1:

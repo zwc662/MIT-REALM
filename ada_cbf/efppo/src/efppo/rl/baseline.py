@@ -125,6 +125,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         b_l: BLFloat
         b_h: BHFloat
         b_expert_control: BControl
+        b_agent_control: BControl
         b_done: BFloat
         
         

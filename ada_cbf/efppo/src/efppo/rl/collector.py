@@ -31,6 +31,7 @@ class RolloutOutput(NamedTuple):
     Th_h: THFloat
     T_done: TDone
     T_expert_control: TControl
+    T_agent_control: TControl
 
 
 @define
@@ -64,9 +65,9 @@ def collect_single_mode(
 ):
     def _body(state: CollectorState, _):
         obs_pol = task.get_obs(state.state)
-        control = get_pol(obs_pol, state.z)
+        agent_control = get_pol(obs_pol, state.z)
         expert_control = task.get_expert(state.state, control)
-        envstate_new = task.step(state.state, control)
+        envstate_new, control = task.step(state.state, agent_control)
 
         # Z dynamics.
         l = task.l(envstate_new, control)
@@ -76,11 +77,11 @@ def collect_single_mode(
         if hasattr(task, 'l1_control_info'):
             task.l1_control_info['z'] = z_new
 
-        return CollectorState(state.steps, envstate_new, z_new), (envstate_new, obs_pol, z_new, control, expert_control)
+        return CollectorState(state.steps, envstate_new, z_new), (envstate_new, obs_pol, z_new, control, expert_control, agent_control)
     if hasattr(task, 'l1_control_info'):
         task.l1_control_info['z'] = z0
     colstate0 = CollectorState(0, x0, z0)
-    collect_state, (T_envstate, T_obs, T_z, T_u, T_expert_u) = lax.scan(_body, colstate0, None, length=rollout_T)
+    collect_state, (T_envstate, T_obs, T_z, T_u, T_expert_u, T_agent_u) = lax.scan(_body, colstate0, None, length=rollout_T)
     obs_final = task.get_obs(collect_state.state)
 
     # Add the initial observations.
@@ -92,7 +93,7 @@ def collect_single_mode(
     T_l = jax.vmap(task.l)(T_state_to, T_u)
     Th_h = jax.vmap(task.h_components)(T_state_to) 
 
-    return RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, None, T_l, Th_h, T_done, T_expert_u)
+    return RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, None, T_l, Th_h, T_done, T_expert_u, T_agent_u)
 
 def collect_single(
     task: Task,
@@ -107,16 +108,16 @@ def collect_single(
     def _body(state: CollectorState, key):
         obs_pol = task.get_obs(state.state)
         a_pol: tfd.Distribution = get_pol(obs_pol, state.z)
-        control, logprob = a_pol.experimental_sample_and_log_prob(seed=key)
-        expert_control = task.get_expert(state.state, control)
-        envstate_new = task.step(state.state, control)
+        agent_control, logprob = a_pol.experimental_sample_and_log_prob(seed=key)
+        expert_control = task.get_expert(state.state, agent_control)
+        envstate_new, control = task.step(state.state, agent_control)
         
         # Z dynamics.
         l = task.l(envstate_new, control) 
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
 
-        return CollectorState(state.steps, envstate_new, z_new), (envstate_new, obs_pol, z_new, control, logprob, expert_control)
+        return CollectorState(state.steps, envstate_new, z_new), (envstate_new, obs_pol, z_new, control, logprob, expert_control, agent_control)
 
     # Randomly sample z0.
     key_z0, key_step = jr.split(key0)
@@ -125,7 +126,7 @@ def collect_single(
 
     assert colstate0.steps.shape == tuple()
     T_keys = jr.split(key_step, rollout_T)
-    collect_state, (T_envstate, T_obs, T_z, T_u, T_logprob, T_expert_u) = lax.scan(_body, colstate0, T_keys, length=rollout_T)
+    collect_state, (T_envstate, T_obs, T_z, T_u, T_logprob, T_expert_u, T_agent_u) = lax.scan(_body, colstate0, T_keys, length=rollout_T)
     collect_state = collect_state._replace(steps=collect_state.steps + rollout_T)
     obs_final = task.get_obs(collect_state.state)
 
@@ -138,7 +139,7 @@ def collect_single(
     Th_h = jax.vmap(task.h_components)(T_state_to)
     T_done = Tp1_z * 0.
 
-    return collect_state, RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, T_logprob, T_l, Th_h, T_done, T_expert_u)
+    return collect_state, RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, T_logprob, T_l, Th_h, T_done, T_expert_u, T_agent_u)
 
 def collect_single_env_mode(
     task: Task,
@@ -156,9 +157,9 @@ def collect_single_env_mode(
         obs_pol = task.get_obs(state.state)
         #a_pol: tfd.Distribution = get_pol(obs_pol, state.z)
         #control = a_pol.mode()
-        control = get_pol(obs_pol, state.z)
-        expert_control = task.get_expert(state.state, control)
-        envstate_new = task.step(state.state, control)
+        agent_control = get_pol(obs_pol, state.z)
+        expert_control = task.get_expert(state.state, agent_control)
+        envstate_new, control = task.step(state.state, agent_control)
  
         # Z dynamics.
         l = task.l(envstate_new, control)
@@ -166,7 +167,7 @@ def collect_single_env_mode(
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
         new_state = CollectorState(state.steps + 1, envstate_new.reshape(-1), z_new)
-        return new_state, (envstate_new, obs_pol, z_new, l, h, control, expert_control)
+        return new_state, (envstate_new, obs_pol, z_new, l, h, control, expert_control, agent_control)
  
     collect_state = CollectorState(0, x0, z0)
     
@@ -178,9 +179,10 @@ def collect_single_env_mode(
     Th_h = [] 
     T_done = []
     T_expert_u = []
+    T_agent_u = []
 
     for t in range(rollout_T):
-        collect_state, (envstate_new, obs_pol, z_new, l, h, control, expert_control) = _body(collect_state, None)
+        collect_state, (envstate_new, obs_pol, z_new, l, h, control, expert_control, agent_control) = _body(collect_state, None)
 
         assert not np.any(np.isnan(envstate_new))
         assert not np.any(np.isnan(obs_pol))
@@ -198,6 +200,7 @@ def collect_single_env_mode(
         T_l.append(l)
         Th_h.append(h)
         T_expert_u.append(expert_control)
+        T_agent_u.append(agent_control)
         
 
         if task.should_reset(envstate_new):
@@ -231,7 +234,7 @@ def collect_single_env_mode(
     Th_h = jnp.stack(Th_h)
     T_done = jnp.stack(T_done)
     T_expert_u = jnp.stack(T_expert_u)
-
+    T_agent_u = jnp.stack(T_agent_u)
     '''
     # Add the initial observations.
     Tp1_state = jnp.stack((x0, *T_envstate))
@@ -243,7 +246,7 @@ def collect_single_env_mode(
     Th_h = jnp.stack((-jnp.ones(len(task.h_labels)), *Th_h)).reshape(-1, len(task.h_labels))
     '''
                      
-    return RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, None, T_l, Th_h, T_done, T_expert_u)
+    return RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, None, T_l, Th_h, T_done, T_expert_u, T_agent_u)
 
 def collect_single_batch(
     task: Task,
@@ -259,8 +262,8 @@ def collect_single_batch(
     def _body(state: CollectorState, key):
         obs_pol = task.get_obs(state.state)
         #a_pol: tfd.Distribution = get_pol(obs_pol, state.z.squeeze())
-        control, logprob = get_pol(obs_pol, state.z.squeeze(), key = key)
-        expert_control = task.get_expert(state.state, control)
+        agent_control, logprob = get_pol(obs_pol, state.z.squeeze(), key = key)
+        expert_control = task.get_expert(state.state, agent_control)
         '''
         s = tfd.Sample(
             tfd.MultivariateNormalDiag(loc=[0., 0.], scale_diag=[1, 1.]), sample_shape=1
@@ -269,7 +272,8 @@ def collect_single_batch(
         logprob = s.log_prob(base_control).reshape(logprob.shape)
         control = (a_pol.scale @ base_control.reshape(-1, 1) + a_pol.loc.reshape(-1, 1)).reshape(control.shape)
         '''
-        envstate_new = jnp.asarray(task.step(state.state, np.asarray(control).reshape(-1)))
+        envstate_new, control = task.step(state.state, np.asarray(agent_control).reshape(-1))
+    
         # Z dynamics.
         l = task.l(envstate_new, control)
         
@@ -278,7 +282,7 @@ def collect_single_batch(
         z_new = jnp.clip(z_new, z_min, z_max)
  
         new_state = CollectorState(state.steps + 1, envstate_new.reshape(-1), z_new)
-        return new_state, (envstate_new, obs_pol, z_new, l, h, control, logprob, expert_control)
+        return new_state, (envstate_new, obs_pol, z_new, l, h, control, logprob, expert_control, agent_control)
     
     fst_step, x0, z0 = colstate0.steps, colstate0.state, colstate0.z
     collect_state = CollectorState(fst_step, x0, z0)
@@ -295,12 +299,13 @@ def collect_single_batch(
     Th_h = []
     T_done = []
     T_expert_u = []
+    T_agent_u = []
 
     collect_state = colstate0 
     # Perform the loop over rollout_T
     for t in range(rollout_T):     
         assert not jnp.isnan(collect_state.state).any(), f'{collect_state.state=}'   
-        collect_state, (envstate_new, obs_pol, z_new, l, h, control, logprob, expert_control) = _body(collect_state, T_keys[t])
+        collect_state, (envstate_new, obs_pol, z_new, l, h, control, logprob, expert_control, agent_control) = _body(collect_state, T_keys[t])
         assert not jnp.isnan(envstate_new).any(), f'{task.cur_state=}'
         assert not jnp.isnan(obs_pol).any(), f'{task.cur_state=}'
         #assert not jnp.isnan(control).any(), f'{control=}'
@@ -317,6 +322,7 @@ def collect_single_batch(
         T_l.append(l)
         Th_h.append(h)
         T_expert_u.append(expert_control)
+        T_agent_u.append(agent_control)
 
         shouldreset = task.should_reset(envstate_new) or (collect_state.steps >= max_T)
         if shouldreset:
@@ -343,6 +349,7 @@ def collect_single_batch(
     Th_h = jnp.stack(Th_h)
     T_done = jnp.stack(T_done)
     T_expert_u = jnp.stack(T_expert_u)
+    T_agent_u = jnp.stack(T_agent_u)
     
     obs_final = task.get_obs(collect_state.state)
 
@@ -354,7 +361,7 @@ def collect_single_batch(
     #T_l = jnp.concatenate((jnp.asarray([0]), jnp.asarray(T_l))).reshape(-1)
     #Th_h = jnp.stack((jnp.asarray([-1]), *Th_h)).reshape(-1, len(task.h_labels))
     
-    return collect_state, RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, T_logprob,T_l, Th_h, T_done, T_expert_u)
+    return collect_state, RolloutOutput(Tp1_state, Tp1_obs, Tp1_z, T_u, T_logprob,T_l, Th_h, T_done, T_expert_u, T_agent_u)
 
 class Collector(struct.PyTreeNode):
     collect_idx: int
