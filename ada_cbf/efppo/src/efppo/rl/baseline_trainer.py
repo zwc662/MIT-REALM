@@ -112,7 +112,7 @@ class BaselineTrainer:
         axes = axes.ravel().tolist()
         for grididx, ax in enumerate(axes[:nz]):
             z = data.z_zs[grididx]
-            cm = ax.contourf(bb_X, bb_Y, data.zbb_critic[grididx], levels=32, cmap=cmap, vmin=0., vmax=self.task.n_actions)
+            cm = ax.contourf(bb_X, bb_Y, data.zbb_critic[grididx], levels=32, cmap=cmap)
             #self.task.setup_traj_plot(ax)
             fig.colorbar(cm, ax=ax)
             ax.set(xlabel=xlabel, ylabel=ylabel, title=f"z={z:.1f}")
@@ -130,7 +130,7 @@ class BaselineTrainer:
         axes = axes.ravel().tolist()
         for grididx, ax in enumerate(axes[:nz]):
             z = data.z_zs[grididx]
-            cm = ax.contourf(bb_X, bb_Y, data.zbb_pol[grididx], levels=32, cmap=cmap)
+            cm = ax.contourf(bb_X, bb_Y, data.zbb_pol[grididx], levels=32, cmap=cmap, vmin=0., vmax=self.task.n_actions)
             #self.task.setup_traj_plot(ax)
             fig.colorbar(cm, ax=ax)
             ax.set(xlabel=xlabel, ylabel=ylabel, title=f"z={z:.1f}")
