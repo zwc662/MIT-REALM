@@ -1222,18 +1222,22 @@ class F1TenthWayPoint(Task):
             )
         
             
-    def grid_contour(self, n_xs = 2, n_ys = 2) -> tuple[BBFloat, BBFloat, TaskState]:
+    def grid_contour(self, n_xs = 10, n_ys = 10) -> tuple[BBFloat, BBFloat, TaskState]:
         # Contour with ( x axis=θ, y axis=H )
-        b_xs = np.linspace(-0.1, 0.1, num=n_xs)
-        b_ys = np.linspace(-0.1, 0.1, num=n_ys)
+        b_xs = np.linspace(-5, 5, num=n_xs)
+        b_ys = np.linspace(-5, 5, num=n_ys)
 
         x0 = jnp.zeros([self.nx])
-        bb_x0 = ei.repeat(x0, "nx -> b1 b2 nx", b1=n_ys, b2=n_xs)
+        bb_x0 = jnp.asarray(ei.repeat(x0, "nx -> b1 b2 nx", b1=n_ys, b2=n_xs))
 
         bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
         for i in range(int((self.nx - self.STATE_FST_LAD) / 2)):
-            bb_x0 = jnp.asarray(bb_x0).at[:, :, self.STATE_FST_LAD + i * 2].add(bb_X * i)
-            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + 1 + i * 2].add(bb_Y * i)
+            bb_LAD = self.conf.work.tlad / self.conf.work.nlad * i  
+            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + i * 2].set(bb_LAD)
+
+        bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_X)
+        bb_x0 = bb_x0.at[:, :, self.STATE_VEL_Y].set(bb_Y)
+
 
         return bb_X, bb_Y, bb_x0
     
