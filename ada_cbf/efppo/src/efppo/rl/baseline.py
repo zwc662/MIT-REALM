@@ -870,7 +870,7 @@ class BaselineSACDisc(Baseline):
 
         new_obs_stats = self.update_stats(replay_buffer.obs_stats.mean, replay_buffer.obs_stats.var)
         
-        return self.replace(obs_stats = new_obs_stats, policy = policy, temp = temp, critic = critic, target_critic = target_critic), info
+        return self.replace(key = key_self, obs_stats = new_obs_stats, policy = policy, temp = temp, critic = critic, target_critic = target_critic), info
          
         
         
@@ -884,10 +884,8 @@ class BaselineSACDisc(Baseline):
         
         b_nxt_critic = jnp.min(b_nxt_critics, axis = 1)
   
-        b_target_critic = self.disc_gamma * b_nxt_critic
-        b_target_critic -= self.disc_gamma * b_nxt_logprob 
-        b_target_critic -= jax.nn.relu(b_target_critic) * batch.b_done 
-        b_target_critic -= batch.b_l
+        b_target_critic = self.disc_gamma * b_nxt_critic - self.disc_gamma * b_nxt_logprob 
+        b_target_critic -= b_target_critic * batch.b_done + batch.b_l
         
         def get_critic_loss(params):
             b_critic_all = jax.vmap(ft.partial(critic.apply_with, params=params))(batch.b_obs, batch.b_z)
