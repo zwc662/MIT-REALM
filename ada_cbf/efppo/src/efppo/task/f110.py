@@ -1226,8 +1226,9 @@ class F1TenthWayPoint(Task):
         bb_x0 = ei.repeat(x0, "nx -> b1 b2 nx", b1=n_ys, b2=n_xs)
 
         bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
-        bb_x0 = jnp.asarray(bb_x0).at[:, :, self.STATE_X].set(bb_X)
-        bb_x0 = bb_x0.at[:, :, self.STATE_Y].set(bb_Y)
+        for i in range(len(self.cur_lookahead_points)):
+            bb_x0 = jnp.asarray(bb_x0).at[:, :, self.STATE_FST_LAD + i * 2].set(bb_X * i)
+            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + 1 + i * 2].set(bb_Y * i)
 
         return bb_X, bb_Y, bb_x0
     

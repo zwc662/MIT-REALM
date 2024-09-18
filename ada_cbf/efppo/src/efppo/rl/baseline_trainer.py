@@ -111,7 +111,7 @@ class BaselineTrainer:
         for grididx, ax in enumerate(axes[:nz]):
             z = data.z_zs[grididx]
             cm = ax.contourf(bb_X, bb_Y, data.zbb_critic[grididx], levels=32, cmap=cmap)
-            self.task.setup_traj_plot(ax)
+            #self.task.setup_traj_plot(ax)
             fig.colorbar(cm, ax=ax)
             ax.set(xlabel=xlabel, ylabel=ylabel, title=f"z={z:.1f}")
         fig_path = mkdir(plot_dir / "critic") / "critic_{:08}.jpg".format(idx)
