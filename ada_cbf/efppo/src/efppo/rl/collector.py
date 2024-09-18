@@ -1,5 +1,5 @@
 import functools as ft
-from typing import Any, NamedTuple, Tuple, Optional
+from typing import Any, NamedTuple, Tuple, Optional, Callable, Dict
 
 import numpy as np
 
@@ -12,7 +12,7 @@ from attrs import define
 from flax import struct
  
 from efppo.task.task import Task, TaskState
-from efppo.task.dyn_types import TControl, THFloat, TObs, TDone
+from efppo.task.dyn_types import TControl, THFloat, TObs, TDone, Obs
 from efppo.utils.jax_types import FloatScalar, IntScalar, TFloat
 from efppo.utils.cfg_utils import Cfg 
 from efppo.utils.jax_utils import concat_at_front, concat_at_end
@@ -145,7 +145,7 @@ def collect_single_env_mode(
     task: Task,
     x0: TaskState,
     z0: float,
-    get_pol,
+    get_pol: Callable[[Obs, FloatScalar], Dict[str, Any]],
     disc_gamma: float,
     z_min: float,
     z_max: float,
@@ -158,8 +158,8 @@ def collect_single_env_mode(
         #a_pol: tfd.Distribution = get_pol(obs_pol, state.z)
         #control = a_pol.mode()
         agent_control = get_pol(obs_pol, state.z)
-        expert_control = task.get_expert(state.state, agent_control)
-        envstate_new, control = task.step(state.state, agent_control, control_mode = 'control')
+        expert_control = task.get_expert(state.state, **agent_control)
+        envstate_new, control = task.step(state.state, **agent_control)
  
         # Z dynamics.
         l = task.l(envstate_new, control)

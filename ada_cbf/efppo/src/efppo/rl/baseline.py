@@ -357,10 +357,14 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         batch_size = len(b_x0)
         b_z0 = jnp.full(batch_size, z)
 
+        def get_pol(obs, z):
+            control = self.get_mode_and_prob(obs, z)[0]
+            return {'control': control, 'control_mode': 'control'}
+
         collect_fn = ft.partial(
             collect_single_env_mode,
             task,
-            get_pol=lambda obs, z: self.get_mode_and_prob(obs, z)[0],
+            get_pol=get_pol,
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
@@ -728,10 +732,14 @@ class BaselineSAC(Baseline):
         batch_size = len(b_x0)
         b_z0 = jnp.full(batch_size, z)
 
+        def get_pol(obs, z):
+            control = self.get_mode_and_prob(obs, z)[0]
+            return {'control': control, 'control_mode': 'control'}
+
         collect_fn = ft.partial(
             collect_single_env_mode,
             task,
-            get_pol=lambda obs, z: self.get_mode_and_prob(obs, z)[0], 
+            get_pol=get_pol,
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
@@ -1092,15 +1100,20 @@ class BaselineSACDisc(Baseline):
         batch_size = len(b_x0)
         b_z0 = jnp.full(batch_size, z)
 
+        def get_pol(obs, z):
+            control = self.get_mode_and_prob(obs, z)[0]
+            return {'control': control, 'control_mode': 'control'}
+
         collect_fn = ft.partial(
             collect_single_env_mode,
             task,
-            get_pol=lambda obs, z: self.get_mode_and_prob(obs, z)[0],
+            get_pol=get_pol,
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
             rollout_T=rollout_T,
         )
+
         bb_rollouts: list[RolloutOutput] = []
         for i in range(batch_size):
             bb_rollouts.append(collect_fn(b_x0[i], b_z0[i]))
@@ -1518,10 +1531,14 @@ class BaselineDQN(Baseline):
         batch_size = len(b_x0)
         b_z0 = jnp.full(batch_size, z)
 
+        def get_pol(obs, z):
+            control = self.get_mode_and_prob(obs, z)[0]
+            return {'control': control, 'control_mode': 'control'}
+
         collect_fn = ft.partial(
             collect_single_env_mode,
             task,
-            get_pol=lambda obs, z: jnp.mean(self.critic.apply(obs, z), axis = -2).argmax(),
+            get_pol=get_pol,
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,

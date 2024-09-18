@@ -947,7 +947,14 @@ class F1TenthWayPoint(Task):
         ## Initialized as pursuit planner
         self.cur_action = self.cur_pursuit_action
         self.cur_control = self.cur_pursuit_control
-        if control_mode is None or control_mode == 'control':
+        
+        if control_mode == 'random':
+            ## If using random control
+            self.cur_action = np.random.randint(self.n_actions)
+        elif control_mode == 'random+pursuit':
+            if np.random.random([1]).item() > 0.5:  
+                self.cur_action = np.random.randint(self.n_actions)
+        else: #if control_mode is None or control_mode == 'control':
             ## If using external control
             if np.asarray([control]).flatten().shape[0] > 1:
                 #print(f'Before projection {self.cur_action=}')
@@ -958,12 +965,6 @@ class F1TenthWayPoint(Task):
                 assert control >= 0 and control < self.n_actions, f"{control=} is out of bounds for [0, {self.n_actions - 1}]"
                 self.cur_action = int(control)
             #self.cur_control = self.discr_to_cts(self.cur_action)
-        elif control_mode == 'random':
-            ## If using random control
-            self.cur_action = np.random.randint(self.n_actions)
-        elif control_mode == 'random+pursuit':
-            if np.random.random([1]).item() > 0.5:  
-                self.cur_action = np.random.randint(self.n_actions)
             
         self.cur_control = self.discr_to_cts(self.cur_action)
         
@@ -1038,9 +1039,9 @@ class F1TenthWayPoint(Task):
         return self.cur_state, \
             (self.cur_control.reshape(control.shape) if np.asarray([control]).flatten().shape[0] > 1 else self.cur_action) #, step_reward, done, info
     
-    def get_expert(self, state: State, ref_control: Union[Control, Action]) -> Union[Control, Action]:
-        if np.asarray([ref_control]).flatten().shape[0] > 1:
-            return self.get_expert_control().reshape(ref_control.shape)
+    def get_expert(self, state: State, control: Union[Control, Action], **kwargs) -> Union[Control, Action]:
+        if np.asarray([control]).flatten().shape[0] > 1:
+            return self.get_expert_control().reshape(control.shape)
         else:
             return self.get_expert_action().item()
 
@@ -1061,9 +1062,7 @@ class F1TenthWayPoint(Task):
         # Initalize
        
         ## High velocity => low cost
-        l_vel = 0
-        max_speed = 1**2
-        l_vel = - min(1, np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum() / max_speed)
+        l_vel = - np.square(state[np.asarray([self.STATE_VEL_X, self.STATE_VEL_Y])]).sum()
     
         ## Stability: greater dist to previous lookahead dist => high cost
         l_stability = 0
@@ -1244,10 +1243,15 @@ class F1TenthWayPoint(Task):
         elif mode == 'lookahead':
             bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
             for i in range(int((self.nx - self.STATE_FST_LAD) / 2)):
-                bb_LAD = self.conf.work.tlad / self.conf.work.nlad * i  
-                bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + i * 2].set(bb_LAD)
-
+                bb_LAD = self.conf.work.tlad / self.conf.work.nlad * i 
+                bb_LAD_X = bb_LAD * bb_X / np.sqrt(bb_X**2 + bb_Y**2)
+                bb_LAD_Y = bb_LAD * bb_Y / np.sqrt(bb_X**2 + bb_Y**2)
+                bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + i * 2].set(bb_LAD_X)
+                bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + 1 + i * 2].set(bb_LAD_Y)
+ 
             bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_X)
             bb_x0 = bb_x0.at[:, :, self.STATE_VEL_Y].set(bb_Y)
+
+
 
 
