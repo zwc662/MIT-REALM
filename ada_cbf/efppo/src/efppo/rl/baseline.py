@@ -1032,7 +1032,7 @@ class BaselineSACDisc(Baseline):
     def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int):
         # --------------------------------------------
         # Plot value functions.
-        bb_X, bb_Y, bb_state = jax2np(task.grid_contour())
+        bb_X, bb_Y, bb_state = jax2np(task.grid_contour(n_xs = 10, n_ys = 10))
         bb_obs = []
         for i in range(bb_state.shape[0]):
             bb_obs.append([])
@@ -1052,18 +1052,17 @@ class BaselineSACDisc(Baseline):
                 bb.append([])
                  
             for j in range(bb_obs.shape[1]):
-                pol, prob = self.get_mode_and_prob(bb_obs[i][j], bb_z[i][j])
                 bb_pol[-1].append(pol)
                 bb_prob[-1].append(prob)
                 
                 critic_all = self.critic.apply(self.standardize(bb_obs[i][j]), bb_z[i][j])
-                critics = jax.vmap(lambda critic: critic.flatten()[pol], in_axes = 0)(critic_all).reshape(-1, self.cfg.net.n_critics)
+                critics = jax.vmap(lambda critic: critic.flatten().max(), in_axes = 0)(critic_all).reshape(-1, self.cfg.net.n_critics)
                 critic = jnp.min(critics, axis = -1).item()
                 #logger.info(f"{i=}, {j=}, {critic=}")
                 bb_critic[-1].append(critic)
 
                 target_critic_all = self.target_critic.apply(self.standardize(bb_obs[i][j]), bb_z[i][j])
-                target_critics =jax.vmap(lambda target_critic: target_critic.flatten()[pol], in_axes = 0)(target_critic_all).reshape(-1, self.cfg.net.n_critics)
+                target_critics =jax.vmap(lambda target_critic: target_critic.flatten().max(), in_axes = 0)(target_critic_all).reshape(-1, self.cfg.net.n_critics)
                 target_critic = jnp.min(target_critics, axis = 1).item()
                 #logger.info(f"{i=}, {j=}, {target_critic=}")
                 bb_target_critic[-1].append(target_critic)
