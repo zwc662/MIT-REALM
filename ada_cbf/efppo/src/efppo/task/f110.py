@@ -947,7 +947,7 @@ class F1TenthWayPoint(Task):
         ## Initialized as pursuit planner
         self.cur_action = self.cur_pursuit_action
         self.cur_control = self.cur_pursuit_control
-        if control_mode is None:
+        if control_mode is None or control_mode == 'control':
             ## If using external control
             if np.asarray([control]).flatten().shape[0] > 1:
                 #print(f'Before projection {self.cur_action=}')
