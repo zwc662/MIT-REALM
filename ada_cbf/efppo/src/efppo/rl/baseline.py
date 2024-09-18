@@ -1038,9 +1038,11 @@ class BaselineSACDisc(Baseline):
             bb_obs.append([])
             for j in range(bb_state.shape[1]): 
                 bb_obs[-1].append(task.get_obs(bb_state[i][j]))
-            bb_obs[-1] = jtu.tree_map(lambda *x: self.standardize(jnp.stack(x)), *bb_obs[-1]) 
-            
-        bb_obs = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs)
+            bb_obs[-1] = jnp.stack(bb_obs[-1]) 
+            bb_obs[-1] = jax.vmap(self.standardize, in_axes = 0)(bb_obs[-1])
+  
+        bb_obs =  jnp.stack(bb_obs)
+        
         bb_z = jnp.full(bb_X.shape, z)
 
         bb_pol = []
