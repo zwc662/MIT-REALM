@@ -47,7 +47,11 @@ def main(
         if 'hist' in name:
             n_history = int(re.search(r"(\d+)hist", name).group(1))
         
-        task = F1TenthWayPoint(n_history=n_history)
+        control_mode = None
+        if 'offpolicy' in name:
+            control_mode = 'mix'
+
+        task = F1TenthWayPoint(n_history=n_history, control_mode = control_mode)
         trainer = BaselineTrainer(task) 
         trainer_cfg = BaselineTrainerCfg(n_iters=10_000_000, train_after = 1_000, train_every= 3, log_every=100, eval_every=100, ckpt_every=100)
          
