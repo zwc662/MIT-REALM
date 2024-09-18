@@ -1052,6 +1052,7 @@ class BaselineSACDisc(Baseline):
                 bb.append([])
                  
             for j in range(bb_obs.shape[1]):
+                pol, prob = self.get_mode_and_prob(bb_obs[i][j], bb_z[i][j])
                 bb_pol[-1].append(pol)
                 bb_prob[-1].append(prob)
                 
