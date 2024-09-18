@@ -245,7 +245,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
 
     def eval_iteratively(self, task: Task, rollout_T: int, contour_size: Tuple[int]) -> EvalData:
         # Evaluate for a range of zs.
-        val_zs = np.linspace(self.train_cfg.z_min, self.train_cfg.z_max, num=8)
+        val_zs = np.linspace(self.train_cfg.z_min, self.train_cfg.z_max, num=9)
 
         Z_datas = []
         for z in val_zs:
@@ -260,7 +260,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
     @ft.partial(jax.jit, static_argnames=["rollout_T"])
     def eval(self, task: Task, rollout_T: int) -> EvalData:
         # Evaluate for a range of zs.
-        val_zs = np.linspace(self.train_cfg.z_min, self.train_cfg.z_max, num=8)
+        val_zs = np.linspace(self.train_cfg.z_min, self.train_cfg.z_max, num=9)
 
         Z_datas = []
         for z in val_zs:
@@ -1038,7 +1038,8 @@ class BaselineSACDisc(Baseline):
             bb_obs.append([])
             for j in range(bb_state.shape[1]): 
                 bb_obs[-1].append(task.get_obs(bb_state[i][j]))
-            bb_obs[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs[-1]) 
+            bb_obs[-1] = jtu.tree_map(lambda *x: self.standardize(jnp.stack(x)), *bb_obs[-1]) 
+            
         bb_obs = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs)
         bb_z = jnp.full(bb_X.shape, z)
 
@@ -1052,17 +1053,20 @@ class BaselineSACDisc(Baseline):
                 bb.append([])
                  
             for j in range(bb_obs.shape[1]):
-                pol, prob = self.get_mode_and_prob(bb_obs[i][j], bb_z[i][j])
+                dist = self.policy.apply(bb_obs[i][j], bb_z[i][j])
+                pol = dist.mode()
+                prob = jnp.exp(dist.log_prob(pol))
+
                 bb_pol[-1].append(pol)
                 bb_prob[-1].append(prob)
                 
-                critic_all = self.critic.apply(self.standardize(bb_obs[i][j]), bb_z[i][j])
+                critic_all = self.critic.apply(bb_obs[i][j], bb_z[i][j])
                 critics = jax.vmap(lambda critic: critic.flatten().max(), in_axes = 0)(critic_all).reshape(-1, self.cfg.net.n_critics)
                 critic = jnp.min(critics, axis = -1).item()
                 #logger.info(f"{i=}, {j=}, {critic=}")
                 bb_critic[-1].append(critic)
 
-                target_critic_all = self.target_critic.apply(self.standardize(bb_obs[i][j]), bb_z[i][j])
+                target_critic_all = self.target_critic.apply(bb_obs[i][j], bb_z[i][j])
                 target_critics =jax.vmap(lambda target_critic: target_critic.flatten().max(), in_axes = 0)(target_critic_all).reshape(-1, self.cfg.net.n_critics)
                 target_critic = jnp.min(target_critics, axis = 1).item()
                 #logger.info(f"{i=}, {j=}, {target_critic=}")
@@ -1546,7 +1550,7 @@ class BaselineDQN(Baseline):
 
     def eval_iteratively(self, task: Task, rollout_T: int) -> EvalData:
         # Evaluate for a range of zs.
-        val_zs = np.linspace(self.train_cfg.z_min, self.train_cfg.z_max, num=8)
+        val_zs = np.linspace(self.train_cfg.z_min, self.train_cfg.z_max, num=9)
 
         Z_datas = []
         for z in val_zs:
