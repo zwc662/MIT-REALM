@@ -849,11 +849,14 @@ class BaselineSACDisc(Baseline):
         temp = self.temp
         critic = self.critic
         target_critic = self.target_critic
+        
+        key_self, key_critic = jr.split(self.key, 2)
+        keys = jr.split(key_critic, batch.num_batches)
         for batch_idx in range(batch.num_batches): 
             mb_dset = jax.tree_map(lambda x: x[batch_idx], batch)
-            
+            key = keys[batch_idx]
             # 3: Perform value function and policy updates.
-            critic, target_critic, critic_info = self.update_critic(mb_dset, critic, target_critic)
+            critic, target_critic, critic_info = self.update_critic(key, mb_dset, critic, target_critic)
             policy, temp, pol_info = self.update_policy(mb_dset, policy, temp, critic)
             
             # Take the mean.
@@ -872,7 +875,7 @@ class BaselineSACDisc(Baseline):
         
         
 
-    def update_critic(self, key: PRNGKey, critic: TrainState, target_critic: TrainState, batch: Baseline.Batch) -> tuple["TrainState", "TrainState", dict]:
+    def update_critic(self, key: PRNGKey, batch: Baseline.Batch, critic: TrainState, target_critic: TrainState) -> tuple["TrainState", "TrainState", dict]:
         keys = jr.split(key, self.train_cfg.batch_size)
         b_nxt_control, b_nxt_logprob =jax.vmap(self.sample_action)(batch.b_nxt_obs, batch.b_nxt_z, keys)
 
@@ -925,7 +928,7 @@ class BaselineSACDisc(Baseline):
         return new_critic, new_target_critic, critic_info
      
 
-    def update_policy(self, policy: TrainState, temp: FloatScalar, critic: TrainState, batch: Baseline.Batch) -> tuple["TrainState", FloatScalar, dict]:
+    def update_policy(self, batch: Baseline.Batch, policy: TrainState, temp: FloatScalar, critic: TrainState) -> tuple["TrainState", FloatScalar, dict]:
         def get_pol_loss(pol_params):
             pol_apply = ft.partial(policy.apply_with, params=pol_params)
 
