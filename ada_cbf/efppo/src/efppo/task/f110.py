@@ -913,7 +913,7 @@ class F1TenthWayPoint(Task):
         if self.cur_history is None:
             obss *= self.n_history + 1
         else:
-            obss += [get_one_obs(pre_state) for pre_state in range(self.cur_history)]
+            obss += [get_one_obs(pre_state) for pre_state in self.cur_history]
          
         return np.asarray(obss).flatten()
 
