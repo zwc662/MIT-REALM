@@ -153,8 +153,8 @@ class SACLearner(object):
     def save(self, idx: int):
         save_dir = pathlib.Path(f'{self.save_dir}/{idx:08}/default/')
         self.actor.save(save_dir / 'actor')
-        self.critic.save(save_dir / 'critic')
-        self.value.save(save_dir / 'value' )
+        self.critic.save(save_dir / 'critic') 
+        self.target_critic.save(save_dir / 'target_critic') 
         self.temp.save(save_dir / 'temp')
 
         print(f"Saved ckpt at {str(save_dir)}!")
@@ -162,10 +162,10 @@ class SACLearner(object):
 
     def load(self, idx: int):
         load_dir = pathlib.Path(f'{self.save_dir}/{idx:08}/default/')
-        self.actor.save(load_dir / 'actor')
-        self.critic.save(load_dir / 'critic')
-        self.value.save(load_dir / 'value' )
-        self.temp.save(load_dir / 'temp')
+        self.actor.load(load_dir / 'actor')
+        self.critic.load(load_dir / 'critic') 
+        self.target_critic.load(load_dir / 'target_critic') 
+        self.temp.load(load_dir / 'temp')
 
         print(f"Loaded ckpt at {str(load_dir)}!")
         
