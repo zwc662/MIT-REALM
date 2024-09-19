@@ -92,7 +92,7 @@ class JAXRLTrainer:
             if i >= self.start_training:
                 action = train_env.get_expert_control()
             else:
-                action = self.agent.sample_actions(observation).clip(-1, 1) * (train_env.ub - train_env.lb) / 2 + train_env.lb 
+                action = self.agent.sample_actions(observation).clip(-1, 1) * (train_env.ub - train_env.lb) / 2 + (train_env.ub + train_env.lb) / 2
             next_state, _ = train_env.step(state, action)
             next_observation = train_env.get_obs(next_state)
             reward = - train_env.l(next_state, action)
