@@ -8,6 +8,8 @@ import jax.numpy as jnp
 import numpy as np
 import optax
 
+import pathlib  
+
 from jaxrl.agents.sac import temperature
 from jaxrl.agents.sac.actor import update as update_actor
 from jaxrl.agents.sac.critic import target_update
@@ -55,6 +57,7 @@ class SACLearner(object):
 
     def __init__(self,
                  seed: int,
+                 save_dir: str,
                  observations: jnp.ndarray,
                  actions: jnp.ndarray,
                  actor_lr: float = 3e-4,
@@ -68,7 +71,8 @@ class SACLearner(object):
                  backup_entropy: bool = True,
                  init_temperature: float = 1.0,
                  init_mean: Optional[np.ndarray] = None,
-                 policy_final_fc_init_scale: float = 1.0):
+                 policy_final_fc_init_scale: float = 1.0, 
+                 **kwargs):
         """
         An implementation of the version of Soft-Actor-Critic described in https://arxiv.org/abs/1812.05905
         """
@@ -116,6 +120,8 @@ class SACLearner(object):
 
         self.step = 1
 
+        self.save_dir = save_dir
+
     def sample_actions(self,
                        observations: np.ndarray,
                        temperature: float = 1.0) -> jnp.ndarray:
@@ -125,7 +131,7 @@ class SACLearner(object):
         self.rng = rng
 
         actions = np.asarray(actions)
-        return np.clip(actions, -1, 1)
+        return actions #np.clip(actions, -1, 1)
 
     def update(self, batch: Batch) -> InfoDict:
         self.step += 1
@@ -142,3 +148,25 @@ class SACLearner(object):
         self.temp = new_temp
 
         return info
+
+
+    def save(self, idx: int):
+        save_dir = pathlib.Path(f'{self.save_dir}/{idx:08}/default/')
+        self.actor.save(save_dir / 'actor')
+        self.critic.save(save_dir / 'critic')
+        self.value.save(save_dir / 'value' )
+        self.temp.save(save_dir / 'temp')
+
+        print(f"Saved ckpt at {str(save_dir)}!")
+        return save_dir
+
+    def load(self, idx: int):
+        load_dir = pathlib.Path(f'{self.save_dir}/{idx:08}/default/')
+        self.actor.save(load_dir / 'actor')
+        self.critic.save(load_dir / 'critic')
+        self.value.save(load_dir / 'value' )
+        self.temp.save(load_dir / 'temp')
+
+        print(f"Loaded ckpt at {str(load_dir)}!")
+        
+ 

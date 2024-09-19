@@ -1,5 +1,5 @@
 import functools as ft
-from typing import NamedTuple, TypeVar, Generic, Optional, Tuple
+from typing import NamedTuple, TypeVar, Generic, Optional, Tuple, Dict, List
 from dataclasses import dataclass
 
 import jax
@@ -92,11 +92,27 @@ class BaselineCfg(Cfg):
     net: NetCfg
     train: TrainCfg
     eval: EvalCfg
-    
+ 
 class ObsStats(NamedTuple):
-        mean: Obs
-        var: Obs 
-  
+    mean: Obs
+    var: Obs 
+ 
+class EvalContourData(NamedTuple):
+    zbb_X: ZBBFloat
+    zbb_Y: ZBBFloat
+    zbb_pol: ZBBControl
+    zbb_prob: ZBBFloat
+ 
+class EvalRollOutData(NamedTuple):
+    zbT_x: ZBTState
+    info: dict[str, float] 
+ 
+class EvalData(NamedTuple):
+    z_zs: ZFloat
+    z_eval_contours: Dict[str, NamedTuple]
+    z_eval_rollout: EvalRollOutData
+    info: dict[str, float] 
+
 class Baseline(Generic[_Algo], struct.PyTreeNode):
     update_idx: int
     key: PRNGKey 
@@ -113,7 +129,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
     ent_cf_sched: optax.Schedule = struct.field(pytree_node=False)
     disc_gamma_sched: optax.Schedule = struct.field(pytree_node=False)
 
-    Cfg = BaselineCfg
+    Cfg = BaselineCfg 
 
     class Batch(NamedTuple):
         b_obs: BObs 
@@ -139,15 +155,9 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
             assert self.b_logprob.ndim == 2
             return self.b_logprob.shape[0]
     
-    class EvalData(NamedTuple):
-        z_zs: ZFloat
-        zbb_pol: ZBBControl
-        zbb_prob: ZBBFloat
-        
-        zbT_x: ZBTState
-
-        info: dict[str, float]
-
+    
+    
+    
     @classmethod
     def create(cls, key: jr.PRNGKey, task: Task, cfg: BaselineCfg):
         key, key_pol = jr.split(key, 2)
@@ -245,19 +255,27 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         return mode_sample, mode_prob
  
 
-    def eval_iteratively(self, task: Task, rollout_T: int, contour_size: Tuple[int]) -> EvalData:
+    def eval_iteratively(self, task: Task, rollout_T: int, countour_modes: List[int], contour_size: Tuple[int]) -> EvalData:
         # Evaluate for a range of zs.
         val_zs = np.linspace(self.train_cfg.z_min, self.train_cfg.z_max, num=9)
 
-        Z_datas = []
+        Z_eval_contour_datas = {}
+        Z_eval_rollout_datas = []
         for z in val_zs:
-            data = self.eval_single_z_iteratively(task, z, rollout_T, contour_size)
-            Z_datas.append(data)
-        Z_data = tree_stack(Z_datas)
+            z_eval_contour_vals, z_eval_rollout_val= self.eval_single_z_iteratively(task, z, rollout_T, countour_modes, contour_size)
+            Z_eval_rollout_datas.append(z_eval_rollout_val)
+            for k, v in z_eval_contour_vals.items():
+                if k not in Z_eval_contour_datas:
+                    Z_eval_contour_datas[k] = []
+                Z_eval_contour_datas[k].append(v)
+        
+        Z_eval_contour_data = {k: tree_stack(v) for k, v in Z_eval_contour_datas.items()}
+        Z_eval_rollout_data = tree_stack(Z_eval_rollout_datas) 
 
-        info = jtu.tree_map(lambda arr: {"z=0": arr[0], "z=4": arr[4], "z=7": arr[7]}, Z_data.info)
-        info["update_idx"] = self.update_idx
-        return Z_data._replace(info=info)
+        info = jtu.tree_map(lambda arr: {"z=0": arr[0], "z=4": arr[4], "z=7": arr[7]}, Z_eval_rollout_data.info)
+        info["update_idx"] = self.update_idx 
+        
+        return EvalData(z_zs = val_zs, z_eval_contours=Z_eval_contour_data, z_eval_rollout=Z_eval_rollout_data, info = info)
     
     @ft.partial(jax.jit, static_argnames=["rollout_T"])
     def eval(self, task: Task, rollout_T: int) -> EvalData:
@@ -319,36 +337,42 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}#
         return self.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info)
      
-    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_size: Tuple[int]):
+    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_modes: List[int], contour_size: Tuple[int]):
         # --------------------------------------------
-        # Plot value functions.
-        bb_X, bb_Y, bb_state = jax2np(task.grid_contour(*contour_size))
-        bb_obs = []
-        for i in range(bb_state.shape[0]):
-            bb_obs.append([])
-            for j in range(bb_state.shape[1]): 
-                bb_obs[-1].append(task.get_obs(bb_state[i][j]))
-            bb_obs[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs[-1]) 
-        bb_obs = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs)
-        bb_z = jnp.full(bb_X.shape, z)
+        # Plot value functions
+        eval_contour_vals = {}
+        for mode in task.CONTOUR_MODES:
+            if mode.value not in contour_modes:
+                continue
+            bb_X, bb_Y, bb_state = jax2np(task.grid_contour(*contour_size), mode)
+            bb_obs = []
+            for i in range(bb_state.shape[0]):
+                bb_obs.append([])
+                for j in range(bb_state.shape[1]): 
+                    bb_obs[-1].append(task.get_obs(bb_state[i][j]))
+                bb_obs[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs[-1]) 
+            bb_obs = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs)
+            bb_z = jnp.full(bb_X.shape, z)
 
-        bb_pol = []
-        bb_prob = []   
+            bb_pol = []
+            bb_prob = []   
 
-        for i in range(bb_obs.shape[0]):
-            for bb in [bb_pol, bb_prob]:
-                bb.append([])
-                 
-            for j in range(bb_obs.shape[1]):
-                pol, prob = self.get_mode_and_prob(bb_obs[i][j], bb_z[i][j])
-                bb_pol[-1].append(pol)
-                bb_prob[-1].append(prob)
-                
-            for bb in [bb_pol, bb_prob]:
-                bb[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb[-1])
-        
-        bb_pol = jtu.tree_map(lambda *x: jnp.stack(x), *bb_pol)
-        bb_prob = jtu.tree_map(lambda *x: jnp.stack(x), *bb_prob) 
+            for i in range(bb_obs.shape[0]):
+                for bb in [bb_pol, bb_prob]:
+                    bb.append([])
+                    
+                for j in range(bb_obs.shape[1]):
+                    pol, prob = self.get_mode_and_prob(bb_obs[i][j], bb_z[i][j])
+                    bb_pol[-1].append(pol)
+                    bb_prob[-1].append(prob)
+                    
+                for bb in [bb_pol, bb_prob]:
+                    bb[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb[-1])
+            
+            bb_pol = jtu.tree_map(lambda *x: jnp.stack(x), *bb_pol)
+            bb_prob = jtu.tree_map(lambda *x: jnp.stack(x), *bb_prob) 
+            eval_contour_vals[mode.name] = EvalContourData(bb_X, bb_Y, bb_pol, bb_prob)
+         
         # --------------------------------------------
         # Rollout trajectories and get stats.
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
@@ -389,7 +413,9 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         # --------------------------------------------
 
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}# 
-        return self.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info)
+        eval_rollout_val = EvalRollOutData(b_rollout.Tp1_state, info)
+        
+        return eval_contour_vals, eval_rollout_val
 
 
 class BaselineSAC(Baseline):
@@ -398,19 +424,14 @@ class BaselineSAC(Baseline):
     control_lb: Control
     control_ub: Control
 
-    class EvalData(NamedTuple):
-        z_zs: ZFloat
-        zbb_pol: ZBBControl
-        zbb_prob: ZBBFloat
-        
-        zbT_x: ZBTState
-
-        info: dict[str, float]
-        
+    
+    class EvalContourData(NamedTuple):
+        zbb_X: ZBBFloat
+        zbb_Y: ZBBFloat
         zbb_critic: ZBBFloat
         zbb_target_critic: ZBBFloat
-        
-     
+
+   
     @classmethod
     def create(cls, key: jr.PRNGKey, task: Task, cfg: BaselineCfg):
         key, key_pol, key_critic = jr.split(key, 3)
@@ -679,51 +700,56 @@ class BaselineSAC(Baseline):
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}#
         return self.EvalData(z, bb_control, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic)
      
-    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_size: Tuple[int]):
+    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_modes: List[int], contour_size: Tuple[int]):
         # --------------------------------------------
         # Plot value functions.
-        bb_X, bb_Y, bb_state = jax2np(task.grid_contour(*contour_size))
-        bb_obs = []
-        for i in range(bb_state.shape[0]):
-            bb_obs.append([])
-            for j in range(bb_state.shape[1]): 
-                bb_obs[-1].append(task.get_obs(bb_state[i][j]))
-            bb_obs[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs[-1]) 
-        bb_obs = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs)
-        bb_z = jnp.full(bb_X.shape, z)
+        eval_contour_vals = {}
+        for mode in task.contour_modes:
+            if mode.value not in contour_modes:
+                continue
+            bb_X, bb_Y, bb_state = jax2np(task.grid_contour(*contour_size), mode = mode)
+            bb_obs = []
+            for i in range(bb_state.shape[0]):
+                bb_obs.append([])
+                for j in range(bb_state.shape[1]): 
+                    bb_obs[-1].append(task.get_obs(bb_state[i][j]))
+                bb_obs[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs[-1]) 
+            bb_obs = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs)
+            bb_z = jnp.full(bb_X.shape, z)
 
-        bb_pol = []
-        bb_prob = []  
-        bb_critic = []  
-        bb_target_critic = [] 
+            bb_pol = []
+            bb_prob = []  
+            bb_critic = []  
+            bb_target_critic = [] 
 
-        for i in range(bb_obs.shape[0]):
-            for bb in [bb_pol, bb_prob, bb_critic, bb_target_critic]:
-                bb.append([])
-                 
-            for j in range(bb_obs.shape[1]):
-                pol, prob = self.get_mode_and_prob(bb_obs[i][j], bb_z[i][j])
-                bb_pol[-1].append(pol)
-                bb_prob[-1].append(prob)
-                
-                critics = self.critic.apply(self.standardize(bb_obs[i][j]), bb_z[i][j], pol).flatten()
-                critic = jnp.min(critics).item()
-                #logger.info(f"{i=}, {j=}, {critic=}")
-                bb_critic[-1].append(critic)
+            for i in range(bb_obs.shape[0]):
+                for bb in [bb_pol, bb_prob, bb_critic, bb_target_critic]:
+                    bb.append([])
+                    
+                for j in range(bb_obs.shape[1]):
+                    pol, prob = self.get_mode_and_prob(bb_obs[i][j], bb_z[i][j])
+                    bb_pol[-1].append(pol)
+                    bb_prob[-1].append(prob)
+                    
+                    critics = self.critic.apply(self.standardize(bb_obs[i][j]), bb_z[i][j], pol).flatten()
+                    critic = jnp.min(critics).item()
+                    #logger.info(f"{i=}, {j=}, {critic=}")
+                    bb_critic[-1].append(critic)
 
-                target_critics = self.target_critic.apply(self.standardize(bb_obs[i][j]), bb_z[i][j], pol).flatten()
-                target_critic = jnp.min(target_critics).item()
-                #logger.info(f"{i=}, {j=}, {target_critic=}")
-                bb_target_critic[-1].append(target_critic)
+                    target_critics = self.target_critic.apply(self.standardize(bb_obs[i][j]), bb_z[i][j], pol).flatten()
+                    target_critic = jnp.min(target_critics).item()
+                    #logger.info(f"{i=}, {j=}, {target_critic=}")
+                    bb_target_critic[-1].append(target_critic)
 
-            for bb in [bb_pol, bb_prob, bb_critic, bb_target_critic]:
-                bb[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb[-1])
-        
-        bb_pol = jtu.tree_map(lambda *x: jnp.stack(x), *bb_pol)
-        bb_prob = jtu.tree_map(lambda *x: jnp.stack(x), *bb_prob)
-        bb_critic = jtu.tree_map(lambda *x: jnp.stack(x), *bb_critic)
-        bb_target_critic = jtu.tree_map(lambda *x: jnp.stack(x), *bb_target_critic)
-         
+                for bb in [bb_pol, bb_prob, bb_critic, bb_target_critic]:
+                    bb[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb[-1])
+            
+            bb_pol = jtu.tree_map(lambda *x: jnp.stack(x), *bb_pol)
+            bb_prob = jtu.tree_map(lambda *x: jnp.stack(x), *bb_prob)
+            bb_critic = jtu.tree_map(lambda *x: jnp.stack(x), *bb_critic)
+            bb_target_critic = jtu.tree_map(lambda *x: jnp.stack(x), *bb_target_critic)
+            eval_contour_vals[mode.name] = self.EvalContourData(zbb_X = bb_X, zbb_Y = bb_Y, zbb_pol = bb_pol, zbb_prob = bb_prob, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic)
+
         # --------------------------------------------
         # Rollout trajectories and get stats.
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
@@ -768,25 +794,24 @@ class BaselineSAC(Baseline):
         # --------------------------------------------
 
         info = {"avg_len": avg_len, "p_unsafe": p_unsafe, "h_mean": h_mean, "l_mean": l_mean}# 
-        return BaselineSAC.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic)
+        eval_rollout_val = EvalRollOutData(zbT_x = b_rollout.Tp1_state, info = info)
+        
+        return  eval_contour_vals, eval_rollout_val
+    
      
 
 class BaselineSACDisc(Baseline):
     critic: TrainState[LFloat]
     target_critic: TrainState[HFloat]
-
-    class EvalData(NamedTuple):
-        z_zs: ZFloat
+ 
+    class EvalContourData(NamedTuple):
+        zbb_X: ZBBFloat
+        zbb_Y: ZBBFloat
         zbb_pol: ZBBControl
         zbb_prob: ZBBFloat
-        
-        zbT_x: ZBTState
-
-        info: dict[str, float]
-        
         zbb_critic: ZBBFloat
         zbb_target_critic: ZBBFloat
-        
+
      
     @classmethod
     def create(cls, key: jr.PRNGKey, task: Task, cfg: BaselineCfg):
@@ -1037,61 +1062,79 @@ class BaselineSACDisc(Baseline):
         # --------------------------------------------
 
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}#
-        return self.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic)
+
+        raise NotImplementedError
+        return Baseline.EvalData(
+            z, 
+            EvalRollOutData(b_rollout.Tp1_state, info), 
+            {'????': BaselineSACDisc.EvalContourData(bb_pol, bb_prob, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic)}
+            )
      
-    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_size: Tuple[int]):
+    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_modes: List[int], contour_size: Tuple[int]):
+
         # --------------------------------------------
         # Plot value functions.
-        bb_X, bb_Y, bb_state = jax2np(task.grid_contour(*contour_size))
-        bb_obs = []
-        for i in range(bb_state.shape[0]):
-            bb_obs.append([])
-            for j in range(bb_state.shape[1]): 
-                bb_obs[-1].append(task.get_obs(bb_state[i][j]))
-            bb_obs[-1] = jnp.stack(bb_obs[-1]) 
-            bb_obs[-1] = jax.vmap(self.standardize, in_axes = 0)(bb_obs[-1])
-  
-        bb_obs =  jnp.stack(bb_obs)
-        
-        bb_z = jnp.full(bb_X.shape, z)
 
-        bb_pol = []
-        bb_prob = []  
-        bb_critic = []  
-        bb_target_critic = [] 
+        eval_contour_vals = {}
+        for mode in task.CONTOUR_MODES:
+            if mode.value not in contour_modes:
+                continue
+            bb_X, bb_Y, bb_state = jax2np(task.grid_contour(*contour_size, mode = mode))
+            bb_obs = []
+            for i in range(bb_state.shape[0]):
+                bb_obs.append([])
+                for j in range(bb_state.shape[1]): 
+                    bb_obs[-1].append(task.get_obs(bb_state[i][j]))
+                bb_obs[-1] = jnp.stack(bb_obs[-1]) 
+                bb_obs[-1] = jax.vmap(self.standardize, in_axes = 0)(bb_obs[-1])
+    
+            bb_obs =  jnp.stack(bb_obs)
+            
+            bb_z = jnp.full(bb_X.shape, z)
 
-        for i in range(bb_obs.shape[0]):
-            for bb in [bb_pol, bb_prob, bb_critic, bb_target_critic]:
-                bb.append([])
-                 
-            for j in range(bb_obs.shape[1]):
-                dist = self.policy.apply(bb_obs[i][j], bb_z[i][j])
-                pol = dist.mode()
-                prob = jnp.exp(dist.log_prob(pol))
+            bb_pol = []
+            bb_prob = []  
+            bb_critic = []  
+            bb_target_critic = [] 
 
-                bb_pol[-1].append(pol)
-                bb_prob[-1].append(prob)
-                
-                critic_all = self.critic.apply(bb_obs[i][j], bb_z[i][j])
-                critics = jax.vmap(lambda critic: critic.flatten().max(), in_axes = 0)(critic_all).reshape(-1, self.cfg.net.n_critics)
-                critic = jnp.min(critics, axis = -1).item()
-                #logger.info(f"{i=}, {j=}, {critic=}")
-                bb_critic[-1].append(critic)
+            for i in range(bb_obs.shape[0]):
+                for bb in [bb_pol, bb_prob, bb_critic, bb_target_critic]:
+                    bb.append([])
+                    
+                for j in range(bb_obs.shape[1]):
+                    dist = self.policy.apply(bb_obs[i][j], bb_z[i][j])
+                    pol = dist.mode()
+                    prob = jnp.exp(dist.log_prob(pol))
 
-                target_critic_all = self.target_critic.apply(bb_obs[i][j], bb_z[i][j])
-                target_critics =jax.vmap(lambda target_critic: target_critic.flatten().max(), in_axes = 0)(target_critic_all).reshape(-1, self.cfg.net.n_critics)
-                target_critic = jnp.min(target_critics, axis = 1).item()
-                #logger.info(f"{i=}, {j=}, {target_critic=}")
-                bb_target_critic[-1].append(target_critic)
+                    bb_pol[-1].append(pol)
+                    bb_prob[-1].append(prob)
+                    
+                    critic_all = self.critic.apply(bb_obs[i][j], bb_z[i][j])
+                    critics = jax.vmap(lambda critic: critic.flatten().max(), in_axes = 0)(critic_all).reshape(-1, self.cfg.net.n_critics)
+                    critic = jnp.min(critics, axis = -1).item()
+                    #logger.info(f"{i=}, {j=}, {critic=}")
+                    bb_critic[-1].append(critic)
 
-            for bb in [bb_pol, bb_prob, bb_critic, bb_target_critic]:
-                bb[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb[-1])
-        
-        bb_pol = jtu.tree_map(lambda *x: jnp.stack(x), *bb_pol)
-        bb_prob = jtu.tree_map(lambda *x: jnp.stack(x), *bb_prob)
-        bb_critic = jtu.tree_map(lambda *x: jnp.stack(x), *bb_critic)
-        bb_target_critic = jtu.tree_map(lambda *x: jnp.stack(x), *bb_target_critic)
-         
+                    target_critic_all = self.target_critic.apply(bb_obs[i][j], bb_z[i][j])
+                    target_critics =jax.vmap(lambda target_critic: target_critic.flatten().max(), in_axes = 0)(target_critic_all).reshape(-1, self.cfg.net.n_critics)
+                    target_critic = jnp.min(target_critics, axis = 1).item()
+                    #logger.info(f"{i=}, {j=}, {target_critic=}")
+                    bb_target_critic[-1].append(target_critic)
+
+                for bb in [bb_pol, bb_prob, bb_critic, bb_target_critic]:
+                    bb[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb[-1])
+            
+            bb_pol = jtu.tree_map(lambda *x: jnp.stack(x), *bb_pol)
+            bb_prob = jtu.tree_map(lambda *x: jnp.stack(x), *bb_prob)
+            bb_critic = jtu.tree_map(lambda *x: jnp.stack(x), *bb_critic)
+            bb_target_critic = jtu.tree_map(lambda *x: jnp.stack(x), *bb_target_critic)
+            eval_contour_vals[mode.name] = BaselineSACDisc.EvalContourData(zbb_X = bb_X, zbb_Y = bb_Y, zbb_pol = bb_pol, zbb_prob = bb_prob, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic) 
+
+        eval_rollout_val = self.eval_single_z_rollout_iteratively(task, z, rollout_T)
+ 
+        return  eval_contour_vals, eval_rollout_val
+    
+    def eval_single_z_rollout_iteratively(self, task: Task, z: float, rollout_T: int):
         # --------------------------------------------
         # Rollout trajectories and get stats.
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
@@ -1137,7 +1180,8 @@ class BaselineSACDisc(Baseline):
         # --------------------------------------------
 
         info = {"avg_len": avg_len, "p_unsafe": p_unsafe, "h_mean": h_mean, "l_mean": l_mean}# 
-        return BaselineSAC.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic)
+
+        return EvalRollOutData(b_rollout.Tp1_state, info)
      
 
 

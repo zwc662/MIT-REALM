@@ -1,7 +1,7 @@
 import pathlib
 import time
 
-from typing import Tuple
+from typing import Tuple, Union, List
 
 import sys, os
 
@@ -19,7 +19,7 @@ from enum import Enum
 import wandb
 from efppo.rl.collector import Collector, CollectorCfg
 from efppo.rl.replay_buffer import ReplayBuffer, Experience
-from efppo.rl.baseline import Baseline, BaselineSAC, BaselineDQN
+from efppo.rl.baseline import Baseline, BaselineSAC, BaselineSACDisc, BaselineDQN, EvalData
 from efppo.task.plotter import Plotter
 from efppo.task.task import Task
 from efppo.utils.cfg_utils import Cfg
@@ -45,6 +45,7 @@ sys.path.append(
 # Enum mapping strings to classes
 class BaselineEnum(Enum):
     SAC = BaselineSAC
+    DISC_SAC = BaselineSACDisc
     DQN = BaselineDQN
 
 
@@ -59,6 +60,7 @@ class BaselineTrainerCfg(Cfg):
 
     ckpt_max_keep: int = 100
 
+    contour_modes: List[int] = [1]
     contour_size: Tuple[int] = (10, 10)
 
     
@@ -66,7 +68,7 @@ class BaselineTrainerCfg(Cfg):
 class BaselineTrainer:
     def __init__(self, task: Task):
         self.task = task
-        self.plotter = Plotter(task)
+        self.plotter = Plotter(task) 
         register_cmaps()
 
     def plot_train(self, idx: int, plot_dir: pathlib.Path, data: Experience):
@@ -83,21 +85,18 @@ class BaselineTrainer:
         plt.close(fig)
 
 
-    def plot_eval(self, idx: int, plot_dir: pathlib.Path, data: Baseline.EvalData, trainer_cfg: BaselineTrainerCfg):
+    def plot_eval(self, idx: int, plot_dir: pathlib.Path, data: EvalData, trainer_cfg: BaselineTrainerCfg):
         fig_opt = dict(layout="constrained", dpi=200)
 
-        bb_X, bb_Y, _ = self.task.grid_contour(*trainer_cfg.contour_size)
-
         # --------------------------------------------
-        # Plot the trajectories.
-        nz, plot_batch_size, T, nx = data.zbT_x.shape
-
+        # Plot rollouts
+        nz, plot_batch_size, T, nx = data.z_eval_rollout.zbT_x.shape
         figsize = 1.5 * np.array([8, 6])
         fig, axes = plt.subplots(3, 3, figsize=figsize, **fig_opt)
         axes = axes.ravel().tolist()
         for grididx, ax in enumerate(axes[:nz]):
             z = data.z_zs[grididx]
-            self.plotter.plot_traj(data.zbT_x[grididx], multicolor=True, ax=ax)
+            self.plotter.plot_traj(data.z_eval_rollout.zbT_x[grididx], multicolor=True, ax=ax)
             ax.set_title(f"z={z:.1f}")
         fig_path = mkdir(plot_dir / "phase") / "phase_{:08}.jpg".format(idx)
         fig.savefig(fig_path, bbox_inches="tight")
@@ -105,58 +104,57 @@ class BaselineTrainer:
 
         # --------------------------------------------
         # Contour of critic.
-        cmap = "rocket"
-        x_idx, y_idx = self.task.get2d_idxs()
-        xlabel, ylabel = self.task.x_labels[x_idx], self.task.x_labels[y_idx]
-
-        fig, axes = plt.subplots(3, 3, figsize=figsize, **fig_opt)
-        axes = axes.ravel().tolist()
-        for grididx, ax in enumerate(axes[:nz]):
-            z = data.z_zs[grididx]
-            cm = ax.contourf(bb_X, bb_Y, data.zbb_critic[grididx], levels=32, cmap=cmap)
-            #self.task.setup_traj_plot(ax)
-            fig.colorbar(cm, ax=ax)
-            ax.set(xlabel=xlabel, ylabel=ylabel, title=f"z={z:.1f}")
-        fig_path = mkdir(plot_dir / "critic") / "critic_{:08}.jpg".format(idx)
-        fig.savefig(fig_path, bbox_inches="tight")
-        plt.close(fig)
+        for mode, eval_contour_val in data.z_eval_contours.items():
+            #bb_X, bb_Y, _ = self.task.grid_contour(*trainer_cfg.contour_size, self.task.contour_modes[mode])
+            zbb_X, zbb_Y = eval_contour_val.zbb_X, eval_contour_val.zbb_Y
+            
+            cmap = "rocket"     
+            fig, axes = plt.subplots(3, 3, figsize=figsize, **fig_opt)
+            axes = axes.ravel().tolist()
+            for grididx, ax in enumerate(axes[:nz]):
+                z = data.z_zs[grididx]
+                cm = ax.contourf(zbb_X[grididx], zbb_Y[grididx], eval_contour_val.zbb_critic[grididx], levels=32, cmap=cmap)
+                #self.task.setup_traj_plot(ax)
+                fig.colorbar(cm, ax=ax)
+                ax.set(xlabel='x', ylabel='y', title=f"z={z:.1f}")
+            fig_path = mkdir(plot_dir / "critic") / "{:s}_{:08}.jpg".format(mode, idx)
+            fig.savefig(fig_path, bbox_inches="tight")
+            plt.close(fig)
  
-        # --------------------------------------------
-        # Contour of policy.
-        # Use 'bwr' colormap and discretize it into task.n_actions colors (one for each integer action)
-        cmap = plt.get_cmap('bwr', self.task.n_actions)  # discrete colors from the 'bwr' colormap
-        # Create a norm to map values to the integers 0 to 10
-        norm = BoundaryNorm(boundaries=np.arange(self.task.n_actions), ncolors=cmap.N)
-        x_idx, y_idx = self.task.get2d_idxs()
-        xlabel, ylabel = self.task.x_labels[x_idx], self.task.x_labels[y_idx]
+            # --------------------------------------------
+            # Contour of policy.
+            # Use 'bwr' colormap and discretize it into task.n_actions colors (one for each integer action)
+            cmap = plt.get_cmap('bwr', self.task.n_actions)  # discrete colors from the 'bwr' colormap
+            # Create a norm to map values to the integers 0 to 10
+            norm = BoundaryNorm(boundaries=np.arange(self.task.n_actions), ncolors=cmap.N)
+            
+            fig, axes = plt.subplots(3, 3, figsize=figsize, **fig_opt)
+            axes = axes.ravel().tolist()
+            for grididx, ax in enumerate(axes[:nz]):
+                z = data.z_zs[grididx]
+                cm = ax.contourf(zbb_X[grididx], zbb_Y[grididx], eval_contour_val.zbb_pol[grididx], levels=32, cmap=cmap, norm=norm)
+                #self.task.setup_traj_plot(ax)
+                fig.colorbar(cm, ax=ax, ticks=np.arange(self.task.n_actions))
+                ax.set(xlabel='x', ylabel='y', title=f"z={z:.1f}")
+            fig_path = mkdir(plot_dir / "policy") / "{:s}_{:08}.jpg".format(mode, idx)
+            fig.savefig(fig_path, bbox_inches="tight")
+            plt.close(fig)
 
-        fig, axes = plt.subplots(3, 3, figsize=figsize, **fig_opt)
-        axes = axes.ravel().tolist()
-        for grididx, ax in enumerate(axes[:nz]):
-            z = data.z_zs[grididx]
-            cm = ax.contourf(bb_X, bb_Y, data.zbb_pol[grididx], levels=32, cmap=cmap, norm=norm)
-            #self.task.setup_traj_plot(ax)
-            fig.colorbar(ax=ax, ticks=np.arange(self.task.n_actions))
-            ax.set(xlabel=xlabel, ylabel=ylabel, title=f"z={z:.1f}")
-        fig_path = mkdir(plot_dir / "policy") / "mode_{:08}.jpg".format(idx)
-        fig.savefig(fig_path, bbox_inches="tight")
-        plt.close(fig)
-
-        '''
-        # --------------------------------------------
-        # Contour of Vh.
-        fig, axes = plt.subplots(3, 3, figsize=figsize, **fig_opt)
-        axes = axes.ravel().tolist()
-        for grididx, ax in enumerate(axes[:nz]):
-            z = data.z_zs[grididx]
-            cm = ax.contourf(bb_X, bb_Y, data.zbb_Vh[grididx], norm=CenteredNorm(), levels=32, cmap=cmap_Vh)
-            self.task.setup_traj_plot(ax)
-            fig.colorbar(cm, ax=ax)
-            ax.set(xlabel=xlabel, ylabel=ylabel, title=f"z={z:.1f}")
-        fig_path = mkdir(plot_dir / "Vh") / "Vh_{:08}.jpg".format(idx)
-        fig.savefig(fig_path, bbox_inches="tight")
-        plt.close(fig)
-        '''
+            '''
+            # --------------------------------------------
+            # Contour of Vh.
+            fig, axes = plt.subplots(3, 3, figsize=figsize, **fig_opt)
+            axes = axes.ravel().tolist()
+            for grididx, ax in enumerate(axes[:nz]):
+                z = data.z_zs[grididx]
+                cm = ax.contourf(bb_X, bb_Y, data.zbb_Vh[grididx], norm=CenteredNorm(), levels=32, cmap=cmap_Vh)
+                self.task.setup_traj_plot(ax)
+                fig.colorbar(cm, ax=ax)
+                ax.set(xlabel=xlabel, ylabel=ylabel, title=f"z={z:.1f}")
+            fig_path = mkdir(plot_dir / "Vh") / "Vh_{:08}.jpg".format(idx)
+            fig.savefig(fig_path, bbox_inches="tight")
+            plt.close(fig)
+            '''
 
     def train(
         self, key: PRNGKey, alg_cfg: Baseline.Cfg, collect_cfg: CollectorCfg, wandb_name: str, trainer_cfg: BaselineTrainerCfg, iteratively: bool = True, 
@@ -211,7 +209,7 @@ class BaselineTrainer:
             eval_rollout_T = collect_cfg.rollout_T
             if should_eval:
                 if iteratively:
-                    data = alg.eval_iteratively(self.task, eval_rollout_T, trainer_cfg.contour_size)
+                    data = alg.eval_iteratively(self.task, eval_rollout_T, trainer_cfg.contour_modes, trainer_cfg.contour_size)
                     data = jtu.tree_map(np.array, data)
                 else:
                     data = jax2np(alg.eval(eval_rollout_T))

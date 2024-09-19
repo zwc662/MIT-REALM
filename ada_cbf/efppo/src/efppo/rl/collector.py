@@ -51,8 +51,6 @@ class CollectorState(NamedTuple):
     state: TaskState
     z: FloatScalar
 
-
-
 def collect_single_mode(
     task: Task,
     x0: TaskState,
@@ -167,7 +165,7 @@ def collect_single_env_mode(
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
         new_state = CollectorState(state.steps + 1, envstate_new.reshape(-1), z_new)
-        return new_state, (envstate_new, obs_pol, z_new, l, h, control, expert_control, agent_control)
+        return new_state, (envstate_new, obs_pol, z_new, l, h, control, expert_control, agent_control['control'] if type(agent_control) == dict else agent_control )
  
     collect_state = CollectorState(0, x0, z0)
     

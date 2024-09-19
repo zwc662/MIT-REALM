@@ -64,3 +64,5 @@ runs/**/*.txt
 !*_eval_value_*.jpg 
 
 .DS_Store
+
+**/ckpts

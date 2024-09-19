@@ -79,8 +79,6 @@ class Experience(NamedTuple):
     
 @dataclass
 class ReplayBuffer:
-    
- 
     _key: PRNGKey
     _capacity: int = 10240 
     experiences: Optional[Experience] = None

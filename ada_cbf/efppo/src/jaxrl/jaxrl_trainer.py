@@ -40,7 +40,7 @@ class JAXRLTrainer:
     max_steps: int = int(1e7)        # ('Number of training steps.')
     start_training: int = int(1e4)      #'Number of training steps to start training.')
     tqdm: bool = True
-    replay_buffer_size: int = int(1e6)
+    replay_buffer_size: int = int(1e7)
     agent: Optional[Union[AWACLearner, DDPGLearner, REDQLearner, SACLearner, SACV1Learner]] = None
 
     def train(self):
@@ -53,7 +53,7 @@ class JAXRLTrainer:
         elif 'ql' in name.lower():
             algo = REDQLearner
         else:
-            algo = SACV1Learner
+            algo = SACLearner
  
         wandb.init(
             project='jaxrl',
@@ -90,7 +90,7 @@ class JAXRLTrainer:
             if i >= self.start_training:
                 action = train_env.get_expert_control()
             else:
-                action = self.agent.sample_actions(observation)
+                action = self.agent.sample_actions(observation).clip(-1, 1) * (train_env.ub - train_env.lb) / 2 + train_env.lb 
             next_state = train_env.step(state, action)
             next_observation = train_env.get_obs(next_state)
             reward = - train_env.l(next_state, action)

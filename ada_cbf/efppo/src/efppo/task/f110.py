@@ -11,7 +11,8 @@ import jax.lax as lax
 import jax.numpy as jnp
 import jax.random as jr
 from jax import lax
- 
+
+from enum import Enum
 
 import numpy as np
 from numba import njit
@@ -22,7 +23,7 @@ import warnings
 
 from typing_extensions import override
 
-from typing import List, Dict, Any, Union, Optional, Tuple
+from typing import List, Dict, Any, Union, Optional, Tuple, ClassVar
 
 from f110_gym.envs.f110_env import F110Env
 from f110_gym.envs.base_classes import Integrator 
@@ -526,21 +527,25 @@ class Planner:
 
 
 class F1TenthWayPoint(Task):
-    STATE_X = 0
-    STATE_Y = 1
-    STATE_YAW = 2
-    STATE_VEL_X = 3
-    STATE_VEL_Y = 4
-    STATE_FST_LAD = 5
+    STATE_X: int = 0
+    STATE_Y: int = 1
+    STATE_YAW: int = 2
+    STATE_VEL_X: int = 3
+    STATE_VEL_Y: int = 4
+    STATE_FST_LAD: int = 5
 
-    OBS_YAW = 0
-    OBS_VEL_X = 1
-    OBS_VEL_Y = 2
-    OBS_FST_LAD = 3
+    OBS_YAW: int = 0
+    OBS_VEL_X: int = 1
+    OBS_VEL_Y: int = 2
+    OBS_FST_LAD: int = 3
 
-    PLOT_2D_INDXS = [STATE_X, STATE_Y]
+    PLOT_2D_INDXS: Tuple[int, int] = [STATE_X, STATE_Y]
 
-     
+    class CONTOUR_MODES(Enum):
+        VELOCITY = 1
+        VELOCITY_LOOKAHEAD = 2
+        VELOCITY_YAW = 3
+        VELOCITY_YAW_LOOKAHEAD = 4
 
     def __init__(self, seed = 10, assets_location: str = None, n_actions: Tuple[int] = (10, 1), n_history: int = 0, control_mode: Optional[str] = None):
        
@@ -583,10 +588,8 @@ class F1TenthWayPoint(Task):
         self._ub = np.array([np.pi/6., 5])
         
         self.render = False
-
+ 
         self.control_mode = control_mode
-
-        
          
         self.discrete_actionss = []
         for d in range(len(n_actions)):
@@ -602,6 +605,13 @@ class F1TenthWayPoint(Task):
 
         self.n_history = n_history
     
+    @property
+    def contour_modes(self):
+        return self.CONTOUR_MODES
+    
+    @property
+    def contour_mode(self):
+        return self.CONTOUR_MODES.VELOCITY
 
     @property
     def n_actions(self):
@@ -1220,7 +1230,8 @@ class F1TenthWayPoint(Task):
             )
         
             
-    def grid_contour(self, n_xs = 10, n_ys = 10, mode: str = 'velocity') -> tuple[BBFloat, BBFloat, TaskState]:
+    def grid_contour(self, n_xs = 10, n_ys = 10, mode: Optional[CONTOUR_MODES] = None) -> tuple[BBFloat, BBFloat, TaskState]:
+        
         # Contour with ( x axis=θ, y axis=H )
         b_xs = np.linspace(-5, 5, num=n_xs)
         b_ys = np.linspace(-5, 5, num=n_ys)
@@ -1228,30 +1239,44 @@ class F1TenthWayPoint(Task):
         x0 = jnp.zeros([self.nx])
         bb_x0 = jnp.asarray(ei.repeat(x0, "nx -> b1 b2 nx", b1=n_ys, b2=n_xs))
 
-        if mode == 'velocity':
-            bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
-            for i in range(int((self.nx - self.STATE_FST_LAD) / 2)):
-                bb_LAD = self.conf.work.tlad / self.conf.work.nlad * i  
-                bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + i * 2].set(bb_LAD)
+        bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
+        
+      
 
-            bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_X)
-            bb_x0 = bb_x0.at[:, :, self.STATE_VEL_Y].set(bb_Y)
+        if mode is None or mode.value == 1:
+            # VELOCITY = 1
+            mode = self.contour_mode
+            bb_LAD = self.conf.work.tlad / self.conf.work.nlad * np.arange(int((self.nx - self.STATE_FST_LAD) / 2))  
+            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD::2].set(bb_LAD)
+        elif mode.value == 2:
+            # VELOCITY_LOOKAHEAD = 2
+            bb_vel = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
+            bb_LAD = self.conf.work.tlad / self.conf.work.nlad * np.arange(int((self.nx - self.STATE_FST_LAD) / 2))
+            bb_LAD_X = bb_LAD * bb_X / bb_vel ## lad_dist * cosine 
+            bb_LAD_Y = bb_LAD * bb_Y / bb_vel  ## lad_dist * sine
+            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD::2].set(bb_LAD_X)
+            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + 1::2].set(bb_LAD_Y)
+        elif mode.value == 3:
+            # VELOCITY_YAW = 3
+            bb_vel = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
+            bb_yaw = np.arcsin(bb_X / bb_vel)
+            bb_LAD = self.conf.work.tlad / self.conf.work.nlad * np.arange(int((self.nx - self.STATE_FST_LAD) / 2)) 
+            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD::2].set(bb_LAD)
+            bb_x0 = bb_x0.at[:, :, self.STATE_YAW].set(bb_yaw)
+        elif mode.value == 4:
+            # VELOCITY_YAW_LOOKAHEAD = 4
+            bb_vel = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
+            bb_yaw = np.arcsin(bb_X / bb_vel)
+            bb_LAD = self.conf.work.tlad / self.conf.work.nlad * np.arange(int((self.nx - self.STATE_FST_LAD) / 2)) 
+            bb_LAD_X = bb_LAD * bb_X / bb_vel ## lad_dist * cosine 
+            bb_LAD_Y = bb_LAD * bb_Y / bb_vel ## lad_dist * sine
+            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD::2].set(bb_LAD_X)
+            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + 1::2].set(bb_LAD_Y)
+            bb_x0 = bb_x0.at[:, :, self.STATE_YAW].set(bb_yaw)
 
+        bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_X)
+        bb_x0 = bb_x0.at[:, :, self.STATE_VEL_Y].set(bb_Y)
+        
+        return bb_X, bb_Y, bb_x0
 
-            return bb_X, bb_Y, bb_x0
-
-        elif mode == 'lookahead':
-            bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
-            for i in range(int((self.nx - self.STATE_FST_LAD) / 2)):
-                bb_LAD = self.conf.work.tlad / self.conf.work.nlad * i 
-                bb_LAD_X = bb_LAD * bb_X / np.sqrt(bb_X**2 + bb_Y**2)
-                bb_LAD_Y = bb_LAD * bb_Y / np.sqrt(bb_X**2 + bb_Y**2)
-                bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + i * 2].set(bb_LAD_X)
-                bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + 1 + i * 2].set(bb_LAD_Y)
- 
-            bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_X)
-            bb_x0 = bb_x0.at[:, :, self.STATE_VEL_Y].set(bb_Y)
-
-
-
-
+       

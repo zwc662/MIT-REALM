@@ -17,7 +17,7 @@ def evaluate(agent, env: gym.Env, num_episodes: int) -> Dict[str, float]:
         state = env.reset(mode='test')
         observation = env.get_obs(state) 
         while not done and tot_length <= 1e3:
-            action = agent.sample_actions(observation, temperature=0.0)
+            action = agent.sample_actions(observation, temperature=0.0).clip(-1, 1) * (env.ub - env.lb) / 2 + env.lb
             state = env.step(state, action)
             observation = env.get_obs(state)
             cost = env.l(state, action)

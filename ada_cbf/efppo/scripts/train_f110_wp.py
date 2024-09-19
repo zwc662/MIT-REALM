@@ -51,9 +51,14 @@ def main(
         if 'offpolicy' in name:
             control_mode = 'random+pursuit'
 
+        contour_mode = 1
+        if 'contour' in name:
+            contour_mode = int(re.search(r"contour(\d+)", name).group(1))
+        
         task = F1TenthWayPoint(n_history=n_history, control_mode = control_mode)
         trainer = BaselineTrainer(task) 
-        trainer_cfg = BaselineTrainerCfg(n_iters=10_000_000, train_after = 1_000, train_every= 3, log_every=100, eval_every=100, ckpt_every=100)
+        trainer_cfg = BaselineTrainerCfg(n_iters=10_000_000, train_after = 1_000, train_every= 3, log_every=100, eval_every=100, ckpt_every=100, contour_modes = [contour_mode])
+         
          
         if os.path.exists(name): 
             with open(os.path.join(os.path.dirname(os.path.abspath(name)), 'cfg.pt'), 'rb') as fp:

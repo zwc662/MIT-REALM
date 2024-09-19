@@ -22,7 +22,7 @@ def test_train():
         )
     )
     from train_f110_wp import main as train_main
-    train_main(name = 'baseline_disc_sac_10hist_10acts_stability_dist_normalized')
+    train_main(name = 'offline_baseline_disc_sac_10acts_mode2')
 
 ''' 
 def test_vmap():
