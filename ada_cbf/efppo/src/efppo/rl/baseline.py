@@ -1087,9 +1087,8 @@ class BaselineSACDisc(Baseline):
                     bb_obs[-1].append(task.get_obs(bb_state[i][j]))
                 bb_obs[-1] = jnp.stack(bb_obs[-1]) 
                 bb_obs[-1] = jax.vmap(self.standardize, in_axes = 0)(bb_obs[-1])
-    
+
             bb_obs =  jnp.stack(bb_obs)
-            
             bb_z = jnp.full(bb_X.shape, z)
 
             bb_pol = []

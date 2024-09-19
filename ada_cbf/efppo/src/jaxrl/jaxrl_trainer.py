@@ -42,6 +42,8 @@ class JAXRLTrainer:
     tqdm: bool = True
     replay_buffer_size: int = int(1e7)
     agent: Optional[Union[AWACLearner, DDPGLearner, REDQLearner, SACLearner, SACV1Learner]] = None
+    load_from_path: Optional[str] = None
+    
 
     def train(self):
         kwargs = asdict(self)
@@ -67,8 +69,7 @@ class JAXRLTrainer:
 
         run_dir = mkdir(get_runs_dir() / f"F1TenthWayPoint_JAXRL" / name) 
         ckpt_dir = mkdir(run_dir / "ckpts")
-        
-       
+         
         train_env = F1TenthWayPoint()
         eval_env = F1TenthWayPoint()
         state_example = np.zeros([train_env.nx])

@@ -120,6 +120,9 @@ class SACV1Learner(object):
 
         self.save_dir = save_dir
 
+        if 'load_from_path' in kwargs and kwargs['load_from_path'] is not None:
+            self.load(kwargs['load_from_path'])
+
 
     def sample_actions(self,
                        observations: np.ndarray,
@@ -159,8 +162,8 @@ class SACV1Learner(object):
         print(f"Saved ckpt at {str(save_dir)}!")
         return save_dir
 
-    def load(self, idx: int):
-        load_dir = pathlib.Path(f'{self.save_dir}/{idx:08}/default/')
+    def load(self, path: str):
+        load_dir = pathlib.Path(path)
         self.actor.load(load_dir / 'actor')
         self.critic.load(load_dir / 'critic')
         self.value.load(load_dir / 'value' )

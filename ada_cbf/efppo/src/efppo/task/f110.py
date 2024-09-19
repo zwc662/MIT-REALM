@@ -544,10 +544,8 @@ class F1TenthWayPoint(Task):
     PLOT_2D_INDXS: Tuple[int, int] = [STATE_X, STATE_Y]
 
     class CONTOUR_MODES(Enum):
-        VELOCITY = 1
-        VELOCITY_LOOKAHEAD = 2
-        VELOCITY_YAW = 3
-        VELOCITY_YAW_LOOKAHEAD = 4
+        YAW = 1
+        YAW_LOOKAHEAD = 2 
 
     def __init__(self, seed = 10, assets_location: str = None, n_actions: Tuple[int] = (10, 1), n_history: int = 0, control_mode: Optional[str] = None):
        
@@ -1246,27 +1244,46 @@ class F1TenthWayPoint(Task):
 
         bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
         
-        bb_vel = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
-        bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_vel)
 
-        bb_yaw = np.arcsin(bb_Y / bb_vel)
-        bb_x0 = bb_x0.at[:, :, self.STATE_THETA].set(bb_yaw)
+        ## bbox coord always indicates speed
+        bb_spd = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
+        bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_spd)
+ 
          
         if mode is None or mode.value == 1:
-            # VELOCITY = 1
+            # YAW = 1
+            ## bbox coord also indicates yaw direction
+
+            ## Set yaw angles in bbox
+            bb_yaw = np.arctan2(bb_Y, bb_X) % (2 * np.pi) 
+            bb_x0 = bb_x0.at[:, :, self.STATE_YAW].set(bb_yaw)
+
+            ## Set fixd lookahead point along x+ direction
             mode = self.contour_mode
             bb_LAD = self.conf.work.tlad / self.conf.work.nlad * np.arange(int((self.nx - self.STATE_FST_LAD) / 2))  
             bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD::2].set(bb_LAD)
+
         elif mode.value == 2:
-            # VELOCITY_LOOKAHEAD = 2
-            bb_vel = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
-            bb_LAD = self.conf.work.tlad / self.conf.work.nlad * np.arange(int((self.nx - self.STATE_FST_LAD) / 2))
-            bb_LAD_X = bb_LAD * np.cos(bb_yaw) ## lad_dist * cosine 
-            bb_LAD_Y = bb_LAD * np.sin(bb_yaw)  ## lad_dist * sine
-            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD::2].set(bb_LAD_X)
-            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + 1::2].set(bb_LAD_Y)
-       
+            # YAW_LOOKAHEAD = 2
+
+            ## Set yaw angles in bbox
+            bb_yaw = np.arctan2(bb_Y, bb_X) % (2 * np.pi) 
+            bb_x0 = bb_x0.at[:, :, self.STATE_YAW].set(bb_yaw)
+
+
+            ## Align lookahead point with yaw angle
+            def compute_lad(i):
+                lad = self.conf.work.tlad / self.conf.work.nlad * i
+                bb_LAD_X_i = lad * np.cos(bb_yaw) ## lad_dist * cosine 
+                bb_LAD_Y_i = lad * np.sin(bb_yaw)  ## lad_dist * sine
+                return jnp.stack((bb_LAD_X_i, bb_LAD_Y_i), axis = -1)
+
+            bb_LADs= jax.vmap(compute_lad, in_axes = 0)(np.arange(int((self.nx - self.STATE_FST_LAD) / 2)))
+            assert bb_LADs.shape == (self.conf.work.nlad, n_xs, n_ys, 2)
+            bb_LAD = ei.rearrange(bb_LADs, 'nlad b1 b2 xy -> b1 b2 (nlad xy)', xy = 2)
+            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD:].set(bb_LAD) 
+  
 
         return bb_X, bb_Y, bb_x0
-
+ 
        

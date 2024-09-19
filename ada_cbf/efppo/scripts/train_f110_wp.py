@@ -37,28 +37,44 @@ def main(
 ):
     
     set_logger_format()
+
+    n_history = 0
+    if 'hist' in name:
+        n_history = int(re.search(r"(\d+)hist", name).group(1))
+    
+    control_mode = None
+    if 'offpolicy' in name:
+        control_mode = 'random+pursuit'
+
+    contour_mode = 1
+    if 'contour' in name:
+        contour_mode = int(re.search(r"contour(\d+)", name).group(1))
+    
+    task = F1TenthWayPoint(n_history=n_history, control_mode = control_mode)
     
     if 'jaxrl' in name:
+        load_from_path = None
         stamped_name = '_'.join([current_timestamp, str(sha)[-5:], name])
-        trainer = JAXRLTrainer(name = stamped_name, seed = seed)     
+        
+        if os.path.exists(name):
+            load_from_path = name
+            stamped_name = '_'.join([
+                    current_timestamp, 
+                    str(sha)[-5:], 
+                    '_'.join([
+                        os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(name)))), 
+                        os.path.basename(os.path.dirname(name))
+                        ])
+                        ])
+        
+        trainer = JAXRLTrainer(name = stamped_name, seed = seed, load_from_path = load_from_path)     
+        
+        
+            
         trainer.train()
     elif 'baseline' in name:
-        n_history = 0
-        if 'hist' in name:
-            n_history = int(re.search(r"(\d+)hist", name).group(1))
-        
-        control_mode = None
-        if 'offpolicy' in name:
-            control_mode = 'random+pursuit'
-
-        contour_mode = 1
-        if 'contour' in name:
-            contour_mode = int(re.search(r"contour(\d+)", name).group(1))
-        
-        task = F1TenthWayPoint(n_history=n_history, control_mode = control_mode)
         trainer = BaselineTrainer(task) 
         trainer_cfg = BaselineTrainerCfg(n_iters=10_000_000, train_after = 1_000, train_every= 3, log_every=100, eval_every=100, ckpt_every=100, contour_modes = [contour_mode])
-         
          
         if os.path.exists(name): 
             with open(os.path.join(os.path.dirname(os.path.abspath(name)), 'cfg.pt'), 'rb') as fp:

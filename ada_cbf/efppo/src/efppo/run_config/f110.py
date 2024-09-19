@@ -8,8 +8,8 @@ from enum import Enum
 
 
 def get(name: str = 'efppo'):
-    zmin, zmax = -10., 10.
-    nz_enc = 8
+    zmin, zmax = 0., 0. # -10., 10.
+    nz_enc = 1 #8
     z_mean = 0.
     z_scale = 1.0
 
