@@ -1246,8 +1246,12 @@ class F1TenthWayPoint(Task):
 
         bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
         
-      
+        bb_vel = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
+        bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_vel)
 
+        bb_yaw = np.arcsin(bb_Y / bb_vel)
+        bb_x0 = bb_x0.at[:, :, self.STATE_THETA].set(bb_yaw)
+         
         if mode is None or mode.value == 1:
             # VELOCITY = 1
             mode = self.contour_mode
@@ -1257,31 +1261,12 @@ class F1TenthWayPoint(Task):
             # VELOCITY_LOOKAHEAD = 2
             bb_vel = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
             bb_LAD = self.conf.work.tlad / self.conf.work.nlad * np.arange(int((self.nx - self.STATE_FST_LAD) / 2))
-            bb_LAD_X = bb_LAD * bb_X / bb_vel ## lad_dist * cosine 
-            bb_LAD_Y = bb_LAD * bb_Y / bb_vel  ## lad_dist * sine
+            bb_LAD_X = bb_LAD * np.cos(bb_yaw) ## lad_dist * cosine 
+            bb_LAD_Y = bb_LAD * np.sin(bb_yaw)  ## lad_dist * sine
             bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD::2].set(bb_LAD_X)
             bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + 1::2].set(bb_LAD_Y)
-        elif mode.value == 3:
-            # VELOCITY_YAW = 3
-            bb_vel = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
-            bb_yaw = np.arcsin(bb_X / bb_vel)
-            bb_LAD = self.conf.work.tlad / self.conf.work.nlad * np.arange(int((self.nx - self.STATE_FST_LAD) / 2)) 
-            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD::2].set(bb_LAD)
-            bb_x0 = bb_x0.at[:, :, self.STATE_YAW].set(bb_yaw)
-        elif mode.value == 4:
-            # VELOCITY_YAW_LOOKAHEAD = 4
-            bb_vel = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
-            bb_yaw = np.arcsin(bb_X / bb_vel)
-            bb_LAD = self.conf.work.tlad / self.conf.work.nlad * np.arange(int((self.nx - self.STATE_FST_LAD) / 2)) 
-            bb_LAD_X = bb_LAD * bb_X / bb_vel ## lad_dist * cosine 
-            bb_LAD_Y = bb_LAD * bb_Y / bb_vel ## lad_dist * sine
-            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD::2].set(bb_LAD_X)
-            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD + 1::2].set(bb_LAD_Y)
-            bb_x0 = bb_x0.at[:, :, self.STATE_YAW].set(bb_yaw)
+       
 
-        bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_X)
-        bb_x0 = bb_x0.at[:, :, self.STATE_VEL_Y].set(bb_Y)
-        
         return bb_X, bb_Y, bb_x0
 
        
