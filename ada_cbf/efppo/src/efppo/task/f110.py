@@ -527,17 +527,19 @@ class Planner:
 
 
 class F1TenthWayPoint(Task):
-    STATE_X: int = 0
-    STATE_Y: int = 1
-    STATE_YAW: int = 2
-    STATE_VEL_X: int = 3
-    STATE_VEL_Y: int = 4
-    STATE_FST_LAD: int = 5
+    STATE_X = 0
+    STATE_Y = 1
+    STATE_YAW = 2
+    STATE_VEL_X = 3
+    STATE_VEL_Y = 4
+    STATE_ANG_Z = 5
+    STATE_FST_LAD = 6
 
-    OBS_YAW: int = 0
-    OBS_VEL_X: int = 1
-    OBS_VEL_Y: int = 2
-    OBS_FST_LAD: int = 3
+    OBS_YAW = 0
+    OBS_VEL_X = 1
+    OBS_VEL_Y = 2
+    OBS_ANG_Z = 3
+    OBS_FST_LAD = 4
 
     PLOT_2D_INDXS: Tuple[int, int] = [STATE_X, STATE_Y]
 
@@ -619,11 +621,11 @@ class F1TenthWayPoint(Task):
     
     @property
     def nx(self):
-        return 5 + 2 * self.conf.work.nlad
+        return 6 + 2 * self.conf.work.nlad
 
     @property
     def nobs(self):
-        return (3 + 2 * self.conf.work.nlad) * (self.n_history + 1)
+        return (4 + 2 * self.conf.work.nlad) * (self.n_history + 1)
     
     @property
     def nu(self):
@@ -646,6 +648,7 @@ class F1TenthWayPoint(Task):
             r"$\theta$",
             r"$v_x$",
             r"$v_y$"
+            r"$ang_z$"
         ] 
 
         for i in range(self.conf.work.nlad):
@@ -713,6 +716,7 @@ class F1TenthWayPoint(Task):
         pose_theta = state_dict['poses_theta']
         velocity_x = state_dict['linear_vels_x']
         velocity_y = state_dict['linear_vels_y']
+        ang_vel_z = state_dict['ang_vels_z']
 
         assert lookahead_points[0].shape == (2, )
 
@@ -722,6 +726,7 @@ class F1TenthWayPoint(Task):
             pose_theta, 
             velocity_x, 
             velocity_y, 
+            ang_vel_z,
             *lookahead_points), axis = -1)
  
    
@@ -988,11 +993,11 @@ class F1TenthWayPoint(Task):
         #print(self.cur_step, nxt_state_dict, action)
              
         if self.render:
-            #print(f"control: {control}")
-            #print(f"state: {nxt_state_dict}")
+            print(f"cur_control: {self.cur_control}")
+            print(f"nxt_state_dict: {nxt_state_dict}")
             #self.init_render_callbacks()
             self.cur_env.render(mode='human')
-          
+            
         
         
         self.cur_collision = nxt_state_dict['collisions']
