@@ -52,6 +52,8 @@ class JAXRLTrainer:
             algo = DDPGLearner
         elif 'ql' in name.lower():
             algo = REDQLearner
+        elif 'sac1' in name.lower():
+            algo = SACV1Learner
         else:
             algo = SACLearner
  
@@ -91,7 +93,7 @@ class JAXRLTrainer:
                 action = train_env.get_expert_control()
             else:
                 action = self.agent.sample_actions(observation).clip(-1, 1) * (train_env.ub - train_env.lb) / 2 + train_env.lb 
-            next_state = train_env.step(state, action)
+            next_state, _ = train_env.step(state, action)
             next_observation = train_env.get_obs(next_state)
             reward = - train_env.l(next_state, action)
             done = train_env.should_reset()
