@@ -545,7 +545,8 @@ class F1TenthWayPoint(Task):
 
     class CONTOUR_MODES(Enum):
         YAW = 1
-        YAW_LOOKAHEAD = 2 
+        YAW_LOOKAHEAD = 2
+        ANGULAR = 3 
 
     def __init__(self, seed = 10, assets_location: str = None, n_actions: Tuple[int] = (10, 1), n_history: int = 0, control_mode: Optional[str] = None):
        
@@ -611,7 +612,7 @@ class F1TenthWayPoint(Task):
     
     @property
     def contour_mode(self):
-        return self.CONTOUR_MODES.VELOCITY
+        return self.CONTOUR_MODES.YAW
 
     @property
     def n_actions(self):
@@ -1083,7 +1084,9 @@ class F1TenthWayPoint(Task):
             previous_lookahead_point = np.asarray(self.cur_planner.waypoints[self.pre_waypoint_ids[-1]])
             l_stability = np.square(np.asarray(self.get2d(state)).reshape(2) - previous_lookahead_point.reshape(2)).sum() - \
                 np.square(np.asarray(self.get2d(self.pre_state)).reshape(2) - previous_lookahead_point.reshape(2)).sum()
-            l_stability = - (np.exp( - l_stability) - 1)
+            #l_stability = - (np.exp( - l_stability) - 1)
+            l_stability = max(np.exp(l_stability) - 1, 0)
+        
         ## Compare agent control w/ expert control
         l_bc = 0
         if False:
@@ -1116,7 +1119,7 @@ class F1TenthWayPoint(Task):
             ## Guaranteed overwhelmed cost for collision
             l_avoid = np.abs(self.cur_totl)
       
-        l = l_stability + l_dist #  l_vel + l_bc
+        l = l_stability #+ l_dist #  l_vel + l_bc
         self.cur_totl += l
 
         if self.render:
@@ -1243,21 +1246,18 @@ class F1TenthWayPoint(Task):
         bb_x0 = jnp.asarray(ei.repeat(x0, "nx -> b1 b2 nx", b1=n_ys, b2=n_xs))
 
         bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
+         
         
-
-        ## bbox coord always indicates speed
-        bb_spd = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
-        bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_spd)
- 
          
         if mode is None or mode.value == 1:
             # YAW = 1
-            ## bbox coord also indicates yaw direction
 
-            ## Set yaw angles in bbox
+            ## bbox coord indicates yaw direction
+            bb_spd = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
+            bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_spd)
             bb_yaw = np.arctan2(bb_Y, bb_X) % (2 * np.pi) 
             bb_x0 = bb_x0.at[:, :, self.STATE_YAW].set(bb_yaw)
-
+            
             ## Set fixd lookahead point along x+ direction
             mode = self.contour_mode
             bb_LAD = self.conf.work.tlad / self.conf.work.nlad * np.arange(int((self.nx - self.STATE_FST_LAD) / 2))  
@@ -1266,10 +1266,11 @@ class F1TenthWayPoint(Task):
         elif mode.value == 2:
             # YAW_LOOKAHEAD = 2
 
-            ## Set yaw angles in bbox
+            ## bbox coord indicates yaw direction
+            bb_spd = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
+            bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_spd)
             bb_yaw = np.arctan2(bb_Y, bb_X) % (2 * np.pi) 
             bb_x0 = bb_x0.at[:, :, self.STATE_YAW].set(bb_yaw)
-
 
             ## Align lookahead point with yaw angle
             def compute_lad(i):
@@ -1282,7 +1283,24 @@ class F1TenthWayPoint(Task):
             assert bb_LADs.shape == (self.conf.work.nlad, n_xs, n_ys, 2)
             bb_LAD = ei.rearrange(bb_LADs, 'nlad b1 b2 xy -> b1 b2 (nlad xy)', xy = 2)
             bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD:].set(bb_LAD) 
-  
+        
+        elif mode.value == 3:
+            # ANGULAR_SPEED = 3
+            
+            ## Set fixed speed
+            bb_spd = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
+            bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_spd) 
+
+            ## Set fixd lookahead point along x+ direction
+            bb_LAD = self.conf.work.tlad / self.conf.work.nlad * np.arange(int((self.nx - self.STATE_FST_LAD) / 2))  
+            bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD::2].set(bb_LAD)
+
+            ## bbox coord indicates angular velocity
+            bb_ang_z = np.arctan2(bb_Y, bb_X)
+            bb_x0 = bb_x0.at[:, :, self.STATE_ANG_Z].set(bb_ang_z)
+        
+        else:
+            raise NotImplementedError
 
         return bb_X, bb_Y, bb_x0
  
