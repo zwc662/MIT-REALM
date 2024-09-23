@@ -157,7 +157,7 @@ def collect_single_env_mode(
         #a_pol: tfd.Distribution = get_pol(obs_pol, state.z)
         #control = a_pol.mode()
         agent_control = get_pol(obs_pol, state.z)
-        expert_control = task.get_expert(state.state, agent_control, control_mode)
+        expert_control = task.get_expert(state.state, agent_control)
         envstate_new, control = task.step(state.state, agent_control, control_mode)
  
         # Z dynamics.
