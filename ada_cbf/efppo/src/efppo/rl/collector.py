@@ -149,15 +149,16 @@ def collect_single_env_mode(
     z_max: float,
     rollout_T: int,
     verbose: bool = False,
-    soft_reset: bool = False
+    soft_reset: bool = False,
+    control_mode: Optional[str] = None
 ):
     def _body(state: CollectorState, _):
         obs_pol = task.get_obs(state.state)
         #a_pol: tfd.Distribution = get_pol(obs_pol, state.z)
         #control = a_pol.mode()
         agent_control = get_pol(obs_pol, state.z)
-        expert_control = task.get_expert(state.state, **agent_control)
-        envstate_new, control = task.step(state.state, **agent_control)
+        expert_control = task.get_expert(state.state, agent_control, control_mode)
+        envstate_new, control = task.step(state.state, agent_control, control_mode)
  
         # Z dynamics.
         l = task.l(envstate_new, control)
@@ -165,7 +166,7 @@ def collect_single_env_mode(
         z_new = (state.z - l) / disc_gamma
         z_new = jnp.clip(z_new, z_min, z_max)
         new_state = CollectorState(state.steps + 1, envstate_new.reshape(-1), z_new)
-        return new_state, (envstate_new, obs_pol, z_new, l, h, control, expert_control, agent_control['control'] if type(agent_control) == dict else agent_control )
+        return new_state, (envstate_new, obs_pol, z_new, l, h, control, expert_control, agent_control)
  
     collect_state = CollectorState(0, x0, z0)
     
@@ -255,7 +256,8 @@ def collect_single_batch(
     z_min: float,
     z_max: float,
     rollout_T: int,
-    max_T: float = float('inf')
+    max_T: float = float('inf'),
+    control_mode: str = 'control'
 ):
     def _body(state: CollectorState, key):
         obs_pol = task.get_obs(state.state)
@@ -270,7 +272,7 @@ def collect_single_batch(
         logprob = s.log_prob(base_control).reshape(logprob.shape)
         control = (a_pol.scale @ base_control.reshape(-1, 1) + a_pol.loc.reshape(-1, 1)).reshape(control.shape)
         '''
-        envstate_new, control = task.step(state.state, np.asarray(agent_control).reshape(-1))
+        envstate_new, control = task.step(state.state, np.asarray(agent_control).reshape(-1), control_mode)
     
         # Z dynamics.
         l = task.l(envstate_new, control)
@@ -432,7 +434,7 @@ class Collector(struct.PyTreeNode):
         return new_self, bT_outputs
 
     def _collect_single_batch(
-        self, env_idx: int, key0: PRNGKey, colstate0: CollectorState, get_pol, disc_gamma: float, z_min: float, z_max: float, rollout_T: Optional[int] = None
+        self, env_idx: int, key0: PRNGKey, colstate0: CollectorState, get_pol, disc_gamma: float, z_min: float, z_max: float, rollout_T: Optional[int] = None, control_mode: Optional[str] = None
     ) -> tuple[CollectorState, RolloutOutput]: 
         if rollout_T is None:
             if hasattr(self.cfg, 'rollout_T'):
@@ -444,11 +446,11 @@ class Collector(struct.PyTreeNode):
         if hasattr(self.cfg, 'max_T'):
             max_T = self.cfg.max_T
 
-        return collect_single_batch(self.task, key0, colstate0, get_pol, disc_gamma, z_min, z_max, rollout_T, max_T)
+        return collect_single_batch(self.task, key0, colstate0, get_pol, disc_gamma, z_min, z_max, rollout_T, max_T, control_mode)
 
 
     def collect_batch_iteratively(
-        self, get_pol, disc_gamma: float, z_min: float, z_max: float, rollout_T: int = 1
+        self, get_pol, disc_gamma: float, z_min: float, z_max: float, rollout_T: int = 1, control_mode: Optional[str] = None
     ) -> tuple["Collector", RolloutOutput]:
         key0 = jr.fold_in(self.key, self.collect_idx)
         key_pol, key_reset_bernoulli, key_reset = jr.split(key0, 3)
@@ -499,7 +501,8 @@ class Collector(struct.PyTreeNode):
                 disc_gamma=disc_gamma, 
                 z_min=z_min, 
                 z_max=z_max,
-                rollout_T = rollout_T 
+                rollout_T = rollout_T ,
+                control_mode = control_mode
                 )
             #print(f"Sampled control {np.mean(bT_output.T_logprob)=}")
             # Resample x0

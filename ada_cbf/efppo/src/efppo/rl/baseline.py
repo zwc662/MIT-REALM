@@ -209,9 +209,14 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max 
         return collector.collect_batch(ft.partial(self.policy.apply), self.disc_gamma, z_min, z_max)
 
-    def collect_iteratively(self, collector: Collector, rollout_T: Optional[int] = None) -> tuple[Collector, Batch]:
+    def collect_iteratively(self, collector: Collector, rollout_T: Optional[int] = None, train_mode: Optional[str] = 'control') -> tuple[Collector, Batch]:
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
-        collector, data = collector.collect_batch_iteratively(lambda obs, z: self.sample_actions(self.standardize(obs), z), self.disc_gamma, z_min, z_max, rollout_T)
+
+        control_mode = 'control'
+        if train_mode == 'offpolicy':
+            control_mode = 'random+pursuit'
+            
+        collector, data = collector.collect_batch_iteratiffvely(lambda obs, z: self.sample_actions(self.standardize(obs), z), self.disc_gamma, z_min, z_max, rollout_T, control_mode)
         return collector, data
     
     def update_stats(self, mean: Obs, var: Obs):

@@ -126,10 +126,7 @@ def main(
             z_min=alg.cfg.train.z_min
             z_max=alg.cfg.train.z_max
         
-    def get_pol(obs, z):
-        control = rootfind_pol(obs, z)
-        return {'control': control, 'control_mode': control_mode}
-
+     
     bb_X, bb_Y, bb_x0 = jax2np(task.grid_contour(n_xs=10, n_ys=10))
     b1, b2 = bb_X.shape
     bb_z0 = np.full((b1, b2), z_max)
@@ -138,13 +135,14 @@ def main(
     collect_fn = ft.partial(
         collect_single_env_mode,
         task,
-        get_pol=get_pol,
+        get_pol=rootfind_pol,
         disc_gamma=disc_gamma,
         z_min=z_min,
         z_max=z_max,
         rollout_T=rollout_T,
         verbose=False,
-        soft_reset = False
+        soft_reset = False,
+        control_mode = control_mode
     )
     print("Collecting rollouts...")
     bb_rollouts: list[list[RolloutOutput]] = []

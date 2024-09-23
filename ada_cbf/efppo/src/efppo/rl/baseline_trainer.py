@@ -63,6 +63,7 @@ class BaselineTrainerCfg(Cfg):
     contour_modes: List[int] = [1]
     contour_size: Tuple[int] = (10, 10)
 
+    train_mode: str = 'Online'
     
 
 class BaselineTrainer:

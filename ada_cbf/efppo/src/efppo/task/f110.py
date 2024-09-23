@@ -944,7 +944,7 @@ class F1TenthWayPoint(Task):
 
 
     @override
-    def step(self, state: State, control: Union[Control, Action], control_mode: Optional[str] = None) -> State:
+    def step(self, state: State, control: Optional[Union[Control, Action]] = None, control_mode: Optional[str] = None) -> State:
         ## Ensure pausing the simulator when the agent is already out of bound (out of lane boundary or inf/nan in states)
         if False and np.any(self.cur_done > 0.): 
             print(f'Simulation fronzen @ {self.cur_step}: {self.cur_state_dict}')
@@ -962,13 +962,7 @@ class F1TenthWayPoint(Task):
         self.cur_action = self.cur_pursuit_action
         self.cur_control = self.cur_pursuit_control
         
-        if control_mode == 'random':
-            ## If using random control
-            self.cur_action = np.random.randint(self.n_actions)
-        elif control_mode == 'random+pursuit':
-            if np.random.random([1]).item() > 0.5:  
-                self.cur_action = np.random.randint(self.n_actions)
-        else: #if control_mode is None or control_mode == 'control':
+        if control_mode is None or control_mode == 'control':
             ## If using external control
             if np.asarray([control]).flatten().shape[0] > 1:
                 #print(f'Before projection {self.cur_action=}')
@@ -979,7 +973,15 @@ class F1TenthWayPoint(Task):
                 assert control >= 0 and control < self.n_actions, f"{control=} is out of bounds for [0, {self.n_actions - 1}]"
                 self.cur_action = int(control)
             #self.cur_control = self.discr_to_cts(self.cur_action)
-            
+        elif control_mode == 'random':
+            ## If using random control
+            self.cur_action = np.random.randint(self.n_actions)
+        elif control_mode == 'random+pursuit':
+            if np.random.random([1]).item() > 0.5:  
+                self.cur_action = np.random.randint(self.n_actions)
+        elif control_mode == 'pursuit':
+            pass
+       
         self.cur_control = self.discr_to_cts(self.cur_action)
         
         if self.render:
