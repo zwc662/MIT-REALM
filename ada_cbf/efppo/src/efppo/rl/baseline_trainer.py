@@ -63,7 +63,7 @@ class BaselineTrainerCfg(Cfg):
     contour_modes: List[int] = [1]
     contour_size: Tuple[int] = (10, 10)
 
-    train_mode: str = 'Online'
+    train_mode: str = 'online'
     
 
 class BaselineTrainer:
@@ -178,7 +178,7 @@ class BaselineTrainer:
  
         print(f"Initial data collection for {trainer_cfg.train_after} steps")
         collector: Collector = Collector.create(key, self.task, collect_cfg)
-        collector, rollout = alg.collect_iteratively(collector, rollout_T = trainer_cfg.train_after)
+        collector, rollout = alg.collect_iteratively(collector, rollout_T = trainer_cfg.train_after, train_mode = trainer_cfg.train_mode)
         replay_buffer.insert(rollout)
         idx = 0
         for idx in range(trainer_cfg.n_iters):
@@ -189,7 +189,7 @@ class BaselineTrainer:
             t0 = time.time()
 
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Collecting ... ")
-            collector, rollout = alg.collect_iteratively(collector, rollout_T = trainer_cfg.train_every)
+            collector, rollout = alg.collect_iteratively(collector, rollout_T = trainer_cfg.train_every, train_mode = trainer_cfg.train_mode)
             replay_buffer.insert(rollout)
             print(f"Iteration {idx} / {trainer_cfg.n_iters}: Updating ... ")
             t1 = time.time()
@@ -210,7 +210,7 @@ class BaselineTrainer:
             eval_rollout_T = collect_cfg.rollout_T
             if should_eval:
                 if iteratively:
-                    data = alg.eval_iteratively(self.task, eval_rollout_T, trainer_cfg.contour_modes, trainer_cfg.contour_size)
+                    data = alg.eval_iteratively(self.task, eval_rollout_T, trainer_cfg.contour_modes, trainer_cfg.contour_size, train_mode = trainer_cfg.train_mode)
                     data = jtu.tree_map(np.array, data)
                 else:
                     data = jax2np(alg.eval(eval_rollout_T))

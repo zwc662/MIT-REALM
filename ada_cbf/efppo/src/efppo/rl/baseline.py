@@ -213,10 +213,10 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
 
         control_mode = 'control'
-        if train_mode == 'offpolicy':
+        if train_mode == 'offpolicy' or train_mode == 'offline':
             control_mode = 'random+pursuit'
             
-        collector, data = collector.collect_batch_iteratiffvely(lambda obs, z: self.sample_actions(self.standardize(obs), z), self.disc_gamma, z_min, z_max, rollout_T, control_mode)
+        collector, data = collector.collect_batch_iteratively(self.sample_action, self.disc_gamma, z_min, z_max, rollout_T, control_mode)
         return collector, data
     
     def update_stats(self, mean: Obs, var: Obs):
@@ -260,14 +260,21 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         return mode_sample, mode_prob
  
 
-    def eval_iteratively(self, task: Task, rollout_T: int, countour_modes: List[int], contour_size: Tuple[int]) -> EvalData:
+    def eval_iteratively(self, task: Task, rollout_T: int, countour_modes: List[int], contour_size: Tuple[int], train_mode: Optional[str] = None) -> EvalData:
+        control_mode = 'control'
+        if train_mode == 'pursuit':
+            control_mode = 'pursuit'
+        elif train_mode == 'offpolicy':
+            control_mode = 'pursuit+random'
+        
+
         # Evaluate for a range of zs.
         val_zs = np.linspace(self.train_cfg.z_min, self.train_cfg.z_max, num=9)
 
         Z_eval_contour_datas = {}
         Z_eval_rollout_datas = []
         for z in val_zs:
-            z_eval_contour_vals, z_eval_rollout_val= self.eval_single_z_iteratively(task, z, rollout_T, countour_modes, contour_size)
+            z_eval_contour_vals, z_eval_rollout_val= self.eval_single_z_iteratively(task, z, rollout_T, countour_modes, contour_size, control_mode)
             Z_eval_rollout_datas.append(z_eval_rollout_val)
             for k, v in z_eval_contour_vals.items():
                 if k not in Z_eval_contour_datas:
@@ -342,7 +349,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}#
         return self.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info)
      
-    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_modes: List[int], contour_size: Tuple[int]):
+    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_modes: List[int], contour_size: Tuple[int], control_mode: Optional[str] = 'control'):
         # --------------------------------------------
         # Plot value functions
         eval_contour_vals = {}
@@ -387,8 +394,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
         b_z0 = jnp.full(batch_size, z)
 
         def get_pol(obs, z):
-            control = self.get_mode_and_prob(obs, z)[0]
-            return {'control': control, 'control_mode': 'control'}
+            return self.get_mode_and_prob(obs, z)[0]
 
         collect_fn = ft.partial(
             collect_single_env_mode,
@@ -398,6 +404,7 @@ class Baseline(Generic[_Algo], struct.PyTreeNode):
             z_min=z_min,
             z_max=z_max,
             rollout_T=rollout_T,
+            control_mode = control_mode
         )
         bb_rollouts: list[RolloutOutput] = []
         for i in range(batch_size):
@@ -651,14 +658,7 @@ class BaselineSAC(Baseline):
     def get_target_critic(self, obs, z, control):
         h_target_critic = self.target_critic.apply(self.standardize(obs), z, control)
         return h_target_critic.max()
-
-
-    def collect_iteratively(self, collector: Collector, rollout_T: Optional[int] = None) -> tuple[Collector, Baseline.Batch]:
-        z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
-        collector, data = collector.collect_batch_iteratively(self.sample_action, self.disc_gamma, z_min, z_max, rollout_T)
-        return collector, data
-    
-
+ 
     def eval_single_z(self, task: Task, z: float, rollout_T: int, contour_size: Tuple[int]):
         # --------------------------------------------
         # Plot value functions.
@@ -685,7 +685,7 @@ class BaselineSAC(Baseline):
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
-            rollout_T=rollout_T,
+            rollout_T=rollout_T
         )
         b_rollout: RolloutOutput = jax_vmap(collect_fn)(b_x0, b_z0)
 
@@ -705,7 +705,7 @@ class BaselineSAC(Baseline):
         info = {"p_unsafe": p_unsafe, "h_mean": h_mean, "cost sum": l_mean}#
         return self.EvalData(z, bb_control, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic)
      
-    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_modes: List[int], contour_size: Tuple[int]):
+    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_modes: List[int], contour_size: Tuple[int], control_mode: Optional[str] = None):
         # --------------------------------------------
         # Plot value functions.
         eval_contour_vals = {}
@@ -765,7 +765,7 @@ class BaselineSAC(Baseline):
 
         def get_pol(obs, z):
             control = self.get_mode_and_prob(obs, z)[0]
-            return {'control': control, 'control_mode': 'control'}
+            return control
 
         collect_fn = ft.partial(
             collect_single_env_mode,
@@ -775,6 +775,7 @@ class BaselineSAC(Baseline):
             z_min=z_min,
             z_max=z_max,
             rollout_T=rollout_T,
+            control_mode = control_mode
         )
         bb_rollouts: list[RolloutOutput] = []
         for i in range(batch_size):
@@ -1012,12 +1013,7 @@ class BaselineSACDisc(Baseline):
         new_temp = temp - ent_cf * (pol_info['loss_entropy'] - self.target_ent)
         pol_info["temperature"] = new_temp
         return new_policy, new_temp, pol_info
-    
-    
-    def collect_iteratively(self, collector: Collector, rollout_T: Optional[int] = None) -> tuple[Collector, Baseline.Batch]:
-        z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
-        collector, data = collector.collect_batch_iteratively(self.sample_action, self.disc_gamma, z_min, z_max, rollout_T)
-        return collector, data
+     
 
     def get_target_critic(self, obs, z):
         h_target_critic = self.target_critic.apply(obs, z)
@@ -1045,7 +1041,7 @@ class BaselineSACDisc(Baseline):
         collect_fn = ft.partial(
             collect_single_mode,
             task,
-            get_pol=self.policy.apply,
+            get_pol=self.sample_action,
             disc_gamma=self.disc_gamma,
             z_min=z_min,
             z_max=z_max,
@@ -1075,7 +1071,7 @@ class BaselineSACDisc(Baseline):
             {'????': BaselineSACDisc.EvalContourData(bb_pol, bb_prob, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic)}
             )
      
-    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_modes: List[int], contour_size: Tuple[int]):
+    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_modes: List[int], contour_size: Tuple[int], control_mode: Optional[str] = 'control'):
 
         # --------------------------------------------
         # Plot value functions.
@@ -1134,11 +1130,11 @@ class BaselineSACDisc(Baseline):
             bb_target_critic = jtu.tree_map(lambda *x: jnp.stack(x), *bb_target_critic)
             eval_contour_vals[mode.name] = BaselineSACDisc.EvalContourData(zbb_X = bb_X, zbb_Y = bb_Y, zbb_pol = bb_pol, zbb_prob = bb_prob, zbb_critic = bb_critic, zbb_target_critic = bb_target_critic) 
 
-        eval_rollout_val = self.eval_single_z_rollout_iteratively(task, z, rollout_T)
+        eval_rollout_val = self.eval_single_z_rollout_iteratively(task, z, rollout_T, control_mode = control_mode)
  
         return  eval_contour_vals, eval_rollout_val
     
-    def eval_single_z_rollout_iteratively(self, task: Task, z: float, rollout_T: int):
+    def eval_single_z_rollout_iteratively(self, task: Task, z: float, rollout_T: int, control_mode: Optional[str] = 'control'):
         # --------------------------------------------
         # Rollout trajectories and get stats.
         z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
@@ -1149,7 +1145,7 @@ class BaselineSACDisc(Baseline):
 
         def get_pol(obs, z):
             control = self.get_mode_and_prob(obs, z)[0]
-            return {'control': control, 'control_mode': 'control'}
+            return control
 
         collect_fn = ft.partial(
             collect_single_env_mode,
@@ -1159,6 +1155,7 @@ class BaselineSACDisc(Baseline):
             z_min=z_min,
             z_max=z_max,
             rollout_T=rollout_T,
+            control_mode = control_mode
         )
 
         bb_rollouts: list[RolloutOutput] = []
@@ -1414,13 +1411,7 @@ class BaselineDQN(Baseline):
         a_pol = self.policy.apply(self.standardize(obs_pol), z)
         control, logprob = a_pol.experimental_sample_and_log_prob(seed=self.key)
         return control, logprob
-    
-    def collect_iteratively(self, collector: Collector, rollout_T: Optional[int] = None) -> tuple[Collector, Baseline.Batch]:
-        z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
-        collector, data = collector.collect_batch_iteratively(self.sample_action, self.disc_gamma, z_min, z_max, rollout_T)
-        return collector, data
-
-
+     
     def update_target_critic(self):
         new_target_critic_params = jax.tree_map(lambda p, tp: p * 5e-3 + tp * (1 - 5e-3), self.critic.params, self.target_critic.params)
         target_critic = self.target_critic.replace(params=new_target_critic_params)
@@ -1581,7 +1572,7 @@ class BaselineDQN(Baseline):
 
         def get_pol(obs, z):
             control = self.get_mode_and_prob(obs, z)[0]
-            return {'control': control, 'control_mode': 'control'}
+            return control
 
         collect_fn = ft.partial(
             collect_single_env_mode,
