@@ -30,6 +30,7 @@ def main(name: str = typer.Option(..., help="Name of the run."), group: str = ty
 
     # loss_weights = {"Loss/Vh_mse": 1.0, "Loss/Now": 1.0, "Loss/Future": 1.0, "Loss/PDE": 0.0}
     loss_weights = {"Loss/Vh_mse": 1.0, "Loss/Now": 1.0, "Loss/Future": 1.0, "Loss/Equil": 1.0}
+    loss_weights.update({"Loss/Vh_gumbel": 1.0})
     CFG.extras["loss_weights"] = loss_weights
 
     run_dir = init_wandb_and_get_run_dir(CFG, "intavoid_f16gcas", "intavoid_f16gcas", name, group=group)

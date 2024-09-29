@@ -11,7 +11,7 @@ def test_cummax():
     T_h = np.array([1.0, 0.5, 0.4, 0.2, 1.2, 0.3, 1.3, 0.1])
     T = len(T_h)
     T_cummax_true = np.array([T_h[:ii].max() for ii in range(1, T + 1)])
-
+        
     Th_h = np.stack([T_h, 0.5 * T_h + 1.0], axis=1)
     Th_cummax_true = np.stack([T_cummax_true, 0.5 * T_cummax_true + 1.0], axis=1)
 

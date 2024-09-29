@@ -4,7 +4,7 @@ from typing import Any, Callable, Iterable, ParamSpec, Sequence, TypeVar
 import einops as ei
 import ipdb
 import jax._src.dtypes
-import jax.config
+import jax#.config
 import jax.nn as jnn
 import jax.numpy as jnp
 import jax.tree_util as jtu

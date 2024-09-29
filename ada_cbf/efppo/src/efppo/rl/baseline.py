@@ -1622,3 +1622,292 @@ class BaselineDQN(Baseline):
         info = jtu.tree_map(lambda arr: {f"z={val_zs[0]}": arr[0], f"z={val_zs[4]}": arr[4], f"z={val_zs[7]}": arr[7]}, Z_data.info)
         info["update_idx"] = self.update_idx
         return Z_data._replace(info=info) 
+
+class BaselineDQNCLF(BaselineDQN):
+    def update_iteratively(self, replay_buffer: ReplayBuffer) -> tuple["BaselineDQN", dict]:
+        batch = self.make_dset(replay_buffer)
+        info = None
+        for batch_idx in range(batch.num_batches):
+            key_shuffle, key_self = jr.split(self.key, 2)
+            self = self.replace(key = key_self)
+            rand_idxs = jr.permutation(key_shuffle, jnp.arange(batch.batch_size))
+            mb_dset = jax.tree_map(lambda x: x[batch_idx][rand_idxs], batch)
+            
+            # 3: Perform value function and policy updates.
+            def updates_body(alg_: BaselineDQN, b_batch: BaselineDQN.Batch):
+                alg_, critic_info = alg_.update_critic(b_batch)
+                return alg_,  critic_info  
+
+            self, new_info = updates_body(self, mb_dset)
+            # Take the mean.
+            if info is None:
+                info = jax.tree_map(lambda x: jnp.asarray([x]), new_info)
+            else:
+                info = jax.tree_map(lambda xs, x: jnp.stack((*xs, x)), info, new_info)
+
+        info = jax.tree_map(jnp.mean, info)
+        info["steps/critic"] = self.critic.step        
+        
+        self = self.update_target_critic()   
+        
+          
+        return self, info
+    
+    def update_policy(self, batch: Baseline.Batch):
+        new_policy_params = self.critic.params
+        new_policy = self.policy.replace(params=new_policy_params)
+
+        def get_pol_loss(pol_params):
+            pol_apply = ft.partial(self.policy.apply_with, params=pol_params)
+
+            def get_logprob_entropy(obs, z, expert_control):
+                dist = pol_apply(obs, z)
+                expert_logprob = dist.log_prob(expert_control)
+                entropy = dist.entropy()
+             
+                return entropy, expert_logprob
+            
+            b_entropy,  b_expert_logprob = jax.vmap(get_logprob_entropy)(batch.b_obs, batch.b_z, batch.b_expert_control)
+              
+            bc_loss = - jnp.mean(b_expert_logprob)
+
+            mean_entropy = b_entropy.mean()
+
+
+            pol_loss = bc_ratio * bc_loss - 0. * ent_cf * mean_entropy
+  
+            
+            info = {
+                "loss_entropy": mean_entropy, 
+                "loss_bc": bc_loss,
+                "loss_pol": pol_loss
+            }
+            return pol_loss, info
+        
+        ent_cf = self.ent_cf
+        bc_ratio = self.train_cfg.bc_ratio
+        grads, pol_info = jax.grad(get_pol_loss, has_aux=True)(self.policy.params)
+        
+        grads, pol_info["Grad/pol"] = compute_norm_and_clip(grads, self.train_cfg.clip_grad_pol)
+        new_policy = self.policy.apply_gradients(grads=grads)
+
+        new_critic_params = new_policy.params
+        new_critic= self.critic.replace(params=new_critic_params)
+
+        return self.replace(policy=new_policy, critic=new_critic), pol_info
+
+    def sample_action(self, obs_pol, z):
+        a_pol = self.policy.apply(self.standardize(obs_pol), z)
+        control, logprob = a_pol.experimental_sample_and_log_prob(seed=self.key)
+        return control, logprob
+     
+    def update_target_critic(self):
+        new_target_critic_params = jax.tree_map(lambda p, tp: p * 5e-3 + tp * (1 - 5e-3), self.critic.params, self.target_critic.params)
+        target_critic = self.target_critic.replace(params=new_target_critic_params)
+        return self.replace(target_critic = target_critic)
+
+    def update_critic(self, batch: Baseline.Batch) -> tuple["BaselineDQN", dict]:
+        b_nxt_critic_all= jax.vmap(lambda obs, z: self.target_critic.apply(obs, z))(batch.b_nxt_obs, batch.b_nxt_z)
+        b_nxt_critics = jax.vmap(lambda nxt_critic: jnp.max(nxt_critic, axis = -1), in_axes = 0)(b_nxt_critic_all).reshape(-1, self.cfg.net.n_critics)
+        b_nxt_critic = jnp.min(b_nxt_critics, axis = 1)
+ 
+        b_target_critic = self.disc_gamma * b_nxt_critic 
+        b_target_critic -= jax.nn.relu(b_target_critic) * batch.b_done 
+        b_target_critic -= batch.b_l
+        
+
+        def get_critic_loss(params):
+            b_critic_all = jax.vmap(lambda obs, z: self.critic.apply_with(obs, z, params=params), in_axes = 0)(batch.b_obs, batch.b_z)
+            b_critics = jax.vmap(lambda critic_all, control: critic_all[:, control], in_axes = 0)(b_critic_all, batch.b_control).reshape(-1, self.cfg.net.n_critics) 
+            
+            assert b_target_critic.shape[0] == b_critics.shape[0] 
+ 
+            loss_critics = (b_critics - b_target_critic[:, jnp.newaxis]) ** 2
+
+            info = {f"Loss/critic_{i}": loss_critics[:, i].mean() for i in range(self.cfg.net.n_critics)} | {f"mean_critic_{i}": b_critics[:,  i].mean() for i in range(self.cfg.net.n_critics)}
+
+            loss_critic = jnp.mean(loss_critics)
+            info.update({'Loss/critic': loss_critic})
+
+            return loss_critic, info
+
+        critic_grads, critic_info = jax.grad(get_critic_loss, has_aux=True)(self.critic.params)
+        critic_grads, critic_info["Grad/critic"] = compute_norm_and_clip(critic_grads, self.train_cfg.clip_grad_V)
+ 
+        # Compute the kernel matrix and kernel gradients 
+        if self.cfg.net.n_critics > 2:
+            ensemble_params = self.critic.params['EnsembleDiscreteCriticNet_0'] 
+            ensemble_grads = critic_grads['EnsembleDiscreteCriticNet_0']
+            kernel_matrix = compute_kernel_matrix(ensemble_params)
+            kernel_gradients = compute_kernel_gradient(ensemble_params)
+
+            # Compute SVGD updates
+            ensemble_grads = svgd_update(ensemble_grads, kernel_matrix, kernel_gradients)
+            critic_grads['EnsembleDiscreteCriticNet_0'] = ensemble_grads 
+            critic_grads, critic_info["SVGD/critic"] = compute_norm_and_clip(critic_grads, self.train_cfg.clip_grad_V)
+
+        critic = self.critic.apply_gradients(grads=critic_grads)
+        
+        return self.replace(critic=critic), critic_info
+      
+    
+    def get_critic(self, obs, z):
+        return self.critic.apply(obs, z)
+        h_critic = self.critic.apply(obs, z) 
+        return h_critic.max()
+
+    def get_target_critic(self, obs, z):
+        return self.target_critic.apply(obs, z) 
+        h_target_critic = self.target_critic.apply(obs, z) 
+        return h_target_critic.max()
+
+    def eval_single_z(self, task: Task, z: float, rollout_T: int):
+        # --------------------------------------------
+        # Plot value functions.
+        bb_X, bb_Y, bb_state = task.grid_contour()
+        bb_obs = jax_vmap(task.get_obs, rep=2)(bb_state)
+        bb_z = jnp.full(bb_X.shape, z)
+
+        bb_pol, bb_prob = jax_vmap(self.get_mode_and_prob, rep=2)(bb_obs, bb_z)
+        bb_critic = jax_vmap(self.get_critic, rep=2)(bb_obs, bb_z)
+         
+        # --------------------------------------------
+        # Rollout trajectories and get stats.
+        z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
+
+        b_x0 = task.get_x0_eval()
+        batch_size = len(b_x0)
+        b_z0 = jnp.full(batch_size, z)
+
+        collect_fn = ft.partial(
+            collect_single_mode,
+            task,
+            get_pol=lambda obs, z: self.get_mode_and_prob(obs, z)[0],
+            disc_gamma=self.disc_gamma,
+            z_min=z_min,
+            z_max=z_max,
+            rollout_T=rollout_T,
+        )
+        b_rollout: RolloutOutput = jax_vmap(collect_fn)(b_x0, b_z0)
+
+        b_done = b_rollout.T_done
+        avg_len = b_done.flatten().shape[0] / (1 + b_done.sum())
+
+
+        b_h = jnp.max(b_rollout.Th_h, axis=(1, 2))
+        assert b_h.shape == (batch_size,)
+        b_issafe = b_h <= 0
+        p_unsafe = 1 - b_issafe.mean()
+        h_mean = jnp.mean(b_h)
+
+        b_l = jnp.sum(b_rollout.T_l, axis=1)
+        l_mean = jnp.mean(b_l)
+
+        b_l_final = b_rollout.T_l[:, -1]
+        l_final = jnp.mean(b_l_final)
+        # --------------------------------------------
+
+        info = {"avg_len": avg_len, "p_unsafe": p_unsafe, "h_mean": h_mean, "l_mean": l_mean}
+        return BaselineDQN.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info, zbb_critic = bb_critic)
+     
+    def eval_single_z_iteratively(self, task: Task, z: float, rollout_T: int, contour_size: Tuple[int]):
+        # --------------------------------------------
+        # Plot value functions.
+        bb_X, bb_Y, bb_state = jax2np(task.grid_contour(*contour_size))
+        bb_obs = []
+        for i in range(bb_state.shape[0]):
+            bb_obs.append([])
+            for j in range(bb_state.shape[1]): 
+                bb_obs[-1].append(task.get_obs(bb_state[i][j]))
+            bb_obs[-1] = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs[-1]) 
+        bb_obs = jtu.tree_map(lambda *x: jnp.stack(x), *bb_obs)
+        bb_z = jnp.full(bb_X.shape, z)
+
+        bb_pol = []
+        bb_prob = []  
+        bb_critic = []  
+        bb_target_critic = [] 
+
+        for i in range(bb_obs.shape[0]):
+            for bb in [bb_pol, bb_prob, bb_critic, bb_target_critic]:
+                bb.append([])
+                 
+            for j in range(bb_obs.shape[1]):
+                pol, prob = self.get_mode_and_prob(bb_obs[i][j], bb_z[i][j])
+                bb_pol[-1].append(pol)
+                bb_prob[-1].append(prob)
+                
+                critic_all = self.get_critic(bb_obs[i][j], bb_z[i][j])
+                critics = jax.vmap(lambda critic: critic.flatten()[pol], in_axes = 0)(critic_all).reshape(-1, self.cfg.net.n_critics)
+                critic = jnp.min(critics, axis = 1).item()
+                #logger.info(f"{i=}, {j=}, {critic=}")
+                bb_critic[-1].append(critic) 
+
+            for bb in [bb_pol, bb_prob, bb_critic, bb_target_critic]:
+                bb[-1] = jnp.asarray(bb[-1])
+        
+        bb_pol = jnp.asarray(bb_pol)
+        bb_prob = jnp.asarray(bb_prob) #jtu.tree_map(lambda x: jnp.stack(x), *bb_prob)
+        bb_critic = jnp.asarray(bb_critic) #jtu.tree_map(lambda x: jnp.stack(x), *bb_critic)
+        bb_target_critic = jnp.asarray(bb_target_critic) #jtu.tree_map(lambda x: jnp.stack(x), *bb_target_critic)
+         
+        # --------------------------------------------
+        # Rollout trajectories and get stats.
+        z_min, z_max = self.train_cfg.z_min, self.train_cfg.z_max
+
+        b_x0 = task.get_x0_eval()
+        batch_size = len(b_x0)
+        b_z0 = jnp.full(batch_size, z)
+
+        def get_pol(obs, z):
+            control = self.get_mode_and_prob(obs, z)[0]
+            return control
+
+        collect_fn = ft.partial(
+            collect_single_env_mode,
+            task,
+            get_pol=get_pol,
+            disc_gamma=self.disc_gamma,
+            z_min=z_min,
+            z_max=z_max,
+            rollout_T=rollout_T,
+        )
+        bb_rollouts: list[RolloutOutput] = []
+        for i in range(batch_size):
+            bb_rollouts.append(collect_fn(b_x0[i], b_z0[i]))
+        b_rollout: RolloutOutput = jtu.tree_map(lambda *x: jnp.stack(x), *bb_rollouts)
+
+        b_done = b_rollout.T_done
+        avg_len = b_done.flatten().shape[0] / (1 + b_done.sum())
+
+        b_h = jnp.max(b_rollout.Th_h, axis=(1, 2))
+        assert b_h.shape == (batch_size,)
+        b_issafe = b_h <= 0
+        p_unsafe = 1 - b_issafe.mean()
+        h_mean = jnp.mean(b_h)
+
+        b_l = jnp.sum(b_rollout.T_l, axis=1)
+        l_mean = jnp.mean(b_l)
+
+        b_l_final = b_rollout.T_l[:, -1]
+        l_final = jnp.mean(b_l_final)
+        # --------------------------------------------
+
+        info = {"avg_len": avg_len, "p_unsafe": p_unsafe, "h_mean": h_mean, "l_mean": l_mean}# 
+        return BaselineDQN.EvalData(z, bb_pol, bb_prob, b_rollout.Tp1_state, info = info, zbb_critic = bb_critic)
+
+
+    def eval_iteratively(self, task: Task, rollout_T: int) -> EvalData:
+        # Evaluate for a range of zs.
+        val_zs = np.linspace(self.train_cfg.z_min, self.train_cfg.z_max, num=9)
+
+        Z_datas = []
+        for z in val_zs:
+            data = self.eval_single_z_iteratively(task, z, rollout_T)
+            Z_datas.append(data)
+        Z_data = tree_stack(Z_datas)
+        #Z_data = jtu.tree_map(lambda *arr: jnp.stack(arr), *Z_datas)
+        
+        info = jtu.tree_map(lambda arr: {f"z={val_zs[0]}": arr[0], f"z={val_zs[4]}": arr[4], f"z={val_zs[7]}": arr[7]}, Z_data.info)
+        info["update_idx"] = self.update_idx
+        return Z_data._replace(info=info) 
