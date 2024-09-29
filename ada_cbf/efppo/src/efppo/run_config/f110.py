@@ -1,6 +1,6 @@
 from efppo.rl.collector import CollectorCfg
 from efppo.rl.efppo_inner import EFPPOCfg
-from efppo.rl.baseline import BaselineCfg, BaselineSAC, BaselineSACDisc, BaselineDQN
+from efppo.rl.baseline import BaselineCfg, BaselineSAC, BaselineSACDisc, BaselineDQN, BaselineDQNCBF
 from efppo.utils.schedules import LinDecay
 
 from enum import Enum
@@ -45,6 +45,8 @@ def get(name: str = 'efppo'):
                 alg = BaselineSAC
         elif 'dqn' in name:
             alg = BaselineDQN
+            if 'cbf' in name:
+                   alg = BaselineDQNCBF  
         
         n_critics = 2
         bc_ratio = 0.

@@ -19,7 +19,7 @@ from enum import Enum
 import wandb
 from efppo.rl.collector import Collector, CollectorCfg
 from efppo.rl.replay_buffer import ReplayBuffer, Experience
-from efppo.rl.baseline import Baseline, BaselineSAC, BaselineSACDisc, BaselineDQN, EvalData
+from efppo.rl.baseline import Baseline, BaselineSAC, BaselineSACDisc, BaselineDQN, BaselineDQNCBF
 from efppo.task.plotter import Plotter
 from efppo.task.task import Task
 from efppo.utils.cfg_utils import Cfg
@@ -47,7 +47,7 @@ class BaselineEnum(Enum):
     SAC = BaselineSAC
     DISC_SAC = BaselineSACDisc
     DQN = BaselineDQN
-
+    DQN_CBF = BaselineDQNCBF
 
 @define
 class BaselineTrainerCfg(Cfg):
@@ -73,7 +73,6 @@ class BaselineTrainer:
         register_cmaps()
 
     def plot_train(self, idx: int, plot_dir: pathlib.Path, data: Experience):
-        
         # --------------------------------------------
         # Plot the trajectories.
         figsize = 1.5 * np.array([8, 6])
@@ -83,10 +82,17 @@ class BaselineTrainer:
         fig = self.plotter.plot_dots(states = Tp1_state, values = T_l)
         fig_path = mkdir(plot_dir / "phase") / "phase_{:08}_replaybuffer.jpg".format(idx)
         fig.savefig(fig_path, bbox_inches="tight")
+
+        for i in range(Tp1_state.shape[-1]):
+            fig, ax = plt.subplots(figsize=figsize, dpi=500)
+            figsize = 1.5 * np.array([8, 6])
+            fig = self.plotter.plot_dots(states = Tp1_state[..., i], values = np.ones(Tp1_state.shape[:-1]) )
+            fig_path = mkdir(plot_dir / "phase") / "phase_{:08}_replaybuffer_state_{}.jpg".format(idx, i)
+            fig.savefig(fig_path, bbox_inches="tight")
         plt.close(fig)
 
 
-    def plot_eval(self, idx: int, plot_dir: pathlib.Path, data: EvalData, trainer_cfg: BaselineTrainerCfg):
+    def plot_eval(self, idx: int, plot_dir: pathlib.Path, data: Baseline.EvalData, trainer_cfg: BaselineTrainerCfg):
         fig_opt = dict(layout="constrained", dpi=200)
 
         # --------------------------------------------

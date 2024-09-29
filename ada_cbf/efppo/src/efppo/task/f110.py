@@ -1250,14 +1250,17 @@ class F1TenthWayPoint(Task):
         bb_X, bb_Y = np.meshgrid(b_xs, b_ys)
          
         
-         
+        
+        ## Set fixed speed
+        bb_spd = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
+        bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_spd) 
+        
         if mode is None or mode.value == 1:
             # YAW = 1
 
-            ## bbox coord indicates yaw direction
-            bb_spd = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
-            bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_spd)
-            bb_yaw = np.arctan2(bb_Y, bb_X) % (2 * np.pi) 
+            ## bbox coord indicates yaw direction 
+            bb_yaw = np.arctan2(bb_Y, bb_X) % (2 * np.pi)
+            #bb_yaw = jnp.where(bb_Y > 0, bb_yaw, - bb_yaw)
             bb_x0 = bb_x0.at[:, :, self.STATE_YAW].set(bb_yaw)
             
             ## Set fixd lookahead point along x+ direction
@@ -1268,10 +1271,9 @@ class F1TenthWayPoint(Task):
         elif mode.value == 2:
             # YAW_LOOKAHEAD = 2
 
-            ## bbox coord indicates yaw direction
-            bb_spd = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
-            bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_spd)
-            bb_yaw = np.arctan2(bb_Y, bb_X) % (2 * np.pi) 
+            ## bbox coord indicates yaw direction 
+            bb_yaw = np.arctan2(bb_Y, bb_X) % np.pi
+            bb_yaw = jnp.where(bb_Y > 0, bb_yaw, - bb_yaw)
             bb_x0 = bb_x0.at[:, :, self.STATE_YAW].set(bb_yaw)
 
             ## Align lookahead point with yaw angle
@@ -1287,18 +1289,15 @@ class F1TenthWayPoint(Task):
             bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD:].set(bb_LAD) 
         
         elif mode.value == 3:
-            # ANGULAR_SPEED = 3
-            
-            ## Set fixed speed
-            bb_spd = np.sqrt(bb_X**2 + bb_Y**2) + 1e-6
-            bb_x0 = bb_x0.at[:, :, self.STATE_VEL_X].set(bb_spd) 
+            # ANGULAR_SPEED = 3 
 
             ## Set fixd lookahead point along x+ direction
             bb_LAD = self.conf.work.tlad / self.conf.work.nlad * np.arange(int((self.nx - self.STATE_FST_LAD) / 2))  
             bb_x0 = bb_x0.at[:, :, self.STATE_FST_LAD::2].set(bb_LAD)
 
             ## bbox coord indicates angular velocity
-            bb_ang_z = np.arctan2(bb_Y, bb_X)
+            bb_ang_z = 2 * (np.arctan2(bb_Y, bb_X) % np.pi)
+            bb_ang_z = jnp.where(bb_Y > 0, bb_ang_z, - bb_ang_z)
             bb_x0 = bb_x0.at[:, :, self.STATE_ANG_Z].set(bb_ang_z)
         
         else:

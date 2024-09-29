@@ -22,7 +22,7 @@ def test_train():
         )
     )
     from train_f110_wp import main as train_main
-    train_main(name = 'offline_baseline_disc_sac_10acts_contour1')
+    train_main(name = 'offline_baseline_dqn_cbf_contour1_3', ckpt = "/home/zhouw534/Workspace/MIT-REALM/ada_cbf/efppo/runs/F1TenthWayPoint_Baseline/0364-2024_09_26_01_57_42_7fe67_offpolicy_baseline_dqn_cbf_contour1/ckpts/00005200/default")
 
 ''' 
 def test_vmap():
