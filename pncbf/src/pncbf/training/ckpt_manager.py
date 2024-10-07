@@ -14,8 +14,8 @@ import numpy as np
 
 def get_ckpt_manager(ckpt_dir: pathlib.Path, max_to_keep: int = 100):
     # Get random port.
-    random_port = np.random.randint(10000, 20000)
-    jax.distributed.initialize("localhost:{}".format(random_port), num_processes=1, process_id=0)
+    #random_port = np.random.randint(10000, 20000)
+    #jax.distributed.initialize("localhost:{}".format(random_port), num_processes=1, process_id=0)
     options = orbax.checkpoint.CheckpointManagerOptions(
         max_to_keep=max_to_keep, keep_time_interval=datetime.timedelta(minutes=5), create=True
     )

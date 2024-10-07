@@ -1,5 +1,5 @@
 from pncbf.dyn.f16_gcas import F16GCAS
-from pncbf.ncbf.int_avoid import IntAvoidCfg, IntAvoidEvalCfg, IntAvoidTrainCfg
+from pncbf.ncbf.int_avoid import IntAvoidCfg, IntAvoidEvalCfg, IntAvoidTrainCfg, ModelBasedIntAvoidCfg
 from pncbf.utils.schedules import (
     Constant,
     ExpDecay,
@@ -12,9 +12,9 @@ from pncbf.utils.schedules import (
 )
 from run_config.run_cfg import RunCfg
 from run_config.sac.sac_loop_cfg import SACLoopCfg
+ 
 
-
-def get(seed: int) -> RunCfg[IntAvoidCfg, SACLoopCfg]:
+def get(seed: int, model_based: bool = False) -> RunCfg[IntAvoidCfg, SACLoopCfg]:
     dt = F16GCAS.DT
     sched1_steps = 500_000
     sched1_warmup = 100_000
@@ -47,8 +47,13 @@ def get(seed: int) -> RunCfg[IntAvoidCfg, SACLoopCfg]:
         collect_size, rollout_dt, rollout_T=99, batch_size=8192, lam=lam, tau=0.005, tgt_rhs=tgt_rhs, use_eq_state=True
     )
     eval_cfg = IntAvoidEvalCfg(eval_rollout_T=100)
+    
     alg_cfg = IntAvoidCfg(
         act=act, lr=lr, wd=wd, hids=[256, 256, 256, 256], train_cfg=train_cfg, eval_cfg=eval_cfg, n_Vs=2, n_min_tgt=2
     )
+
+    if model_based:
+        alg_cfg = ModelBasedIntAvoidCfg(act=act, lr=lr, wd=wd, hids=[256, 256, 256, 256], train_cfg=train_cfg, eval_cfg=eval_cfg, n_Vs=2, n_min_tgt=2, n_fs = 2, n_Gs = 2)
+     
     loop_cfg = SACLoopCfg(n_iters=lam.total_steps + 50_000, ckpt_every=5_000, log_every=100, eval_every=5_000)
     return RunCfg(seed, alg_cfg, loop_cfg)

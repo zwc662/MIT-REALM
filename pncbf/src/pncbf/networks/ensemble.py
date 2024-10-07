@@ -5,7 +5,7 @@ import jax
 import jax.numpy as jnp
 import jax.random as jr
 import jax.tree_util as jtu
-from flax.core import FrozenDict, freeze
+from flax.core.frozen_dict import FrozenDict, freeze
 
 from pncbf.utils.rng import PRNGKey
 
@@ -42,5 +42,5 @@ def subsample_ensemble(key: PRNGKey, params: FrozenDict, num_sample: int, num_qs
     # Index into the params for the ensemble.
     ensemble_params = jtu.tree_map(lambda param: param[index], params["params"])
 
-    params = freeze(params.unfreeze() | {"params": ensemble_params})
+    params = freeze({"params": ensemble_params}) #freeze(params.unfreeze() | {"params": ensemble_params})
     return params

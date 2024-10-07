@@ -22,6 +22,7 @@ python-git = "^2018.2.1"
 gitpython = "^3.1.43"
 efppo = {path = "efppo", develop = true}
 setuptools = "65.5.0"
+jaxproxqp = {git = "https://github.com/oswinso/jaxproxqp.git"}
 
 
 [build-system]

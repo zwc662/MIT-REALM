@@ -959,6 +959,29 @@ scipy = [
 ]
 
 [[package]]
+name = "jaxproxqp"
+version = "0.0.0"
+description = ""
+optional = false
+python-versions = "*"
+files = []
+develop = false
+
+[package.dependencies]
+attrs = "*"
+equinox = "*"
+flax = "*"
+jax = "*"
+jaxtyping = "*"
+loguru = "*"
+
+[package.source]
+type = "git"
+url = "https://github.com/oswinso/jaxproxqp.git"
+reference = "HEAD"
+resolved_reference = "8b6d76028ef19642b9684a33584624295ea69128"
+
+[[package]]
 name = "jaxtyping"
 version = "0.2.34"
 description = "Type annotations and runtime checking for shape and dtype of JAX arrays, and PyTrees."
@@ -2776,4 +2799,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "7802059e83f79358d33861a5bef496d188efb8ce5fc8eba6789fb1e20d2f58c1"
+content-hash = "16a11b5027810c51e8ad6624a21ef358083fca865c43516e6b2ff7ca000ad29f"

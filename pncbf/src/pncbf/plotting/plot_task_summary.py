@@ -3,7 +3,6 @@ import functools as ft
 import numpy as np
 
 from pncbf.dyn.task import Task
-from pncbf.nclf.sim_nclf import SimNCLF
 from pncbf.plotting.plotter import Plotter
 from pncbf.utils.jax_utils import jax2np, jax_jit, jax_vmap, rep_vmap
 from pncbf.utils.mathtext import from_mathtext
@@ -32,19 +31,26 @@ def plot_task_summary(task: Task, plotter: Plotter, nom_pol=None):
 
     if nom_pol is None:
         return
-
+    
+    try: 
+        from pncbf.nclf.sim_nclf import SimNCLF
+    except ModuleNotFoundError as e:
+        return 
+    
     # Plot the nominal policy and its CI
     T = 80
-
+ 
     sim = SimNCLF(task, nom_pol, T)
     bbT_x, _, _ = jax2np(jax_jit(rep_vmap(sim.rollout_plot, rep=2))(bb_x))
     bbT_h = jax2np(rep_vmap(task.h, rep=3)(bbT_x))
     bb_V_nom = bbT_h.max(-1)
+    
 
     b_x0_plot = task.get_plot_x0()
     sim = SimNCLF(task, nom_pol, T)
     bT_x_plot, _, _ = jax2np(jax_jit(jax_vmap(sim.rollout_plot))(b_x0_plot))
     plotter.batch_phase2d(bT_x_plot, "phase_nom_pol.pdf", extra_lines=[(bb_Xs, bb_Ys, bb_V_nom, "C5")])
+    
 
     # Also see what the nominal policy is like.
     if task.nu != 1:

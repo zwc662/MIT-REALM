@@ -179,6 +179,20 @@
             "python": "/home/zhouw534/anaconda3/envs/envelope/bin/python",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.vscode/project.env",
+        },
+        {
+            "name": "(CONDA) Python run pncbf_f16",
+            "type": "python",
+            "request": "launch",
+            "module": "torch.distributed.run",
+            "cwd": "${workspaceFolder}/pncbf/scripts/f16",
+            "args": [
+                "intavoid_f16gcas.py", 
+                "-name", "test_model_based"
+            ],
+            "python": "/home/zhouw534/anaconda3/envs/envelope/bin/python",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.vscode/project.env",
         }
     ] 
 }

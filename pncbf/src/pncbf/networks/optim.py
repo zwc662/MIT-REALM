@@ -2,7 +2,7 @@ import ipdb
 import jax.numpy as jnp
 import optax
 from flax import traverse_util
-from flax.core import freeze
+from flax.core.frozen_dict import freeze
 
 from pncbf.utils.jax_types import FloatScalar
 
@@ -12,7 +12,10 @@ def wd_mask(params):
     flat_params: dict[Path, jnp.ndarray] = traverse_util.flatten_dict(params)
     # Apply weight decay to all parameters except biases and LayerNorm scale and bias.
     flat_mask = {path: (path[-1] != "bias" and path[-2:] != ("LayerNorm", "scale")) for path in flat_params}
-    return freeze(traverse_util.unflatten_dict(flat_mask))
+    unflatten_mask = traverse_util.unflatten_dict(flat_mask)
+    return unflatten_mask
+    frozen_dict = freeze(unflatten_mask)
+    return frozen_dict
 
 
 def optim(learning_rate: float, wd: float):

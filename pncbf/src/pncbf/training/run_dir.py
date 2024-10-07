@@ -57,14 +57,20 @@ def get_unique_ident(now: datetime, run_dir: pathlib.Path, cfg: RunCfg, ident_le
 
 
 def init_wandb_and_get_run_dir(
-    cfg: RunCfg, project: str, job_type: str, name: str, ident_len: int = 4, group: str = None
+    cfg: RunCfg, project: str, job_type: str, name: str, ident_len: int = 4, group: str = None, entity: str = None,
 ):
     run_dir = get_runs_dir() / job_type
     ident: str = get_unique_ident(datetime.now(), run_dir, cfg, ident_len)
 
     wandb_name = f"{ident}_{name}"
     wandb_settings = wandb.Settings(_disable_stats=True)
-    wandb.init(project=project, job_type=job_type, name=wandb_name, settings=wandb_settings, group=group)
+    kwargs = {}
+    if entity is not None:
+        kwargs['entity'] = entity
+    if group is not None:
+        kwargs['group'] = group
+    wandb.init(project=project, job_type=job_type, name=wandb_name, settings=wandb_settings, entity = entity)
+    
     wandb.config.update(cfg.asdict())
 
     hostname = socket.gethostname()
