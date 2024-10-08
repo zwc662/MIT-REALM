@@ -49,7 +49,7 @@ from pncbf.networks.network_utils import HidSizes, get_act_from_str
 from pncbf.networks.optim import get_default_tx
 from pncbf.networks.train_state import TrainState
 from pncbf.qp.min_norm_cbf import min_norm_cbf, min_norm_cbf_qp_mats
-from pncbf.utils.grad_utils import compute_norm, empty_grad_tx
+from pncbf.utils.grad_utils import compute_norm, empty_grad_tx, compute_kernel_matrix, compute_kernel_matrix, compute_kernel_gradient, svgd_update  
 from pncbf.utils.jax_types import BBBool, BBFloat, BBool, BFloat, BHBool, BTHBool, FloatScalar, MetricsDict
 from pncbf.utils.jax_utils import jax_vmap, merge01, rep_vmap, tree_copy, tree_split_dims
 from pncbf.utils.loss_utils import weighted_sum_dict
@@ -777,7 +777,8 @@ class ModelBasedIntAvoid(IntAvoid):
         G = self.G.apply_fn(params, state) #normalized_state(state))
         assert G.shape == (self.cfg.n_Gs, self.task.nx * self.task.nu)
         return G.mean(axis = 0).reshape(self.task.nx, self.task.nu)
-      
+    
+    
 
     def compute_loss(self, loss_weights, b_x: BState, b_u: BControl, bh_iseqh: BHBool, bh_V_tgt: BHFloat, params):
         batch_size = len(b_x)
@@ -901,14 +902,31 @@ class ModelBasedIntAvoid(IntAvoid):
         grads, info = jax.grad(loss_fn, has_aux=True)(self.Vh.params)
         info["V_grad"] = compute_norm(grads)
         Vh_new = self.Vh.apply_gradients(grads)
-
         return Vh_new, info
     
-    def update_f_G(self, b_x: BState, b_u: BControl, b_nxt_x: BState:
-
+    def update_f_G(self, b_x: BState, b_u: BControl, b_nxt_x: BState):
         gap_fn = ft.partial(self.compute_gap, b_x = b_x, b_u = b_u, b_nxt_x = b_nxt_x)
-        (f_grads, G_grads), info_model = jax.grad(gap_fn, has_aux=True, argnums=(0, 1))(self.f.params, self.G.params)
-        info.update(info_model)
+        (f_grads, G_grads), info = jax.grad(gap_fn, has_aux=True, argnums=(0, 1))(self.f.params, self.G.params)
+        
+        # Compute the kernel matrix and kernel gradients 
+        if self.cfg.n_fs > 2:
+            f_ensemble_params = self.f.params['params']['VmapMultiValueFn_0'] 
+            f_ensemble_grads = f_grads['params']['VmapMultiValueFn_0']
+            f_kernel_matrix = compute_kernel_matrix(f_ensemble_params)
+            f_kernel_gradients = compute_kernel_gradient(f_ensemble_params)
+            # Compute SVGD updates
+            f_ensemble_grads = svgd_update(f_ensemble_grads, f_kernel_matrix, f_kernel_gradients)
+            f_grads['params']['VmapMultiValueFn_0'] = f_ensemble_grads 
+             
+        if self.cfg.n_Gs > 2:
+            G_ensemble_params = self.G.params['params']['VmapMultiValueFn_0'] 
+            G_ensemble_grads = G_grads['params']['VmapMultiValueFn_0']
+            G_kernel_matrix = compute_kernel_matrix(G_ensemble_params)
+            G_kernel_gradients = compute_kernel_gradient(G_ensemble_params)
+            # Compute SVGD updates
+            G_ensemble_grads = svgd_update(G_ensemble_grads, G_kernel_matrix, G_kernel_gradients)
+            G_grads['params']['VmapMultiValueFn_0'] = G_ensemble_grads 
+            
         info['f_grad'] = compute_norm(f_grads)
         info['G_grad'] = compute_norm(G_grads)
         f_new = self.f.apply_gradients(f_grads)
@@ -944,7 +962,7 @@ class ModelBasedIntAvoid(IntAvoid):
         assert bh_V_tgt.shape == (b_size, self.task.nh)
 
         Vh_new, info_h = self.update_Vh(loss_weights, data.b_x0, data.b_u0, data.bh_iseqh, bh_V_tgt)
-        (f_new, G_new), info_f_G = self.update_f_G(loss_weights, data.b_x0, data.b_u0, data.b_nxt_x0)
+        (f_new, G_new), info_f_G = self.update_f_G(data.b_x0, data.b_u0, data.b_nxt_x0)
         info_mean = info_h | info_f_G
 
         info_mean["anneal/lam"] = self.lam
@@ -954,10 +972,10 @@ class ModelBasedIntAvoid(IntAvoid):
         info_mean["collect_idx"] = self.collect_idx
         info_mean["update_idx"] = self.update_idx
 
-        Vh_tgt_params = optax.incremental_update(new_self.Vh.params, self.Vh_tgt.params, self.train_cfg.tau)
-        Vh_tgt = self.Vh_tgt.replace(params=Vh_tgt_params)
+        Vh_tgt_params = optax.incremental_update(Vh_new.params, self.Vh_tgt.params, self.train_cfg.tau)
+        Vh_tgt_new = self.Vh_tgt.replace(params=Vh_tgt_params)
 
-        return new_self.replace(Vh = Vh_new, f = f_new, G = G_new, Vh_tgt=Vh_tgt, update_idx=self.update_idx + 1), info_mean
+        return self.replace(Vh = Vh_new, f = f_new, G = G_new, Vh_tgt=Vh_tgt_new, update_idx=self.update_idx + 1), info_mean
 
     def get_cbf_qpmats(self, alpha_safe: float, alpha_unsafe: float, state: State, V_shift: float = 1e-3, nom_pol=None):
         u_lb, u_ub = self.task.u_min, self.task.u_max
@@ -1141,3 +1159,145 @@ class ModelBasedIntAvoid(IntAvoid):
         }
 
         return self.EvalData(bT_x_plot, bb_Xs, bb_Ys, bbh_V, bbh_Vdot, bbh_Vdot_disc, bb_u, eval_info)
+
+ 
+ 
+class GumbelModelBasedIntAvoid(ModelBasedIntAvoid):
+    
+    @classmethod
+    def create_from_base(cls, baseline: ModelBasedIntAvoid) -> "GumbelModelBasedIntAvoid":
+        base_kwargs = {k: getattr(baseline, k) for k in baseline.__dataclass_fields__}
+        return cls(**base_kwargs)
+        
+
+    def get_fs(self, state: State, params=None): #,normalizer: Normalizer):
+        params = get_or(params, self.f.params)
+        #normalized_state = normalizer.transform_state(state) 
+        #assert normalized_state.shape == (self.task.nx,)
+        f = self.f.apply_fn(params, state) #normalized_state(state))
+        assert f.shape == (self.cfg.n_fs, self.task.nx)
+        return f 
+ 
+    def get_Gs(self, state: State, params=None): #,normalizer: Normalizer):
+        params = get_or(params, self.G.params)
+        #normalized_state = normalizer.transform_state(state)  
+
+        #assert normalized_state.shape == (self.task.nx, ) 
+        G = self.G.apply_fn(params, state) #normalized_state(state))
+        assert G.shape == (self.cfg.n_Gs, self.task.nx * self.task.nu)
+        return G.reshape(self.cfg.n_Gs, self.task.nx, self.task.nu)
+    
+    
+    def compute_loss(self, loss_weights, b_x: BState, b_u: BControl, bh_iseqh: BHBool, bh_V_tgt: BHFloat, params):
+        batch_size = len(b_x)
+        eh_V_apply = ft.partial(self.get_eh_Vh, params=params)
+
+        beh_V_pred = jax_vmap(eh_V_apply)(b_x)
+        # behx_Vx = jax_vmap(jax.jacobian(eh_V_apply))(b_x)
+        bh_h = jax_vmap(self.task.h_components)(b_x)
+
+        # 1: Value function loss. This applies to all states in the trajectory.
+        eh_loss_Vh = jnp.mean((bh_V_tgt[:, None, :] - beh_V_pred) ** 2, axis=0)
+        assert eh_loss_Vh.shape == (self.cfg.n_Vs, self.task.nh)
+        loss_Vh = jnp.mean(eh_loss_Vh)
+
+        # Penalize underestimating beh_Vpred. i.e., Penalize tgt >= pred.
+        eh_loss_Vh_tilt = jnp.mean(jnn.relu(bh_V_tgt[:, None, :] - beh_V_pred) ** 2, axis=0)
+        loss_Vh_tilt = jnp.mean(eh_loss_Vh_tilt)
+
+
+        # 2: Descent loss.
+        b_fs = jax_vmap(self.get_fs)(b_x)
+        b_Gs = jax_vmap(self.get_Gs)(b_x)
+
+        def compute_terms_h(h_V, x: State, h_h, fs, Gs, u):
+            xdots = lax.stop_gradient(jax_vmap(lambda f, G: f + G @ u)(fs, Gs))
+            # Compute Vx^T xdot
+            _, eh_Vdots = jax_vmap(lambda xdot: jax.jvp(eh_V_apply, (x,), (xdot,)))(xdots)
+            assert eh_Vdots.shape == (self.cfg.n_fs, self.cfg.n_Vs, self.task.nh)
+            futures = eh_Vdots - self.lam * (h_V - h_h)[None, ...]
+            def quantile(futures_single_v):
+                #sorted_futures_single_v = jnp.sort(futures_single_v, axis = 0)
+                fugures_single_v_quantile = jnp.quantile(futures_single_v, 0.8, axis = 0)
+                filtered_fugures_single_v = jnp.where(futures_single_v <= fugures_single_v_quantile, futures_single_v, 0)
+                return filtered_fugures_single_v.max(axis = 0)
+            
+            future = jax.vmap(quantile, in_axes = 1)(futures)
+            return future
+         
+
+        grad_terms = {}
+        info_dict = {}
+
+        
+        if self.train_cfg.use_grad_terms:
+            beh_now = bh_h[:, None, :] - beh_V_pred
+            beh_future = jax_vmap(compute_terms_h)(beh_V_pred, b_x, bh_h, b_fs, b_Gs, b_u)
+ 
+            assert beh_now.shape == beh_future.shape == (batch_size, self.cfg.n_Vs, self.task.nh)
+            # Enforce h(x) - V(x) <= 0.
+            loss_now_pos = jnp.mean(jnn.relu(beh_now) ** 2)
+            acc_now = jnp.mean(beh_now <= 0)
+
+            # Enforce Vdot - lambda * (V - h) <=0.
+            loss_future_pos = jnp.mean(jnn.relu(beh_future) ** 2)
+            acc_future = jnp.mean(loss_future_pos <= 0)
+
+            # Represent the complementarity as a multiplication.
+            # If it's positive, clip it to force it to be non-positive.
+            loss_pde = jnp.mean((beh_now * beh_future) ** 2)
+
+            grad_terms = {
+                "Loss/Now": loss_now_pos,
+                "Loss/Future": loss_future_pos,
+                "Loss/PDE": loss_pde,
+            }
+            info_dict = {"Acc/V_desc": acc_now, "Acc/Nonzero": acc_future}
+        else:
+            if ("Loss/Future" in loss_weights) or ("Loss/Now" in loss_weights):
+                raise ValueError("Set use_grad_terms to True to use Loss/Future or Loss/Now!")
+
+        # 3: Gradient loss for when V = h.
+        if self.train_cfg.use_hgrad:
+            bh_V_pred = lax.stop_gradient(jnp.mean(beh_V_pred, axis=1))
+            bh_iseqh = bh_iseqh & (bh_V_pred <= bh_V_tgt)
+
+            b_xdot = b_fs.mean(axis = 1) + jnp.sum(b_Gs.mean(axis = 1) * b_u[:, None, :], axis=-1)
+
+            # bh_hdot = jnp.sum(bhx_hgrad * b_xdot, axis=-1)
+            _, bh_hdot = jax.vmap(lambda x, xdot: jax.jvp(self.task.h_components, (x,), (xdot,)))(b_x, b_xdot)
+            assert bh_hdot.shape == (batch_size, self.task.nh)
+
+            _, beh_Vdot = jax.vmap(lambda x, xdot: jax.jvp(eh_V_apply, (x,), (xdot,)))(b_x, b_xdot)
+            assert beh_Vdot.shape == (batch_size, self.cfg.n_Vs, self.task.nh)
+
+            bh_loss_dV_eqh = jnp.mean((beh_Vdot - bh_hdot[:, :, None, :]) ** 2, axis=1)
+            assert bh_loss_dV_eqh.shape == (batch_size, self.task.nh)
+
+            bh_loss_dV_eq0 = jnp.mean(beh_Vdot**2, axis=1)
+            assert bh_loss_dV_eq0.shape == (batch_size, self.task.nh)
+
+            bh_loss_dV = jnp.where(bh_iseqh, bh_loss_dV_eqh, bh_loss_dV_eq0)
+            loss_dV = jnp.mean(bh_loss_dV)
+
+            grad_terms = {"Loss/dV_mse": loss_dV}
+
+        extra_loss = {}
+        if self.train_cfg.use_eq_state:
+            assert self.task.has_eq_state()
+            x_eq = self.task.eq_state()
+            eh_V_pred_eq = eh_V_apply(x_eq)
+            h_eq = self.task.h_components(x_eq)
+            loss_Vh_eq = jnp.mean((h_eq - eh_V_pred_eq) ** 2)
+            extra_loss["Loss/Equil"] = loss_Vh_eq
+
+        loss_dict = {
+            "Loss/Vh_mse": loss_Vh,
+            "Loss/Vh_tilt": loss_Vh_tilt,
+            **grad_terms,
+            # "Loss/Hess Fro": loss_fro,
+            **extra_loss,
+        }
+        loss = weighted_sum_dict(loss_dict, loss_weights)
+        return loss, loss_dict | info_dict
+    

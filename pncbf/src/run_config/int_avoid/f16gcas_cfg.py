@@ -53,7 +53,7 @@ def get(seed: int, model_based: bool = False) -> RunCfg[IntAvoidCfg, SACLoopCfg]
     )
 
     if model_based:
-        alg_cfg = ModelBasedIntAvoidCfg(act=act, lr=lr, wd=wd, hids=[256, 256, 256, 256], train_cfg=train_cfg, eval_cfg=eval_cfg, n_Vs=2, n_min_tgt=2, n_fs = 2, n_Gs = 2)
+        alg_cfg = ModelBasedIntAvoidCfg(act=act, lr=lr, wd=wd, hids=[256, 256, 256, 256], train_cfg=train_cfg, eval_cfg=eval_cfg, n_Vs=2, n_min_tgt=2, n_fs = 20, n_Gs = 20)
      
     loop_cfg = SACLoopCfg(n_iters=lam.total_steps + 50_000, ckpt_every=5_000, log_every=100, eval_every=5_000)
     return RunCfg(seed, alg_cfg, loop_cfg)

@@ -455,7 +455,7 @@ class _Plotter:
             if isinstance(bb_V_other, dict):
                 phase2d_name = self._task.phase2d_setups()[setup_idx].plot_name
                 bb_V_other = bb_V_other[phase2d_name]
-            ax.contour(Xs, Ys, bb_V_other, levels=[0.0], colors=[color], alpha=0.98, linewidths=1.0, zorder=3.2)
+            ax.contour(Xs, Ys, bb_V_other, levels=[0.0], colors=[color], alpha=0.98, linewidths=2.0, zorder=3.2)
 
         # Plot minimum.
         min_idx = np.unravel_index(Vs.argmin(), Vs.shape)

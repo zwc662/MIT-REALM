@@ -8,7 +8,7 @@ from loguru import logger
 import run_config.int_avoid.f16gcas_cfg
 import wandb
 from pncbf.dyn.f16_gcas import F16GCAS
-from pncbf.ncbf.int_avoid import IntAvoid, ModelBasedIntAvoid
+from pncbf.ncbf.int_avoid import IntAvoid, ModelBasedIntAvoid, GumbelModelBasedIntAvoid
 from pncbf.plotting.plot_task_summary import plot_task_summary
 from pncbf.plotting.plotter import MPPlotter, Plotter
 from pncbf.training.ckpt_manager import get_ckpt_manager, save_create_args
@@ -23,6 +23,7 @@ def main(name: str = typer.Option(..., help="Name of the run."), group: str = ty
     task = F16GCAS()
 
     model_based = 'model_based' in name
+    gumbel = 'gumbel' in name
     CFG = run_config.int_avoid.f16gcas_cfg.get(seed, model_based = model_based)
 
     nom_pol = task.nom_pol_pid
@@ -30,6 +31,9 @@ def main(name: str = typer.Option(..., help="Name of the run."), group: str = ty
     alg: IntAvoid = IntAvoid.create(seed, task, CFG.alg_cfg, nom_pol)
     if model_based:
         alg = ModelBasedIntAvoid.create_from_base(alg)
+        if gumbel:
+            alg = GumbelModelBasedIntAvoid.create_from_base(alg)
+
 
     CFG.extras = {"nom_pol": "pid"}
 

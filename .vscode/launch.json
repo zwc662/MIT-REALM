@@ -188,7 +188,7 @@
             "cwd": "${workspaceFolder}/pncbf/scripts/f16",
             "args": [
                 "intavoid_f16gcas.py", 
-                "-name", "test_model_based"
+                "-name", "test_model_based_gumbel"
             ],
             "python": "/home/zhouw534/anaconda3/envs/envelope/bin/python",
             "console": "integratedTerminal",
