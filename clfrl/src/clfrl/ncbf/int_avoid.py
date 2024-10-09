@@ -14,49 +14,34 @@ from attrs import define
 from flax import struct
 from loguru import logger
 
-# from pncbf.ncbf.min_norm_cbf import min_norm_cbf
-import pncbf.ncbf.min_norm_cbf as cbf_old
-import pncbf.utils.typed_ft as ft
-from pncbf.dyn.dyn_types import (
-    BBControl,
-    BBHBool,
-    BBHFloat,
-    BControl,
-    BHFloat,
-    BState,
-    BTControl,
-    BTHFloat,
-    BTState,
-    HFloat,
-    State,
-    Control
-)
-from pncbf.dyn.sim_cts import SimCtsReal
-from pncbf.dyn.task import Task
-from pncbf.ncbf.compute_disc_avoid import (
+# from clfrl.ncbf.min_norm_cbf import min_norm_cbf
+import clfrl.ncbf.min_norm_cbf as cbf_old
+import clfrl.utils.typed_ft as ft
+from clfrl.dyn.dyn_types import BBControl, BBHBool, BBHFloat, BHFloat, BState, BTHFloat, BTState, HFloat, State
+from clfrl.dyn.sim_cts import SimCtsReal
+from clfrl.dyn.task import Task
+from clfrl.ncbf.compute_disc_avoid import (
     AllDiscAvoidTerms,
     DiscAvoidTerms,
     compute_all_disc_avoid_terms,
     compute_disc_avoid_terms,
 )
-from pncbf.networks.block import TmpNet
 
-# from pncbf.nclf.sim_nclf import SimNCLF
-from pncbf.networks.ensemble import Ensemble, subsample_ensemble
-from pncbf.networks.mlp import MLP
-from pncbf.networks.ncbf import MultiNormValueFn, MultiValueFn, Rescale
-from pncbf.networks.network_utils import HidSizes, get_act_from_str
-from pncbf.networks.optim import get_default_tx
-from pncbf.networks.train_state import TrainState
-from pncbf.qp.min_norm_cbf import min_norm_cbf, min_norm_cbf_qp_mats
-from pncbf.utils.grad_utils import compute_norm, empty_grad_tx, compute_kernel_matrix, compute_kernel_matrix, compute_kernel_gradient, svgd_update  
-from pncbf.utils.jax_types import BBBool, BBFloat, BBool, BFloat, BHBool, BTHBool, FloatScalar, MetricsDict
-from pncbf.utils.jax_utils import jax_vmap, merge01, rep_vmap, tree_copy, tree_split_dims
-from pncbf.utils.loss_utils import weighted_sum_dict
-from pncbf.utils.mathtext import from_mathtext
-from pncbf.utils.none import get_or
-from pncbf.utils.rng import PRNGKey
-from pncbf.utils.schedules import Schedule, as_schedule
+# from clfrl.nclf.sim_nclf import SimNCLF
+from clfrl.networks.ensemble import Ensemble, subsample_ensemble
+from clfrl.networks.mlp import MLP
+from clfrl.networks.ncbf import MultiNormValueFn, MultiValueFn
+from clfrl.networks.network_utils import HidSizes, get_act_from_str
+from clfrl.networks.optim import get_default_tx
+from clfrl.networks.train_state import TrainState
+from clfrl.qp.min_norm_cbf import min_norm_cbf
+from clfrl.utils.grad_utils import compute_norm, empty_grad_tx, compute_kernel_matrix, compute_kernel_matrix, compute_kernel_gradient, svgd_update  
+from clfrl.utils.jax_types import BBBool, BBFloat, BFloat, FloatScalar, MetricsDict
+from clfrl.utils.jax_utils import jax_vmap, merge01, rep_vmap, tree_copy, tree_split_dims
+from clfrl.utils.loss_utils import weighted_sum_dict
+from clfrl.utils.none import get_or
+from clfrl.utils.rng import PRNGKey
+from clfrl.utils.schedules import Schedule, as_schedule
 
 
 @define
@@ -81,10 +66,6 @@ class IntAvoidTrainCfg:
     tgt_rhs: Schedule
     # If true, then use Vh(0) = h(0) as a boundary condition.
     use_eq_state: bool = False
-    # If true, then record the grad terms. Otherwise, we don't even need to compute grad.
-    use_grad_terms: bool = True
-    # If V = h, then enforce the gradients also match.
-    use_hgrad: bool = False
 
 
 @define
@@ -108,10 +89,7 @@ class IntAvoidCfg:
     # Num to use as target.
     n_min_tgt: int
 
-    use_multi_norm: bool = False #False
-    rescale_outputs: bool = False
-
-    new_net: bool = False
+    use_multi_norm: bool = False
 
     @property
     def alg_name(self) -> str:
@@ -137,18 +115,12 @@ class IntAvoid(struct.PyTreeNode):
         """Data collected here has a spacing of train_cfg.rollout_dt."""
 
         bT_x: BTState
-        bT_u: BTControl
         # b_vterms: DiscAvoidTerms
         b_vterms: AllDiscAvoidTerms
-        # If true, then V = h. We can enforce derivative conditions on this.
-        # This can be modified depending on the value of V(x_T).
-        bTh_iseqh: BTHBool
 
     class Batch(NamedTuple):
         b_x0: BState
-        b_u0: BTControl
         b_xT: BState
-        bh_iseqh: BBool
         bh_lhs: BHFloat
         bh_int_rhs: BHFloat
         b_discount_rhs: BFloat
@@ -174,19 +146,11 @@ class IntAvoid(struct.PyTreeNode):
         act = get_act_from_str(cfg.act)
 
         # Define V network.
-        if cfg.new_net:
-            Vh_cls = ft.partial(TmpNet, 2, cfg.hids[0], act)
-        else:
-            Vh_cls = ft.partial(MLP, cfg.hids, act)
-
+        Vh_cls = ft.partial(MLP, cfg.hids, act)
         if cfg.use_multi_norm:
             Vh_cls = ft.partial(MultiNormValueFn, Vh_cls, task.nh, 2 * task.nx)
         else:
             Vh_cls = ft.partial(MultiValueFn, Vh_cls, task.nh)
-
-        if cfg.rescale_outputs:
-            logger.info("Rescaling outputs! h∈[{}, {}]".format(task.h_min, task.h_max))
-            Vh_cls = ft.partial(Rescale, Vh_cls, task.h_min, task.h_max)
 
         Vh_def = Ensemble(Vh_cls, cfg.n_Vs)
         Vh_tx = get_default_tx(cfg.lr.make(), cfg.wd.make())
@@ -214,10 +178,6 @@ class IntAvoid(struct.PyTreeNode):
     def lam(self) -> FloatScalar:
         # return self.lam_sched(self.update_idx)
         return self._lam
-
-    @property
-    def V_shift(self):
-        return -(1 - np.exp(-self.lam * self.task.max_ttc)) * self.task.h_min
 
     def update_lam(self):
         new_lam = self.lam_sched(self.update_idx)
@@ -269,37 +229,25 @@ class IntAvoid(struct.PyTreeNode):
         bT_x, _, _ = jax_vmap(sim.rollout_plot)(b_x0)
         assert bT_x.shape == (self.train_cfg.collect_size, self.train_cfg.rollout_T + 1, self.task.nx)
 
-        # Compute nominal control (again) here, especially if it's expensive (QP).
-        bT_u = rep_vmap(self.nom_pol, rep=2)(bT_x)
-
         bTh_h = rep_vmap(self.task.h_components, rep=2)(bT_x)
 
         # Compute value function terms for each trajectory.
         # b_vterms = jax_vmap(ft.partial(compute_disc_avoid_terms, self.lam, self.task.dt))(bTh_h)
-        b_vterms: AllDiscAvoidTerms = jax_vmap(ft.partial(compute_all_disc_avoid_terms, self.lam, rollout_dt))(bTh_h)
+        b_vterms = jax_vmap(ft.partial(compute_all_disc_avoid_terms, self.lam, rollout_dt))(bTh_h)
 
-        if self.train_cfg.use_hgrad:
-            bTh_iseqh = b_vterms.Th_max_lhs[:, :-1, :] > b_vterms.Th_max_lhs[:, 1:, :]
-            # Set last term to false.
-            b1h_iseqh_final = jnp.zeros((self.train_cfg.collect_size, 1, self.task.nh), dtype=bool)
-            bTh_iseqh = jnp.concatenate([bTh_iseqh, b1h_iseqh_final], axis=1)
-            assert bTh_iseqh.shape == bTh_h.shape
-        else:
-            bTh_iseqh = None
-
-        return self.replace(collect_idx=self.collect_idx + 1), self.CollectData(bT_x, bT_u, b_vterms, bTh_iseqh)
+        return self.replace(collect_idx=self.collect_idx + 1), self.CollectData(bT_x, b_vterms)
 
     @jax.jit
     def get_vterms(self, bT_x: BTState) -> AllDiscAvoidTerms:
         bTh_h = rep_vmap(self.task.h_components, rep=2)(bT_x)
         return jax_vmap(ft.partial(compute_all_disc_avoid_terms, self.lam, self.task.dt))(bTh_h)
 
-    def compute_loss(self, loss_weights, b_x: BState, b_u: BControl, bh_iseqh: BHBool, bh_V_tgt: BHFloat, params):
+    def compute_loss(self, loss_weights, b_x, bh_V_tgt, params):
         batch_size = len(b_x)
         eh_V_apply = ft.partial(self.get_eh_Vh, params=params)
 
         beh_V_pred = jax_vmap(eh_V_apply)(b_x)
-        # behx_Vx = jax_vmap(jax.jacobian(eh_V_apply))(b_x)
+        behx_Vx = jax_vmap(jax.jacobian(eh_V_apply))(b_x)
         bh_h = jax_vmap(self.task.h_components)(b_x)
 
         # 1: Value function loss. This applies to all states in the trajectory.
@@ -307,74 +255,42 @@ class IntAvoid(struct.PyTreeNode):
         assert eh_loss_Vh.shape == (self.cfg.n_Vs, self.task.nh)
         loss_Vh = jnp.mean(eh_loss_Vh)
 
-        # Penalize underestimating beh_Vpred. i.e., Penalize tgt >= pred.
-        eh_loss_Vh_tilt = jnp.mean(jnn.relu(bh_V_tgt[:, None, :] - beh_V_pred) ** 2, axis=0)
-        loss_Vh_tilt = jnp.mean(eh_loss_Vh_tilt)
-
         # 2: Descent loss.
         b_f = jax_vmap(self.task.f)(b_x)
         b_G = jax_vmap(self.task.G)(b_x)
+        b_u = jax_vmap(self.nom_pol)(b_x)
 
-        def compute_terms_h(h_V, x: State, h_h, f, G, u):
+        def compute_terms_h(h_V, hx_Vx, h_h, f, G, u):
+            def compute_terms(V, x_Vx, h):
+                now = h - V
+                future = jnp.dot(x_Vx, xdot) - self.lam * (V - h)
+                return now, future
+
             xdot = f + G @ u
-            # Compute Vx^T xdot
-            _, eh_Vdot = jax.jvp(eh_V_apply, (x,), (xdot,))
-            assert eh_Vdot.shape == (self.cfg.n_Vs, self.task.nh)
-            future = eh_Vdot - self.lam * (h_V - h_h)
-            return future
+            return jax_vmap(compute_terms)(h_V, hx_Vx, h_h)
 
-        grad_terms = {}
-        info_dict = {}
-        if self.train_cfg.use_grad_terms:
-            beh_now = bh_h[:, None, :] - beh_V_pred
-            beh_future = jax_vmap(compute_terms_h)(beh_V_pred, b_x, bh_h, b_f, b_G, b_u)
-            assert beh_now.shape == beh_future.shape == (batch_size, self.cfg.n_Vs, self.task.nh)
-            # Enforce h(x) - V(x) <= 0.
-            loss_now_pos = jnp.mean(jnn.relu(beh_now) ** 2)
-            acc_now = jnp.mean(beh_now <= 0)
+        beh_now, beh_future = jax_vmap(jax_vmap(compute_terms_h, in_axes=(0, 0, None, None, None, None)))(
+            beh_V_pred, behx_Vx, bh_h, b_f, b_G, b_u
+        )
+        assert beh_now.shape == beh_future.shape == (batch_size, self.cfg.n_Vs, self.task.nh)
+        # Enforce h(x) - V(x) <= 0.
+        loss_now_pos = jnp.mean(jnn.relu(beh_now) ** 2)
+        acc_now = jnp.mean(beh_now <= 0)
 
-            # Enforce Vdot - lambda * (V - h) <=0.
-            loss_future_pos = jnp.mean(jnn.relu(beh_future) ** 2)
-            acc_future = jnp.mean(beh_future <= 0)
+        # Enforce Vdot - lambda * (V - h) <=0.
+        loss_future_pos = jnp.mean(jnn.relu(beh_future) ** 2)
+        acc_future = jnp.mean(beh_future <= 0)
 
-            # Represent the complementarity as a multiplication.
-            # If it's positive, clip it to force it to be non-positive.
-            loss_pde = jnp.mean((beh_now * beh_future) ** 2)
+        # Represent the complementarity as a multiplication.
+        # If it's positive, clip it to force it to be non-positive.
+        loss_pde = jnp.mean((beh_now * beh_future) ** 2)
 
-            grad_terms = {
-                "Loss/Now": loss_now_pos,
-                "Loss/Future": loss_future_pos,
-                "Loss/PDE": loss_pde,
-            }
-            info_dict = {"Acc/V_desc": acc_now, "Acc/Nonzero": acc_future}
-        else:
-            if ("Loss/Future" in loss_weights) or ("Loss/Now" in loss_weights):
-                raise ValueError("Set use_grad_terms to True to use Loss/Future or Loss/Now!")
-
-        # 3: Gradient loss for when V = h.
-        if self.train_cfg.use_hgrad:
-            bh_V_pred = lax.stop_gradient(jnp.mean(beh_V_pred, axis=1))
-            bh_iseqh = bh_iseqh & (bh_V_pred <= bh_V_tgt)
-
-            b_xdot = b_f + jnp.sum(b_G * b_u[:, None, :], axis=-1)
-
-            # bh_hdot = jnp.sum(bhx_hgrad * b_xdot, axis=-1)
-            _, bh_hdot = jax.vmap(lambda x, xdot: jax.jvp(self.task.h_components, (x,), (xdot,)))(b_x, b_xdot)
-            assert bh_hdot.shape == (batch_size, self.task.nh)
-
-            _, beh_Vdot = jax.vmap(lambda x, xdot: jax.jvp(eh_V_apply, (x,), (xdot,)))(b_x, b_xdot)
-            assert beh_Vdot.shape == (batch_size, self.cfg.n_Vs, self.task.nh)
-
-            bh_loss_dV_eqh = jnp.mean((beh_Vdot - bh_hdot[:, None, :]) ** 2, axis=1)
-            assert bh_loss_dV_eqh.shape == (batch_size, self.task.nh)
-
-            bh_loss_dV_eq0 = jnp.mean(beh_Vdot**2, axis=1)
-            assert bh_loss_dV_eq0.shape == (batch_size, self.task.nh)
-
-            bh_loss_dV = jnp.where(bh_iseqh, bh_loss_dV_eqh, bh_loss_dV_eq0)
-            loss_dV = jnp.mean(bh_loss_dV)
-
-            grad_terms = {"Loss/dV_mse": loss_dV}
+        # # Fk it, add hessian normalization.
+        # def compute_fro(x):
+        #     return jnp.mean(jax.hessian(V_apply)(x) ** 2)
+        # # bhxx_Vxx = jax_vmap(jax.hessian(V_apply))(b_x)
+        # # loss_fro = jnp.mean(bhxx_Vxx ** 2)
+        # loss_fro = jnp.mean(jax_vmap(compute_fro)(b_x))
 
         extra_loss = {}
         if self.train_cfg.use_eq_state:
@@ -387,17 +303,18 @@ class IntAvoid(struct.PyTreeNode):
 
         loss_dict = {
             "Loss/Vh_mse": loss_Vh,
-            "Loss/Vh_tilt": loss_Vh_tilt,
-            **grad_terms,
+            "Loss/Now": loss_now_pos,
+            "Loss/Future": loss_future_pos,
+            "Loss/PDE": loss_pde,
             # "Loss/Hess Fro": loss_fro,
             **extra_loss,
         }
+        info_dict = {"Acc/V_desc": acc_now, "Acc/Nonzero": acc_future}
         loss = weighted_sum_dict(loss_dict, loss_weights)
         return loss, loss_dict | info_dict
 
-    def update_Vh(self, loss_weights, b_x: BState, b_u: BControl, bh_iseqh: BHBool, bh_V_tgt: BHFloat):
-        loss_fn = ft.partial(self.compute_loss, loss_weights, b_x, b_u, bh_iseqh, bh_V_tgt)
-        grads, info = jax.grad(loss_fn, has_aux=True)(self.Vh.params)
+    def update_Vh(self, loss_weights, b_x, bh_V_tgt):
+        grads, info = jax.grad(ft.partial(self.compute_loss, loss_weights, b_x, bh_V_tgt), has_aux=True)(self.Vh.params)
         info["V_grad"] = compute_norm(grads)
         Vh_new = self.Vh.apply_gradients(grads)
 
@@ -419,18 +336,36 @@ class IntAvoid(struct.PyTreeNode):
         bh_VhT = jnp.min(ebh_VhT, axis=0)
         # bh_VhT = jnp.full((b_size, self.task.nh), -1e12)
 
-        # Speed up tgt 1: clip it between hmin and hmax.
-        bh_VhT = jnp.clip(bh_VhT, self.task.h_min, self.task.h_max)
-        # Speed up tgt 2: If its smaller than h, then make it h.
-        bh_tgt = jax_vmap(self.task.h_components)(data.b_xT)
-        bh_VhT = jnp.maximum(bh_VhT, bh_tgt)
-
         # 1.2: Compute (target) V at T_x using b_vterms
+        # bh_V_tgt = jnp.maximum(data.bh_lhs, data.bh_int_rhs + data.b_discount_rhs[:, None] * bh_VhT)
         bh_rhs = data.bh_int_rhs + data.b_discount_rhs[:, None] * bh_VhT
         bh_V_tgt = data.bh_lhs + self.tgt_rhs_coeff * jnp.maximum(0, bh_rhs - data.bh_lhs)
         assert bh_V_tgt.shape == (b_size, self.task.nh)
 
-        new_self, info_mean = self.update_Vh(loss_weights, data.b_x0, data.b_u0, data.bh_iseqh, bh_V_tgt)
+        # # Merge the (b, T) into (b * T, ), then split into batch size and randomize.
+        # b_data = (merge01(data.bT_x), merge01(bTh_V_tgt))
+
+        new_self, info_mean = self.update_Vh(loss_weights, data.b_x0, bh_V_tgt)
+
+        # mb_dataset = (data.b_x0[None], bh_V_tgt[None])
+        # n_batches = 1
+
+        # dataset_size = len(b_data[0])
+        # n_batches = dataset_size // self.train_cfg.batch_size
+        # # Shuffle.
+        # rand_idxs = jr.permutation(key_shuffle, jnp.arange(dataset_size))
+        # b_data = jtu.tree_map(lambda x: x[rand_idxs], b_data)
+        # # Reshape.
+        # mb_dataset = tree_split_dims(b_data, (n_batches, self.train_cfg.batch_size))
+        # logger.info("n_batches: {}".format(n_batches))
+
+        # def updates_body(alg: IntAvoid, b_dataset):
+        #     alg, info = alg.update_Vh(loss_weights, *b_dataset)
+        #     return alg, info
+        #
+        # new_self, info = lax.scan(updates_body, self, mb_dataset, length=n_batches)
+        # # Take mean of info.
+        # info_mean = jtu.tree_map(lambda x: x.mean(), info)
 
         info_mean["anneal/lam"] = self.lam
         gamma = jnp.exp(-self.lam * self.task.dt)
@@ -444,52 +379,20 @@ class IntAvoid(struct.PyTreeNode):
 
         return new_self.replace(Vh_tgt=Vh_tgt, update_idx=self.update_idx + 1), info_mean
 
-    def get_cbf_qpmats(self, alpha_safe: float, alpha_unsafe: float, state: State, V_shift: float = 1e-3, nom_pol=None):
+    def get_cbf_control_sloped_all(self, alpha_safe: float, alpha_unsafe: float, state: State, V_shift: float = 1e-3):
         u_lb, u_ub = self.task.u_min, self.task.u_max
         Vh_apply = ft.partial(self.get_Vh, params=self.Vh.params)
-        nom_pol = get_or(nom_pol, self.nom_pol)
-
-        h_V = Vh_apply(state)
-        hx_Vx = jax.jacobian(Vh_apply)(state)
-        f = self.task.f(state)
-        G = self.task.G(state)
-        u_nom = nom_pol(state)
-
-        # Give a small margin.
-        h_V = h_V + V_shift
-
-        if isinstance(alpha_safe, float) or alpha_safe.ndim == 0:
-            is_safe = jnp.all(h_V < 0)
-            alpha = jnp.where(is_safe, alpha_safe, alpha_unsafe)
-        else:
-            assert alpha_safe.shape == alpha_unsafe.shape == (self.task.nh,)
-            h_is_safe = h_V < 0
-            h_alpha_safe, h_alpha_unsafe = alpha_safe, alpha_unsafe
-            h_alpha = jnp.where(h_is_safe, h_alpha_safe, h_alpha_unsafe)
-            alpha = h_alpha
-
-        penalty, relax_eps1, relax_eps2 = 10.0, 5e-1, 20.0
-        qp = min_norm_cbf_qp_mats(alpha, u_lb, u_ub, h_V, hx_Vx, f, G, u_nom, penalty, relax_eps1, relax_eps2)
-        return qp
-
-    def get_cbf_control_sloped_all(
-        self, alpha_safe: float, alpha_unsafe: float, state: State, V_shift: float = 1e-3, nom_pol=None
-    ):
-        u_lb, u_ub = self.task.u_min, self.task.u_max
-        Vh_apply = ft.partial(self.get_Vh, params=self.Vh.params)
-
-        nom_pol = get_or(nom_pol, self.nom_pol)
 
         h_V = Vh_apply(state)
         h_Vx = jax.jacobian(Vh_apply)(state)
         f = self.task.f(state)
         G = self.task.G(state)
-        u_nom = nom_pol(state)
+        u_nom = self.nom_pol(state)
 
         # Give a small margin.
         h_V = h_V + V_shift
 
-        if isinstance(alpha_safe, float) or alpha_safe.ndim == 0:
+        if isinstance(alpha_safe, float):
             is_safe = jnp.all(h_V < 0)
             alpha = jnp.where(is_safe, alpha_safe, alpha_unsafe)
         else:
@@ -503,17 +406,15 @@ class IntAvoid(struct.PyTreeNode):
         u, r, sol = min_norm_cbf(alpha, u_lb, u_ub, h_V, h_Vx, f, G, u_nom)
         return self.task.chk_u(u), (r, sol)
 
-    def get_cbf_control_sloped(
-        self, alpha_safe: float, alpha_unsafe: float, state: State, V_shift: float = 1e-3, nom_pol=None
-    ):
-        return self.get_cbf_control_sloped_all(alpha_safe, alpha_unsafe, state, V_shift, nom_pol)[0]
+    def get_cbf_control_sloped(self, alpha_safe: float, alpha_unsafe: float, state: State):
+        return self.get_cbf_control_sloped_all(alpha_safe, alpha_unsafe, state)[0]
 
     def get_cbf_control(self, alpha: float, state: State):
         return self.get_cbf_control_sloped_all(alpha, alpha, state)[0]
 
-    @ft.partial(jax.jit, static_argnames=["T", "setup_idx", "use_pid"])
-    def get_bb_V_nom(self, T: int = None, setup_idx: int = 0, use_pid: bool = False):
-        return self.V_for_pol(self.nom_pol, T, setup_idx, use_pid)
+    @ft.partial(jax.jit, static_argnames=["T", "setup_idx"])
+    def get_bb_V_nom(self, T: int = None, setup_idx: int = 0):
+        return self.V_for_pol(self.nom_pol, T, setup_idx)
 
     # @ft.partial(jax.jit, static_argnames=["T", "setup_idx"])
     # def get_bb_V_opt(self, T: int = None, setup_idx: int = 0):
@@ -526,8 +427,8 @@ class IntAvoid(struct.PyTreeNode):
 
     def V_for_pol(self, pol, T: int = None, setup_idx: int = 0, use_pid: bool = True):
         T = get_or(T, self.cfg.eval_cfg.eval_rollout_T)
-        tf = self.task.dt * (T + 0.001)
-        sim = SimCtsReal(self.task, pol, tf, self.task.dt, use_obs=False, use_pid=use_pid, max_steps=T + 3)
+        tf = 1.01 * self.task.dt * T
+        sim = SimCtsReal(self.task, pol, tf, self.task.dt, use_obs=False, use_pid=use_pid, max_steps=512)
         bb_x, bb_Xs, bb_Ys = self.task.get_contour_x0(setup_idx)
         bbT_x, _, _ = rep_vmap(sim.rollout_plot, rep=2)(bb_x)
         bbT_h = rep_vmap(self.task.h, rep=3)(bbT_x)
@@ -538,7 +439,7 @@ class IntAvoid(struct.PyTreeNode):
         # Get states for plotting and for metrics.
         b_x0_plot = self.task.get_plot_x0(0)
         b_x0_metric = self.task.get_metric_x0()
-        # b_x0_loss = self.task.get_loss_x0()
+        b_x0_loss = self.task.get_loss_x0()
 
         # Rollout using the min norm controller.
         alpha_safe, alpha_unsafe = 2.0, 100.0
@@ -634,22 +535,14 @@ class IntAvoid(struct.PyTreeNode):
         # loss_info[f"Classify/Max"] = h_clsfy_max
 
         # bTl_ls = rep_vmap(self.task.l_components, rep=2)(bT_x_metric)
-        bTh_hs = rep_vmap(self.task.h_components, rep=2)(bT_x_metric)
-        bT_hs = bTh_hs.max(axis=2)
+        bT_hs = rep_vmap(self.task.h, rep=2)(bT_x_metric)
 
         h_mean = bT_hs.mean(-1).mean(0)
         h_max = bT_hs.max(-1).mean(0)
-
-        h_labels = self.task.h_labels_clean
-        safe_fracs = {
-            "Safe/{}".format(h_labels[ii]): jnp.all(bTh_hs[:, :, ii] < 0, axis=1).mean() for ii in range(self.task.nh)
-        }
-
         eval_info = {
             "Constr Mean": h_mean,
             "Constr Max Mean": h_max,
             "Safe Frac": jnp.mean(jnp.all(bT_hs < 0, axis=-1)),
-            **safe_fracs,
             **loss_info,
         }
 
@@ -657,65 +550,20 @@ class IntAvoid(struct.PyTreeNode):
 
 
 
+
 @define
 class ModelBasedIntAvoidCfg(IntAvoidCfg):
-    n_fs: int = 2
-    n_Gs: int = 2
+    n_fs: int = 20
+    n_Gs: int = 20
  
 class ModelBasedIntAvoid(IntAvoid):
     f: TrainState[HFloat]
     G: TrainState[HFloat]
-
-
-    class Normalizer(NamedTuple):
-        x_mean: State
-        x_std: State
-
-        u_mean: Control
-        u_std: Control
-
-        def transform_state(self, x: State) -> State:
-            return (x - self.x_mean) / self.x_std
-        
-        def transform_control(self, u: Control) -> Control:
-            return (u - self.u_mean) / self.u_std
-        
-        def recover_state(self, x: State) -> State:
-            """Recover the original state from the normalized state."""
-            return x * self.x_std + self.x_mean
-        
-        def recover_control(self, u: Control) -> Control:
-            """Recover the original control from the normalized control."""
-            return u * self.u_std + self.u_mean
-  
-        @classmethod
-        def create(cls, dset: IntAvoid.CollectData):
-            """
-            Compute mean and standard deviation for both state and control matrices.
-            
-            Args:
-                states (np.ndarray): B x T x state_dim matrix.
-                controls (np.ndarray): B x T x control_dim matrix.
-            
-            Returns:
-                Normalizer: A Normalizer instance with computed means and stds.
-            """
-            
-            x_mean = dset.bT_x.mean(axis=(0, 1))  # Average over batch and time dimensions
-            x_std = dset.bT_x.std(axis=(0, 1)) + 1e-8  # To avoid division by zero
-
-            u_mean = dset.bT_u.mean(axis=(0, 1))  # Average over batch and time dimensions
-            u_std = dset.bT_u.std(axis=(0, 1)) + 1e-8  # To avoid division by zero
-
-            return cls(x_mean=x_mean, x_std=x_std, u_mean=u_mean, u_std=u_std)
-            
-
+ 
     class Batch(NamedTuple):
-        b_x0: BState
-        b_u0: BTControl
+        b_x0: BState 
         b_nxt_x0: BState
         b_xT: BState
-        bh_iseqh: BBool
         bh_lhs: BHFloat
         bh_int_rhs: BHFloat
         b_discount_rhs: BFloat
@@ -780,12 +628,12 @@ class ModelBasedIntAvoid(IntAvoid):
     
     
 
-    def compute_loss(self, loss_weights, b_x: BState, b_u: BControl, bh_iseqh: BHBool, bh_V_tgt: BHFloat, params):
+    def compute_loss(self, loss_weights, b_x: BState, bh_V_tgt: BHFloat, params):
         batch_size = len(b_x)
         eh_V_apply = ft.partial(self.get_eh_Vh, params=params)
 
         beh_V_pred = jax_vmap(eh_V_apply)(b_x)
-        # behx_Vx = jax_vmap(jax.jacobian(eh_V_apply))(b_x)
+        behx_Vx = jax_vmap(jax.jacobian(eh_V_apply))(b_x)
         bh_h = jax_vmap(self.task.h_components)(b_x)
 
         # 1: Value function loss. This applies to all states in the trajectory.
@@ -793,77 +641,43 @@ class ModelBasedIntAvoid(IntAvoid):
         assert eh_loss_Vh.shape == (self.cfg.n_Vs, self.task.nh)
         loss_Vh = jnp.mean(eh_loss_Vh)
 
-        # Penalize underestimating beh_Vpred. i.e., Penalize tgt >= pred.
-        eh_loss_Vh_tilt = jnp.mean(jnn.relu(bh_V_tgt[:, None, :] - beh_V_pred) ** 2, axis=0)
-        loss_Vh_tilt = jnp.mean(eh_loss_Vh_tilt)
-
 
         # 2: Descent loss.
         b_f = jax_vmap(self.get_f)(b_x)
         b_G = jax_vmap(self.get_G)(b_x)
+        b_u = jax_vmap(self.nom_pol)(b_x)
 
-        def compute_terms_h(h_V, x: State, h_h, f, G, u):
+        def compute_terms_h(h_V, hx_Vx, h_h, f, G, u):
+            def compute_terms(V, x_Vx, h):
+                now = h - V
+                future = jnp.dot(x_Vx, xdot) - self.lam * (V - h)
+                return now, future
+            
             xdot = f + G @ u
-            # Compute Vx^T xdot
-            _, eh_Vdot = jax.jvp(eh_V_apply, (x,), (xdot,))
-            assert eh_Vdot.shape == (self.cfg.n_Vs, self.task.nh)
-            future = eh_Vdot - self.lam * (h_V - h_h)
-            return future
+            return jax_vmap(compute_terms)(h_V, hx_Vx, h_h)
 
-        grad_terms = {}
-        info_dict = {}
+        beh_now, beh_future = jax_vmap(jax_vmap(compute_terms_h, in_axes=(0, 0, None, None, None, None)))(
+            beh_V_pred, behx_Vx, bh_h, b_f, b_G, b_u
+        )
+        assert beh_now.shape == beh_future.shape == (batch_size, self.cfg.n_Vs, self.task.nh)
+        # Enforce h(x) - V(x) <= 0.
+        loss_now_pos = jnp.mean(jnn.relu(beh_now) ** 2)
+        acc_now = jnp.mean(beh_now <= 0)
 
-        
-        if self.train_cfg.use_grad_terms:
-            beh_now = bh_h[:, None, :] - beh_V_pred
-            beh_future = jax_vmap(compute_terms_h)(beh_V_pred, b_x, bh_h, b_f, b_G, b_u)
-            assert beh_now.shape == beh_future.shape == (batch_size, self.cfg.n_Vs, self.task.nh)
-            # Enforce h(x) - V(x) <= 0.
-            loss_now_pos = jnp.mean(jnn.relu(beh_now) ** 2)
-            acc_now = jnp.mean(beh_now <= 0)
+        # Enforce Vdot - lambda * (V - h) <=0.
+        loss_future_pos = jnp.mean(jnn.relu(beh_future) ** 2)
+        acc_future = jnp.mean(beh_future <= 0)
 
-            # Enforce Vdot - lambda * (V - h) <=0.
-            loss_future_pos = jnp.mean(jnn.relu(beh_future) ** 2)
-            acc_future = jnp.mean(beh_future <= 0)
+        # Represent the complementarity as a multiplication.
+        # If it's positive, clip it to force it to be non-positive.
+        loss_pde = jnp.mean((beh_now * beh_future) ** 2)
 
-            # Represent the complementarity as a multiplication.
-            # If it's positive, clip it to force it to be non-positive.
-            loss_pde = jnp.mean((beh_now * beh_future) ** 2)
-
-            grad_terms = {
-                "Loss/Now": loss_now_pos,
-                "Loss/Future": loss_future_pos,
-                "Loss/PDE": loss_pde,
-            }
-            info_dict = {"Acc/V_desc": acc_now, "Acc/Nonzero": acc_future}
-        else:
-            if ("Loss/Future" in loss_weights) or ("Loss/Now" in loss_weights):
-                raise ValueError("Set use_grad_terms to True to use Loss/Future or Loss/Now!")
-
-        # 3: Gradient loss for when V = h.
-        if self.train_cfg.use_hgrad:
-            bh_V_pred = lax.stop_gradient(jnp.mean(beh_V_pred, axis=1))
-            bh_iseqh = bh_iseqh & (bh_V_pred <= bh_V_tgt)
-
-            b_xdot = b_f + jnp.sum(b_G * b_u[:, None, :], axis=-1)
-
-            # bh_hdot = jnp.sum(bhx_hgrad * b_xdot, axis=-1)
-            _, bh_hdot = jax.vmap(lambda x, xdot: jax.jvp(self.task.h_components, (x,), (xdot,)))(b_x, b_xdot)
-            assert bh_hdot.shape == (batch_size, self.task.nh)
-
-            _, beh_Vdot = jax.vmap(lambda x, xdot: jax.jvp(eh_V_apply, (x,), (xdot,)))(b_x, b_xdot)
-            assert beh_Vdot.shape == (batch_size, self.cfg.n_Vs, self.task.nh)
-
-            bh_loss_dV_eqh = jnp.mean((beh_Vdot - bh_hdot[:, None, :]) ** 2, axis=1)
-            assert bh_loss_dV_eqh.shape == (batch_size, self.task.nh)
-
-            bh_loss_dV_eq0 = jnp.mean(beh_Vdot**2, axis=1)
-            assert bh_loss_dV_eq0.shape == (batch_size, self.task.nh)
-
-            bh_loss_dV = jnp.where(bh_iseqh, bh_loss_dV_eqh, bh_loss_dV_eq0)
-            loss_dV = jnp.mean(bh_loss_dV)
-
-            grad_terms = {"Loss/dV_mse": loss_dV}
+        # # Fk it, add hessian normalization.
+        # def compute_fro(x):
+        #     return jnp.mean(jax.hessian(V_apply)(x) ** 2)
+        # # bhxx_Vxx = jax_vmap(jax.hessian(V_apply))(b_x)
+        # # loss_fro = jnp.mean(bhxx_Vxx ** 2)
+        # loss_fro = jnp.mean(jax_vmap(compute_fro)(b_x))
 
         extra_loss = {}
         if self.train_cfg.use_eq_state:
@@ -876,18 +690,21 @@ class ModelBasedIntAvoid(IntAvoid):
 
         loss_dict = {
             "Loss/Vh_mse": loss_Vh,
-            "Loss/Vh_tilt": loss_Vh_tilt,
-            **grad_terms,
+            "Loss/Now": loss_now_pos,
+            "Loss/Future": loss_future_pos,
+            "Loss/PDE": loss_pde,
             # "Loss/Hess Fro": loss_fro,
             **extra_loss,
         }
+        info_dict = {"Acc/V_desc": acc_now, "Acc/Nonzero": acc_future}
         loss = weighted_sum_dict(loss_dict, loss_weights)
         return loss, loss_dict | info_dict
 
     
-    def compute_gap(self, f_params, G_params, b_x: BState, b_u: BControl, b_nxt_x: BState):
+    def compute_gap(self, f_params, G_params, b_x: BState, b_nxt_x: BState):
         b_f = jax_vmap(ft.partial(self.get_f, params = f_params))(b_x)
         b_G = jax_vmap(ft.partial(self.get_G, params = G_params))(b_x)
+        b_u = jax_vmap(self.nom_pol)(b_x)
  
         # Model loss
         b_dx_pred = jax_vmap(lambda f, G, u: f + G @ u)(b_f, b_G, b_u)
@@ -897,15 +714,15 @@ class ModelBasedIntAvoid(IntAvoid):
         return loss, {'Loss/model_mse': loss}
 
 
-    def update_Vh(self, loss_weights, b_x: BState, b_u: BControl, bh_iseqh: BHBool, bh_V_tgt: BHFloat):
-        loss_fn = ft.partial(self.compute_loss, loss_weights, b_x, b_u, bh_iseqh, bh_V_tgt)
-        grads, info = jax.grad(loss_fn, has_aux=True)(self.Vh.params)
+    def update_Vh(self, loss_weights, b_x, bh_V_tgt):
+        grads, info = jax.grad(ft.partial(self.compute_loss, loss_weights, b_x, bh_V_tgt), has_aux=True)(self.Vh.params)
         info["V_grad"] = compute_norm(grads)
         Vh_new = self.Vh.apply_gradients(grads)
+
         return Vh_new, info
     
-    def update_f_G(self, b_x: BState, b_u: BControl, b_nxt_x: BState):
-        gap_fn = ft.partial(self.compute_gap, b_x = b_x, b_u = b_u, b_nxt_x = b_nxt_x)
+    def update_f_G(self, b_x: BState, b_nxt_x: BState):
+        gap_fn = ft.partial(self.compute_gap, b_x = b_x, b_nxt_x = b_nxt_x)
         (f_grads, G_grads), info = jax.grad(gap_fn, has_aux=True, argnums=(0, 1))(self.f.params, self.G.params)
         
         # Compute the kernel matrix and kernel gradients 
@@ -950,19 +767,38 @@ class ModelBasedIntAvoid(IntAvoid):
         bh_VhT = jnp.min(ebh_VhT, axis=0)
         # bh_VhT = jnp.full((b_size, self.task.nh), -1e12)
 
-        # Speed up tgt 1: clip it between hmin and hmax.
-        bh_VhT = jnp.clip(bh_VhT, self.task.h_min, self.task.h_max)
-        # Speed up tgt 2: If its smaller than h, then make it h.
-        bh_tgt = jax_vmap(self.task.h_components)(data.b_xT)
-        bh_VhT = jnp.maximum(bh_VhT, bh_tgt)
-
         # 1.2: Compute (target) V at T_x using b_vterms
+        # bh_V_tgt = jnp.maximum(data.bh_lhs, data.bh_int_rhs + data.b_discount_rhs[:, None] * bh_VhT)
         bh_rhs = data.bh_int_rhs + data.b_discount_rhs[:, None] * bh_VhT
         bh_V_tgt = data.bh_lhs + self.tgt_rhs_coeff * jnp.maximum(0, bh_rhs - data.bh_lhs)
         assert bh_V_tgt.shape == (b_size, self.task.nh)
 
-        Vh_new, info_h = self.update_Vh(loss_weights, data.b_x0, data.b_u0, data.bh_iseqh, bh_V_tgt)
-        (f_new, G_new), info_f_G = self.update_f_G(data.b_x0, data.b_u0, data.b_nxt_x0)
+        # # Merge the (b, T) into (b * T, ), then split into batch size and randomize.
+        # b_data = (merge01(data.bT_x), merge01(bTh_V_tgt))
+
+        Vh_new, info_h = self.update_Vh(loss_weights, data.b_x0, bh_V_tgt)
+
+        # mb_dataset = (data.b_x0[None], bh_V_tgt[None])
+        # n_batches = 1
+
+        # dataset_size = len(b_data[0])
+        # n_batches = dataset_size // self.train_cfg.batch_size
+        # # Shuffle.
+        # rand_idxs = jr.permutation(key_shuffle, jnp.arange(dataset_size))
+        # b_data = jtu.tree_map(lambda x: x[rand_idxs], b_data)
+        # # Reshape.
+        # mb_dataset = tree_split_dims(b_data, (n_batches, self.train_cfg.batch_size))
+        # logger.info("n_batches: {}".format(n_batches))
+
+        # def updates_body(alg: IntAvoid, b_dataset):
+        #     alg, info = alg.update_Vh(loss_weights, *b_dataset)
+        #     return alg, info
+        #
+        # new_self, info = lax.scan(updates_body, self, mb_dataset, length=n_batches)
+        # # Take mean of info.
+        # info_mean = jtu.tree_map(lambda x: x.mean(), info)
+
+        (f_new, G_new), info_f_G = self.update_f_G(data.b_x0, data.b_nxt_x0)
         info_mean = info_h | info_f_G
 
         info_mean["anneal/lam"] = self.lam
@@ -976,22 +812,21 @@ class ModelBasedIntAvoid(IntAvoid):
         Vh_tgt_new = self.Vh_tgt.replace(params=Vh_tgt_params)
 
         return self.replace(Vh = Vh_new, f = f_new, G = G_new, Vh_tgt=Vh_tgt_new, update_idx=self.update_idx + 1), info_mean
-
-    def get_cbf_qpmats(self, alpha_safe: float, alpha_unsafe: float, state: State, V_shift: float = 1e-3, nom_pol=None):
+  
+    def get_cbf_control_sloped_all(self, alpha_safe: float, alpha_unsafe: float, state: State, V_shift: float = 1e-3):
         u_lb, u_ub = self.task.u_min, self.task.u_max
         Vh_apply = ft.partial(self.get_Vh, params=self.Vh.params)
-        nom_pol = get_or(nom_pol, self.nom_pol)
 
         h_V = Vh_apply(state)
-        hx_Vx = jax.jacobian(Vh_apply)(state)
+        h_Vx = jax.jacobian(Vh_apply)(state)
         f = self.get_f(state)
         G = self.get_G(state)
-        u_nom = nom_pol(state)
+        u_nom = self.nom_pol(state)
 
         # Give a small margin.
         h_V = h_V + V_shift
 
-        if isinstance(alpha_safe, float) or alpha_safe.ndim == 0:
+        if isinstance(alpha_safe, float):
             is_safe = jnp.all(h_V < 0)
             alpha = jnp.where(is_safe, alpha_safe, alpha_unsafe)
         else:
@@ -1001,28 +836,25 @@ class ModelBasedIntAvoid(IntAvoid):
             h_alpha = jnp.where(h_is_safe, h_alpha_safe, h_alpha_unsafe)
             alpha = h_alpha
 
-        penalty, relax_eps1, relax_eps2 = 10.0, 5e-1, 20.0
-        qp = min_norm_cbf_qp_mats(alpha, u_lb, u_ub, h_V, hx_Vx, f, G, u_nom, penalty, relax_eps1, relax_eps2)
-        return qp
+        # u, r, (qp_state, qp_mats) = cbf_old.min_norm_cbf(alpha, u_lb, u_ub, h_V, h_Vx, f, G, u_nom)
+        u, r, sol = min_norm_cbf(alpha, u_lb, u_ub, h_V, h_Vx, f, G, u_nom)
+        return self.task.chk_u(u), (r, sol)
 
-    def get_cbf_control_sloped_all(
-        self, alpha_safe: float, alpha_unsafe: float, state: State, V_shift: float = 1e-3, nom_pol=None
-    ):
+
+    def get_cbf_control_sloped_all(self, alpha_safe: float, alpha_unsafe: float, state: State, V_shift: float = 1e-3):
         u_lb, u_ub = self.task.u_min, self.task.u_max
         Vh_apply = ft.partial(self.get_Vh, params=self.Vh.params)
-
-        nom_pol = get_or(nom_pol, self.nom_pol)
 
         h_V = Vh_apply(state)
         h_Vx = jax.jacobian(Vh_apply)(state)
         f = self.get_f(state)
         G = self.get_G(state)
-        u_nom = nom_pol(state)
+        u_nom = self.nom_pol(state)
 
         # Give a small margin.
         h_V = h_V + V_shift
 
-        if isinstance(alpha_safe, float) or alpha_safe.ndim == 0:
+        if isinstance(alpha_safe, float):
             is_safe = jnp.all(h_V < 0)
             alpha = jnp.where(is_safe, alpha_safe, alpha_unsafe)
         else:
@@ -1043,7 +875,7 @@ class ModelBasedIntAvoid(IntAvoid):
         # Get states for plotting and for metrics.
         b_x0_plot = self.task.get_plot_x0(0)
         b_x0_metric = self.task.get_metric_x0()
-        # b_x0_loss = self.task.get_loss_x0()
+        b_x0_loss = self.task.get_loss_x0()
 
         # Rollout using the min norm controller.
         alpha_safe, alpha_unsafe = 2.0, 100.0
@@ -1139,28 +971,20 @@ class ModelBasedIntAvoid(IntAvoid):
         # loss_info[f"Classify/Max"] = h_clsfy_max
 
         # bTl_ls = rep_vmap(self.task.l_components, rep=2)(bT_x_metric)
-        bTh_hs = rep_vmap(self.task.h_components, rep=2)(bT_x_metric)
-        bT_hs = bTh_hs.max(axis=2)
+        bT_hs = rep_vmap(self.task.h, rep=2)(bT_x_metric)
 
         h_mean = bT_hs.mean(-1).mean(0)
         h_max = bT_hs.max(-1).mean(0)
-
-        h_labels = self.task.h_labels_clean
-        safe_fracs = {
-            "Safe/{}".format(h_labels[ii]): jnp.all(bTh_hs[:, :, ii] < 0, axis=1).mean() for ii in range(self.task.nh)
-        }
-
         eval_info = {
             "Constr Mean": h_mean,
             "Constr Max Mean": h_max,
             "Safe Frac": jnp.mean(jnp.all(bT_hs < 0, axis=-1)),
-            **safe_fracs,
             **loss_info,
         }
 
         return self.EvalData(bT_x_plot, bb_Xs, bb_Ys, bbh_V, bbh_Vdot, bbh_Vdot_disc, bb_u, eval_info)
 
- 
+
  
 class GumbelModelBasedIntAvoid(ModelBasedIntAvoid):
     
@@ -1188,35 +1012,12 @@ class GumbelModelBasedIntAvoid(ModelBasedIntAvoid):
         return G.reshape(self.cfg.n_Gs, self.task.nx, self.task.nu)
     
     
-    def compute_loss(self, loss_weights, b_x: BState, b_u: BControl, bh_iseqh: BHBool, bh_V_tgt: BHFloat, params):
-        """
-        Compute the loss for the given batch of states and controls.
-        Parameters:
-        -----------
-        loss_weights : dict
-            Dictionary containing the weights for different loss components.
-        b_x : BState
-            Batch of states.
-        b_u : BControl
-            Batch of controls.
-        bh_iseqh : BHBool
-            Boolean array indicating whether V equals h.
-        bh_V_tgt : BHFloat
-            Target value function.
-        params : dict
-            Additional parameters for the loss computation.
-        Returns:
-        --------
-        loss : jnp.ndarray
-            The computed loss value.
-        loss_dict : dict
-            Dictionary containing individual loss components and additional information.
-        """
+    def compute_loss(self, loss_weights, b_x: BState, bh_V_tgt: BHFloat, params):
         batch_size = len(b_x)
         eh_V_apply = ft.partial(self.get_eh_Vh, params=params)
 
         beh_V_pred = jax_vmap(eh_V_apply)(b_x)
-        # behx_Vx = jax_vmap(jax.jacobian(eh_V_apply))(b_x)
+        behx_Vx = jax_vmap(jax.jacobian(eh_V_apply))(b_x)
         bh_h = jax_vmap(self.task.h_components)(b_x)
 
         # 1: Value function loss. This applies to all states in the trajectory.
@@ -1224,24 +1025,24 @@ class GumbelModelBasedIntAvoid(ModelBasedIntAvoid):
         assert eh_loss_Vh.shape == (self.cfg.n_Vs, self.task.nh)
         loss_Vh = jnp.mean(eh_loss_Vh)
 
-        # Penalize underestimating beh_Vpred. i.e., Penalize tgt >= pred.
-        eh_loss_Vh_tilt = jnp.mean(jnn.relu(bh_V_tgt[:, None, :] - beh_V_pred) ** 2, axis=0)
-        loss_Vh_tilt = jnp.mean(eh_loss_Vh_tilt)
-
 
         # 2: Descent loss.
-        b_fs = jax_vmap(self.get_fs)(b_x)
-        b_Gs = jax_vmap(self.get_Gs)(b_x)
-
+        b_f = jax_vmap(self.get_f)(b_x)
+        b_G = jax_vmap(self.get_G)(b_x)
+        b_u = jax_vmap(self.nom_pol)(b_x)
+ 
         def compute_terms_h(h_V, x: State, h_h, fs, Gs, u):
             '''
             ## Original
-            xdot = lax.stop_gradient(fs.mean(axis = 0) + Gs.mean(axis = 0) @ u) 
-            _, eh_Vdot = jax.jvp(eh_V_apply, (x,), (xdot,))
-            assert eh_Vdot.shape == (self.cfg.n_Vs, self.task.nh)
-            future = eh_Vdot - self.lam * (h_V - h_h) 
-            return future
+            def compute_terms(V, x_Vx, h):
+                now = h - V
+                future = jnp.dot(x_Vx, xdot) - self.lam * (V - h)
+                return now, future
+            
+            xdot = f + G @ u
+            return jax_vmap(compute_terms)(h_V, hx_Vx, h_h)
             '''
+            now = h_h - h_V
 
             ### Quantile robust 
             xdots = lax.stop_gradient(jax_vmap(lambda f, G: f + G @ u)(fs, Gs))
@@ -1256,74 +1057,31 @@ class GumbelModelBasedIntAvoid(ModelBasedIntAvoid):
                 return filtered_fugures_single_v.max(axis = 0)
             
             future = jax.vmap(quantile, in_axes = 1)(futures)
-            return future
-            
-
-        grad_terms = {}
-        info_dict = {}
-
+            return now, future
         
-        if self.train_cfg.use_grad_terms:
-            beh_now = bh_h[:, None, :] - beh_V_pred
-            beh_future = jax_vmap(compute_terms_h)(beh_V_pred, b_x, bh_h, b_fs, b_Gs, b_u)
- 
-            assert beh_now.shape == beh_future.shape == (batch_size, self.cfg.n_Vs, self.task.nh)
-            # Enforce h(x) - V(x) <= 0.
-            loss_now_pos = jnp.mean(jnn.relu(beh_now) ** 2)
-            acc_now = jnp.mean(beh_now <= 0)
 
-            # Enforce Vdot - lambda * (V - h) <=0.
-            loss_future_pos = jnp.mean(jnn.relu(beh_future) ** 2)
-            acc_future = jnp.mean(beh_future <= 0)
+        beh_now, beh_future = jax_vmap(jax_vmap(compute_terms_h, in_axes=(0, 0, None, None, None, None)))(
+            beh_V_pred, behx_Vx, bh_h, b_f, b_G, b_u
+        )
+        assert beh_now.shape == beh_future.shape == (batch_size, self.cfg.n_Vs, self.task.nh)
+        # Enforce h(x) - V(x) <= 0.
+        loss_now_pos = jnp.mean(jnn.relu(beh_now) ** 2)
+        acc_now = jnp.mean(beh_now <= 0)
 
-            # Represent the complementarity as a multiplication.
-            # If it's positive, clip it to force it to be non-positive.
-            loss_pde = jnp.mean((beh_now * beh_future) ** 2)
+        # Enforce Vdot - lambda * (V - h) <=0.
+        loss_future_pos = jnp.mean(jnn.relu(beh_now) ** 2)
+        acc_future = jnp.mean(beh_now <= 0)
 
-            grad_terms = {
-                "Loss/Now": loss_now_pos,
-                "Loss/Future": loss_future_pos,
-                "Loss/PDE": loss_pde,
-            }
-            info_dict = {"Acc/V_desc": acc_now, "Acc/Nonzero": acc_future}
-        else:
-            if ("Loss/Future" in loss_weights) or ("Loss/Now" in loss_weights):
-                raise ValueError("Set use_grad_terms to True to use Loss/Future or Loss/Now!")
+        # Represent the complementarity as a multiplication.
+        # If it's positive, clip it to force it to be non-positive.
+        loss_pde = jnp.mean((beh_now * beh_future) ** 2)
 
-        # 3: Gradient loss for when V = h.
-        if self.train_cfg.use_hgrad:
-            bh_V_pred = lax.stop_gradient(jnp.mean(beh_V_pred, axis=1))
-            bh_iseqh = bh_iseqh & (bh_V_pred <= bh_V_tgt)
-
-            b_xdot = b_fs.mean(axis = 1) + jnp.sum(b_Gs.mean(axis = 1) * b_u[:, None, :], axis=-1)
-
-            # bh_hdot = jnp.sum(bhx_hgrad * b_xdot, axis=-1)
-            _, bh_hdot = jax.vmap(lambda x, xdot: jax.jvp(self.task.h_components, (x,), (xdot,)))(b_x, b_xdot)
-            assert bh_hdot.shape == (batch_size, self.task.nh)
-
-            _, beh_Vdot = jax.vmap(lambda x, xdot: jax.jvp(eh_V_apply, (x,), (xdot,)))(b_x, b_xdot)
-            assert beh_Vdot.shape == (batch_size, self.cfg.n_Vs, self.task.nh)
-
-            ### Original: let Vdot==hdot at states where V = h
-            bh_loss_dV_eqh = jnp.mean((beh_Vdot - bh_hdot[:, :, None, :]) ** 2, axis=1)
-
-            ### Majorization: penalize hdot >= Vdot so that h decreases faster than V 
-            #bh_loss_dV_eqh += jnn.relu(jnp.exp(10. * (bh_hdot[:, :, None, :] - beh_Vdot)) - 1.0).mean(axis = 1)
-            
-            assert bh_loss_dV_eqh.shape == (batch_size, self.task.nh)
-
-            ### Original: let Vdot be zero at states where V > h because V equals future maximum h
-            bh_loss_dV_eq0 = jnp.mean(beh_Vdot**2, axis=1)
-
-            ### Majorization: heavily penalize Vdot <= 0 so that V does not decrease
-            #bh_loss_dV_eq0 += jnn.relu(jnp.exp( - 10. * beh_Vdot) - 1.0).mean(axis = 1)
-
-            assert bh_loss_dV_eq0.shape == (batch_size, self.task.nh)
-
-            bh_loss_dV = jnp.where(bh_iseqh, bh_loss_dV_eqh, bh_loss_dV_eq0)
-            loss_dV = jnp.mean(bh_loss_dV)
-
-            grad_terms = {"Loss/dV_mse": loss_dV}
+        # # Fk it, add hessian normalization.
+        # def compute_fro(x):
+        #     return jnp.mean(jax.hessian(V_apply)(x) ** 2)
+        # # bhxx_Vxx = jax_vmap(jax.hessian(V_apply))(b_x)
+        # # loss_fro = jnp.mean(bhxx_Vxx ** 2)
+        # loss_fro = jnp.mean(jax_vmap(compute_fro)(b_x))
 
         extra_loss = {}
         if self.train_cfg.use_eq_state:
@@ -1336,11 +1094,16 @@ class GumbelModelBasedIntAvoid(ModelBasedIntAvoid):
 
         loss_dict = {
             "Loss/Vh_mse": loss_Vh,
-            "Loss/Vh_tilt": loss_Vh_tilt,
-            **grad_terms,
+            "Loss/Now": loss_now_pos,
+            "Loss/Future": loss_future_pos,
+            "Loss/PDE": loss_pde,
             # "Loss/Hess Fro": loss_fro,
             **extra_loss,
         }
+        info_dict = {"Acc/V_desc": acc_now, "Acc/Nonzero": acc_future}
         loss = weighted_sum_dict(loss_dict, loss_weights)
         return loss, loss_dict | info_dict
-    
+
+        
+            
+ 

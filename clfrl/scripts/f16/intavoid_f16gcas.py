@@ -1,20 +1,21 @@
-import sys
 import ipdb
 import numpy as np
+import sys
+
 import typer
 from flax.training import orbax_utils
 from loguru import logger
 
-import pncbf.run_config.int_avoid.f16gcas_cfg
+import clfrl.run_config.int_avoid.f16gcas_cfg
 import wandb
-from pncbf.dyn.f16_gcas import F16GCAS
-from pncbf.ncbf.int_avoid import IntAvoid, ModelBasedIntAvoid, GumbelModelBasedIntAvoid
-from pncbf.plotting.plot_task_summary import plot_task_summary
-from pncbf.plotting.plotter import MPPlotter, Plotter
-from pncbf.training.ckpt_manager import get_ckpt_manager, save_create_args
-from pncbf.training.run_dir import init_wandb_and_get_run_dir
-from pncbf.utils.jax_utils import jax2np, jax_jit, tree_cat, tree_copy
-from pncbf.utils.logging import set_logger_format
+from clfrl.dyn.f16_gcas import F16GCAS
+from clfrl.ncbf.int_avoid import IntAvoid, ModelBasedIntAvoid, GumbelModelBasedIntAvoid
+from clfrl.plotting.plot_task_summary import plot_task_summary
+from clfrl.plotting.plotter import MPPlotter, Plotter
+from clfrl.training.ckpt_manager import get_ckpt_manager, save_create_args
+from clfrl.training.run_dir import init_wandb_and_get_run_dir
+from clfrl.utils.jax_utils import jax2np, jax_jit, tree_cat, tree_copy
+from clfrl.utils.logging import set_logger_format
 
 
 def main(name: str = typer.Option(..., help="Name of the run."), group: str = typer.Option(None), entity: str = typer.Option(None), seed: int = 7957821):
@@ -24,7 +25,8 @@ def main(name: str = typer.Option(..., help="Name of the run."), group: str = ty
 
     model_based = 'model_based' in name
     gumbel = 'gumbel' in name
-    CFG = pncbf.run_config.int_avoid.f16gcas_cfg.get(seed, model_based = model_based)
+
+    CFG = clfrl.run_config.int_avoid.f16gcas_cfg.get(seed, model_based = model_based)
 
     nom_pol = task.nom_pol_pid
 
@@ -36,20 +38,20 @@ def main(name: str = typer.Option(..., help="Name of the run."), group: str = ty
 
 
     CFG.extras = {"nom_pol": "pid"}
+    
 
     # loss_weights = {"Loss/Vh_mse": 1.0, "Loss/Now": 1.0, "Loss/Future": 1.0, "Loss/PDE": 0.0}
-    loss_weights = {"Loss/Vh_mse": 1.0, "Loss/Now": 1.0, "Loss/Future": 1.0, "Loss/Equil": 1.0} 
+    loss_weights = {"Loss/Vh_mse": 1.0, "Loss/Now": 1.0, "Loss/Future": 1.0, "Loss/Equil": 1.0}
     CFG.extras["loss_weights"] = loss_weights
 
-    
+     
     project = "intavoid_f16gcas" 
     job_type = "intavoid_f16gcas"
     if model_based:
         project = '_'.join(['model_based', project])
         job_type = '_'.join(['model_based', job_type])
-
     run_dir = init_wandb_and_get_run_dir(CFG, project, job_type, name, group=group, entity = entity)
-
+    
     plot_dir, ckpt_dir = run_dir / "plots", run_dir / "ckpts"
     plotter = MPPlotter(task, plot_dir)
 
@@ -70,7 +72,6 @@ def main(name: str = typer.Option(..., help="Name of the run."), group: str = ty
 
     rng = np.random.default_rng(seed=58123)
     dset: IntAvoid.CollectData | None = None
-    
     for idx in range(LCFG.n_iters + 1):
         should_log = idx % LCFG.log_every == 0
         should_eval = idx % LCFG.eval_every == 0
@@ -82,7 +83,6 @@ def main(name: str = typer.Option(..., help="Name of the run."), group: str = ty
         if (idx % 500 == 0) or len(dset_list) < dset_len_max:
             alg, updated = alg.update_lam()
             alg, dset = alg.sample_dset()
-            
             dset_list.append(jax2np(dset))
 
             if len(dset_list) > dset_len_max:
@@ -95,13 +95,11 @@ def main(name: str = typer.Option(..., help="Name of the run."), group: str = ty
             dset = tree_cat(dset_list, axis=0)
             b = dset.bT_x.shape[0]
             b_times_Tm1 = b * (dset.bT_x.shape[1] - 1)
-            if model_based:
-                normalizer = ModelBasedIntAvoid.Normalizer.create(dset)
 
         # Randomly sample x0. Half is random, half is t=0.
         n_rng = alg.train_cfg.batch_size // 2
         n_zero = alg.train_cfg.batch_size - n_rng
- 
+
         b_idx_rng = rng.integers(0, b_times_Tm1, size=(n_rng,))
         b_idx_b_rng = b_idx_rng // (dset.bT_x.shape[1] - 1)
         b_idx_t_rng = 1 + (b_idx_rng % (dset.bT_x.shape[1] - 1 - int(model_based)))
@@ -110,22 +108,20 @@ def main(name: str = typer.Option(..., help="Name of the run."), group: str = ty
         b_idx_t_zero = np.zeros_like(b_idx_b_zero)
 
         b_idx_b = np.concatenate([b_idx_b_rng, b_idx_b_zero], axis=0)
-        b_idx_t = np.concatenate([b_idx_t_rng, b_idx_t_zero], axis=0) 
+        b_idx_t = np.concatenate([b_idx_t_rng, b_idx_t_zero], axis=0)
 
         b_x0 = dset.bT_x[b_idx_b, b_idx_t]
         if model_based:
             b_nxt_x0 = dset.bT_x[b_idx_b, b_idx_t + 1] 
-        b_u0 = dset.bT_u[b_idx_b, b_idx_t]
-        #bh_iseqh = dset.bTh_iseqh[b_idx_b, b_idx_t, :]
         b_xT = dset.bT_x[b_idx_b, -1]
         bh_lhs = dset.b_vterms.Th_max_lhs[b_idx_b, b_idx_t, :]
         bh_int_rhs = dset.b_vterms.Th_disc_int_rhs[b_idx_b, b_idx_t, :]
         b_discount_rhs = dset.b_vterms.T_discount_rhs[b_idx_b, b_idx_t]
         if not model_based:
-            batch = alg.Batch(b_x0, b_u0, b_xT, None, bh_lhs, bh_int_rhs, b_discount_rhs)
+            batch = batch = alg.Batch(b_x0, b_xT, bh_lhs, bh_int_rhs, b_discount_rhs)
         else:
-            batch = alg.Batch(b_x0, b_u0, b_nxt_x0, b_xT, None, bh_lhs, bh_int_rhs, b_discount_rhs)
-
+            batch = alg.Batch(b_x0, b_nxt_x0, b_xT, bh_lhs, bh_int_rhs, b_discount_rhs)
+            
         alg, loss_info = alg.update(batch, loss_weights)
 
         if should_log:

@@ -8,9 +8,9 @@ from datetime import datetime
 from loguru import logger
 
 import wandb
-from pncbf.utils.git_utils import log_git_info
-from pncbf.utils.paths import get_runs_dir
-from pncbf.run_config.run_cfg import RunCfg
+from clfrl.utils.git_utils import log_git_info
+from clfrl.utils.paths import get_runs_dir
+from clfrl.run_config.run_cfg import RunCfg
 
 
 def get_date_stamp(now: datetime | None = None) -> str:
@@ -69,15 +69,14 @@ def init_wandb_and_get_run_dir(
         kwargs['entity'] = entity
     if group is not None:
         kwargs['group'] = group
+
     wandb.init(project=project, job_type=job_type, name=wandb_name, settings=wandb_settings, entity = entity)
-    
     wandb.config.update(cfg.asdict())
 
     hostname = socket.gethostname()
     now = wandb.run.settings._start_datetime
     wandb_disabled = os.environ.get("WANDB_MODE", None) == "disabled"
-
-    if isinstance(now, str) and not wandb_disabled:
+    if isinstance(now, str):
         now = datetime.strptime(now, "%Y%m%d_%H%M%S")
     if not isinstance(now, datetime):
         assert wandb_disabled
