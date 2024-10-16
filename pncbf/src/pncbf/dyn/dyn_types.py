@@ -34,7 +34,12 @@ BLFloat = Float[Arr, "b nl"]
 BTLFloat = Float[Arr, "b T nl"]
 ZBLFloat = Float[Arr, "nz b nl"]
 
-
+FloatScalar = float | Float[Arr, ""]
+TZFloat = Float[Arr, "T"]
+BZFloat = Float[Arr, "b"]
+BTZFloat = Float[Arr, "b T"]
+ZBZFloat = Float[Arr, "nz b"]
+ 
 HFloat = Float[Arr, "nh"]
 BHFloat = Float[Arr, "b nh"]
 BTHFloat = Float[Arr, "b T nh"]
